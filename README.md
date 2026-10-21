@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.1 — functioning, local-first MVP**
+**Version 0.2 — local-first MVP with reactive constellations and voluntary peer-team building**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -15,12 +15,15 @@ Synapse is an employee-centered capability discovery and development prototype. 
 ## Features
 
 - 13 capability domains and 104 task-oriented skills
+- Higher-fidelity radar with clear rings, light trails and truthful gaps for unanswered self-reports
+- Zodiac-inspired animated constellation with a deterministic visual template matcher, manual choice, cursor repulsion and reduced-motion support
 - Radar with domain drill-down and unknown/missing-confidence behavior
-- 104-node linked SVG knowledge graph, domain/search filtering, node details
+- 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
 - Plain-text (`.txt`) résumé / experience keyword matching to **unverified suggestions**; manual confirmation and removal
 - Task-level survey capturing confidence, prior execution, voluntary activity recency, and independent vs approved-AI-assisted vs guided execution
 - Editable, unverified credential inventory with date horizon
-- Aggregated synthetic team coverage with minimum-participation threshold and an explicit user opt-in
+- Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
+- A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
 - ROI scenario calculator with transparent formulas and separation of avoided spend versus recovered non-cash capacity
 - Local state persistence, JSON export/import/validation, delete/reset controls, no network calls
 
@@ -49,6 +52,22 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
 
+## Dynamic constellation visual
+
+Synapse references the twelve Western zodiac constellation names and schematic line figures (Aries through Pisces). Shapes are **original artistic interpretations**, not positional star charts. Auto selection compares the 13-domain vector of voluntary self-reported confidence (with weaker indicators for employee-confirmed experience) to resampled shape signatures. This is geometric pattern matching, **not astrology, personality inference, proficiency grading or job-role prediction**. Changing a profile can change its best-fitting template; the sky menu can also override it.
+
+Nodes respond to pointer movement using an offline spring-and-repulsion animation, with a short cursor trail. Browsers honoring reduced-motion preferences suppress the animated motion. Higher confidence means brighter stars. Unanswered tasks are shown neutrally, not as deficient capability. The radar likewise does not plot unanswered spokes as zero proficiency.
+
+## Create and exchange team profiles
+
+1. Confirm personal experience mentions in My capability profile, and optionally complete task-level confidence pulses.
+2. Open Team intelligence and **create a new team**. The default synthetic demonstration cohort is clearly labeled and distinct from new teams.
+3. Each peer deliberately exports their own JSON capability card with a chosen display name. Cards include employee-confirmed experience mentions by default; sharing confidence and execution method requires a separate unchecked opt-in and a confirmation prompt.
+4. Transfer files outside Synapse using an approved channel. Import each opt-in peer card into the chosen team. Matching peer identifiers refresh existing imported entries.
+5. Once a team contains at least three consenting contributors, view aggregate domain coverage, skill concentrations, priority gaps, and optional self-reported independent-execution bench signals (confidence at least 3 and method independent). These are planning prompts, not proof of qualifications.
+
+**Privacy caveat:** This MVP has no live multi-user service, authentication, file recall/revocation, secure sharing, or server-side permissions. Previously shared files remain with the recipients. Identity displayed on a card is self-declared and unverified. Do not use real Navy personnel data, sensitive resumes or CUI in this demonstration.
+
 ## ROI calculation
 
 Annual illustrative benefits: `employees × trainingCost × avoidedTrainingPct` + `employees × trainingHours × loadedHourlyRate × avoidedTrainingPct` + `externalSpend × avoidancePct` + `employees × weeklyMinutes / 60 × workingWeeks × loadedHourlyRate × usableTimePct`. Training time and workflow time must refer to separate nonoverlapping work. The recovered hours represent **capacity** and not cash savings. All percentages are entered as 0–100. Cost is subtracted for the illustrative net-benefit view; the ratio is benefit divided by annual operating cost.
@@ -57,7 +76,7 @@ Annual illustrative benefits: `employees × trainingCost × avoidedTrainingPct` 
 
 ## Development / testing
 
-Tests in `tests/smoke_test.py` exercise navigation, résumé intake/confirmation, survey persistence, radar/graph, team sharing, credentials, import/export, and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
+Tests in `tests/smoke_test.py` exercise navigation, résumé intake/confirmation, survey persistence, advanced radar/graph, constellation switching, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
 
 ```shell
 python -m pytest tests/smoke_test.py -v
