@@ -1,6 +1,6 @@
 (function skyFactory(global) {
 'use strict';
-/* Schematic zodiac constellation drawings: illustrative, not celestial coordinates.
+/* Western constellation silhouettes derived from BSD-licensed astronomical reference lines when available; fallback drawings are illustrative.
    Auto matching uses only domain confidence / declared interest, not astrology. */
 const templates=[
 ['Aries','♈',[[.20,.68],[.37,.53],[.51,.36],[.60,.29],[.70,.37],[.83,.52]]],
@@ -21,7 +21,7 @@ function resample(points,n) {
  for(let i=1;i<points.length;i++){length+=Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]);segments.push(length)}
  return Array.from({length:n},(_,i)=>{let at=i*length/(n-1),j=segments.findIndex(s=>s>=at);if(j<0)j=segments.length-1;let prior=j?segments[j-1]:0,t=(at-prior)/Math.max(.000001,segments[j]-prior),a=points[j],b=points[j+1];return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]})
 }
-const patterns=templates.map(t=>resample(t[2],13)),svgNS='http://www.w3.org/2000/svg';
+const patterns=templates.map(t=>global.SynapseZodiac?.[t[0]]?.anchors||resample(t[2],13)),svgNS='http://www.w3.org/2000/svg';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let live=null;
@@ -58,7 +58,7 @@ function render(o){
  node('feGaussianBlur',{stdDeviation:4,result:'blur'},f);let m=node('feMerge',{},f);node('feMergeNode',{in:'blur'},m);node('feMergeNode',{in:'SourceGraphic'},m);
  let background=node('g',{'aria-hidden':'true'}),skeleton=node('g',{'aria-hidden':'true'}),lines=node('g',{'aria-hidden':'true'}),nodeLayer=node('g'),trailLayer=node('g',{'pointer-events':'none'});
  for(let i=0;i<115;i++){node('circle',{cx:((i*73+29)%936)+7,cy:((i*191+51)%528)+6,r:i%10===0?1.2:.57,fill:'#cce4f8',opacity:i%9===0?.25:.10},background)}
- for(let i=0;i<12;i++)node('line',{x1:anchors[i].x,y1:anchors[i].y,x2:anchors[i+1].x,y2:anchors[i+1].y,class:'sky-skeleton'},skeleton);
+ const realFigure=global.SynapseZodiac?.[shape[0]];if(realFigure){for(const figline of realFigure.lines)for(let i=0;i<figline.length-1;i++){const a=figline[i],b=figline[i+1];node('line',{x1:105+750*a[0],y1:72+410*a[1],x2:105+750*b[0],y2:72+410*b[1],class:'sky-skeleton'},skeleton)}}else for(let i=0;i<12;i++)node('line',{x1:anchors[i].x,y1:anchors[i].y,x2:anchors[i+1].x,y2:anchors[i+1].y,class:'sky-skeleton'},skeleton);
  let drawn=edges.map(([a,b,major])=>({a,b,major,el:node('line',{class:major?'sky-link sky-major':'sky-link'},lines)}));
  let elements=new Map;
  for(let p of particles){if(!p.show)continue;let g=node('g',{class:'sky-skill-node',role:'button',tabindex:0,'data-skill':p.s.id,'aria-label':p.s.name},nodeLayer);
@@ -94,7 +94,7 @@ function render(o){
  }
  frame(0);
  const s=skills.find(s=>s.id===selected),v=s&&profile.surveys?.[s.id];
- detail.innerHTML=s?`<div class="eyebrow">SKILL SIGNAL</div><h3>${esc(s.name)}</h3><p>${esc(s.task)}</p><dl><dt>Domain</dt><dd>${esc(s.domain)}</dd><dt>Self-reported confidence</dt><dd>${v?esc(v.confidence)+'/4':'Unanswered / unknown'}</dd><dt>Execution method</dt><dd>${v?esc(modeLabel(v.method)):'Not reported'}</dd><dt>Experience</dt><dd>${v?esc(v.performed):'Unknown'}</dd><dt>Employee-confirmed mention</dt><dd>${profile.confirmed.includes(s.id)?'Yes':'Not provided'}</dd><dt>Qualification verification</dt><dd>Not available</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:`<div class="eyebrow">ILLUSTRATIVE SKY PATTERN</div><h3>${shape[1]} ${esc(shape[0])}</h3><p>${choice==='auto'?'Automatic visual selection':'Manual visual selection'}. ${rank.known?`${rank.known} domain(s) with rated responses.`:'No rated domains yet, showing a placeholder.'}</p><p>Bright = higher <em>self-reported confidence</em>. Dim colored = lower self-report. Grey = unanswered, <strong>not incapable</strong>.</p><p>Move your mouse to ripple the starfield. Click a star to inspect distinct signals.</p><p class="muted">Zodiac-inspired schematic art, not sky coordinates or an astrological personality assessment.</p>`;
+ detail.innerHTML=s?`<div class="eyebrow">SKILL SIGNAL</div><h3>${esc(s.name)}</h3><p>${esc(s.task)}</p><dl><dt>Domain</dt><dd>${esc(s.domain)}</dd><dt>Self-reported confidence</dt><dd>${v?esc(v.confidence)+'/4':'Unanswered / unknown'}</dd><dt>Execution method</dt><dd>${v?esc(modeLabel(v.method)):'Not reported'}</dd><dt>Experience</dt><dd>${v?esc(v.performed):'Unknown'}</dd><dt>Employee-confirmed mention</dt><dd>${profile.confirmed.includes(s.id)?'Yes':'Not provided'}</dd><dt>Qualification verification</dt><dd>Not available</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:`<div class="eyebrow">ILLUSTRATIVE SKY PATTERN</div><h3>${shape[1]} ${esc(shape[0])}</h3><p>${choice==='auto'?'Automatic visual selection':'Manual visual selection'}. ${rank.known?`${rank.known} domain(s) with rated responses.`:'No rated domains yet, showing a placeholder.'}</p><p>Bright = higher <em>self-reported confidence</em>. Dim colored = lower self-report. Grey = unanswered, <strong>not incapable</strong>.</p><p>Move your mouse to ripple the starfield. Click a star to inspect distinct signals.</p><p class="muted">Figure projected from Western constellation line data (d3-celestial, BSD-3-Clause). Visual alignment is decorative, not astrological inference.</p>`;
  if(s)detail.querySelector('#graphAction').onclick=()=>onReflect?.(s.id);
  legend.innerHTML=`<span class="legend-item"><i style="background:#62e5cf"></i>Rated: brightness by confidence</span><span class="legend-item"><i style="background:#7892a7"></i>Unrated: unknown</span><span class="legend-item">${shape[1]} ${esc(shape[0])} · ${choice==='auto'?'Auto':'Manual'} · ${rank.known}/13 surveyed domains</span>`;
  return {name:shape[0],known:rank.known,matches:rank.results.slice(0,3)};
