@@ -16,7 +16,7 @@ Synapse is an employee-centered capability discovery and development prototype. 
 
 - 13 capability domains and 104 task-oriented skills
 - Higher-fidelity radar with clear rings, light trails and truthful gaps for unanswered self-reports
-- Zodiac-inspired animated constellation with a deterministic visual template matcher, manual choice, cursor repulsion and reduced-motion support
+- Astronomically sourced zodiac constellation figures with a deterministic visual template matcher, manual choice, cursor repulsion and reduced-motion support
 - Radar with domain drill-down and unknown/missing-confidence behavior
 - 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
 - Plain-text (`.txt`) résumé / experience keyword matching to **unverified suggestions**; manual confirmation and removal
@@ -54,7 +54,7 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 
 ## Dynamic constellation visual
 
-Synapse references the twelve Western zodiac constellation names and schematic line figures (Aries through Pisces). Shapes are **original artistic interpretations**, not positional star charts. Auto selection compares the 13-domain vector of voluntary self-reported confidence (with weaker indicators for employee-confirmed experience) to resampled shape signatures. This is geometric pattern matching, **not astrology, personality inference, proficiency grading or job-role prediction**. Changing a profile can change its best-fitting template; the sky menu can also override it.
+Synapse renders all twelve Western zodiac constellation figures (Aries through Pisces) from the J2000 constellation-line data in the BSD-3-Clause licensed [d3-celestial](https://github.com/ofrohn/d3-celestial) catalog. The figures are projected and normalized for the illustration; they are not a full navigational sky chart. See [third-party notices](THIRD_PARTY_NOTICES.md). Auto selection compares the 13-domain vector of voluntary self-reported confidence (with weaker indicators for employee-confirmed experience) to resampled shape signatures. This is geometric pattern matching, **not astrology, personality inference, proficiency grading or job-role prediction**. Changing a profile can change its best-fitting template; the sky menu can also override it.
 
 Nodes respond to pointer movement using an offline spring-and-repulsion animation, with a short cursor trail. Browsers honoring reduced-motion preferences suppress the animated motion. Higher confidence means brighter stars. Unanswered tasks are shown neutrally, not as deficient capability. The radar likewise does not plot unanswered spokes as zero proficiency.
 
