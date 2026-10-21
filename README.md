@@ -6,8 +6,8 @@ Synapse is an employee-centered capability discovery and development prototype. 
 
 ## Run
 
-1. Download/extract this repository, or download `Synapse-MVP.zip` from the chat artifact.
-2. Double-click `index.html` in a recent Edge, Firefox, or Chrome browser.
+1. **Fastest:** download and double-click `Synapse-Standalone.html` (one file, all code embedded).
+2. **Development edition:** download/extract the repository or `Synapse-MVP.zip`, keeping `index.html` beside `src`. Open `index.html` in a recent Edge, Firefox, or Chrome browser.
 3. On **My capability profile**, select **Use synthetic example** to test résumé matching, explicitly confirm suggestions, and save a confidence pulse. Try the graph, radar, credential planner, team overview, and ROI lab.
 
 **No installation, package manager, internet, PowerShell, server, account, or admin privileges required.** All JavaScript and CSS are local. `index.html` should remain beside the `src` directory. If your browser policy blocks local scripts or localStorage from `file:` pages, serve the directory using an **approved** local hosting mechanism; do not bypass workstation restrictions.
