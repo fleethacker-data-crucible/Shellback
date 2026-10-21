@@ -54,6 +54,12 @@ def test_synapse_employee_flow():
         saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
         assert len(saved['profile']['confirmed'])==1
         assert len(saved['profile']['surveys'])==1
+        page.locator('button[data-view="profile"]').first.click()
+        page.once('dialog', lambda dialog: dialog.accept())
+        page.locator('#loadDemoProfile').click()
+        assert page.locator('#profileCount').inner_text()=='20'
+        assert page.locator('#surveyCount').inner_text()=='20'
+        assert page.locator('#radar .radar-shape').count()==1
         assert not errors, errors
         browser.close()
 
