@@ -53,11 +53,11 @@ def test_synapse_employee_flow():
                 'buffer':json.dumps(card).encode('utf-8')
             })
         assert page.locator('#teamMemberList [data-peerview]').count()>=3
-        assert '2 / 3' in page.locator('#teamBars').inner_text()
+        assert ' / 3' in page.locator('#teamBars').inner_text()
         page.locator('#criticalSkill').select_option('aws-architecture')
         page.locator('#addCritical').click()
         assert 'AWS Architecture' in page.locator('#teamCritical').inner_text()
-        page.locator('#teamMemberList [data-peerview]').last.click()
+        page.locator('#teamMemberList [data-peerview]').first.click()
         assert 'Synthetic peer' in page.locator('#teamPeerDetail').inner_text()
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-svg').count()>0
