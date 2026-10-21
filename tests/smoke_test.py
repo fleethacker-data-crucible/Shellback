@@ -6,7 +6,7 @@ ROOT=Path(__file__).parents[1]
 
 def test_synapse_employee_flow():
     with sync_playwright() as pw:
-        browser=pw.chromium.launch(headless=True, executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+        browser=pw.chromium.launch(headless=True, executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None, args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
         page=browser.new_page(viewport={'width':1440,'height':900}, accept_downloads=True)
         errors=[]
         page.on('pageerror', lambda e: errors.append(str(e)))
