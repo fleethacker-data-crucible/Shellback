@@ -66,13 +66,13 @@ def test_synapse_employee_flow():
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         page.locator('#graphSearch').fill('SQL')
-        assert 1 <= page.locator('#graphSvg .skill-node').count() < 104
+        assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
         page.locator('#constellationMode').select_option('Scorpius')
         assert 'Scorpius' in page.locator('#skyExplanation').inner_text()
         assert page.locator('#graphSvg .sky-skeleton').count()>0
         page.locator('#graphReset').click()
         assert page.locator('#constellationMode').input_value()=='auto'
-        page.locator('#graphSvg .skill-node').first.click()
+        page.locator('#graphSvg .sky-skill-node').first.click()
         assert 'SKILL SIGNAL' in page.locator('#graphDetail').inner_text()
         page.locator('button[data-view="credentials"]').first.click()
         page.locator('#credName').fill('AWS demonstration credential')
