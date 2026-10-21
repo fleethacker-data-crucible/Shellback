@@ -11,6 +11,7 @@ def test_synapse_employee_flow():
         page=browser.new_page(viewport={'width':1440,'height':900}, accept_downloads=True)
         errors=[]
         page.on('pageerror', lambda e: errors.append(str(e)))
+        page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
         for script in ('sky.js', 'team.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
@@ -47,11 +48,11 @@ def test_synapse_employee_flow():
                   'name':f'Synthetic peer {n}', 'consent':True, 'issued':'2026-10-21',
                   'skills':['aws-architecture','sql-pipelines'],
                   'surveys':{'aws-architecture':{'confidence':4,'method':'independent'}}}
-            page.once('dialog', lambda dialog: dialog.accept())
-            page.locator('#importPeerFile').set_input_files({
+                page.locator('#importPeerFile').set_input_files({
                 'name':f'peer-{n}.json','mimeType':'application/json',
                 'buffer':json.dumps(card).encode('utf-8')
             })
+            page.wait_for_function('(count) => document.querySelectorAll("#teamMemberList [data-peerview]").length >= count', arg=n+2)
         assert page.locator('#teamMemberList [data-peerview]').count()>=3
         assert ' / 3' in page.locator('#teamBars').inner_text()
         page.locator('#criticalSkill').select_option('aws-architecture')
@@ -86,7 +87,6 @@ def test_synapse_employee_flow():
         assert len(saved['profile']['confirmed'])==1
         assert len(saved['profile']['surveys'])==1
         page.locator('button[data-view="profile"]').first.click()
-        page.once('dialog', lambda dialog: dialog.accept())
         page.locator('#loadDemoProfile').click()
         assert page.locator('#profileCount').inner_text()=='20'
         assert page.locator('#surveyCount').inner_text()=='20'
