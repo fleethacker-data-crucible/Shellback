@@ -48,7 +48,7 @@ def test_synapse_employee_flow():
                   'name':f'Synthetic peer {n}', 'consent':True, 'issued':'2026-10-21',
                   'skills':['aws-architecture','sql-pipelines'],
                   'surveys':{'aws-architecture':{'confidence':4,'method':'independent'}}}
-                page.locator('#importPeerFile').set_input_files({
+            page.locator('#importPeerFile').set_input_files({
                 'name':f'peer-{n}.json','mimeType':'application/json',
                 'buffer':json.dumps(card).encode('utf-8')
             })
