@@ -13,11 +13,12 @@ def test_synapse_employee_flow():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('sky.js', 'team.js', 'app.js'):
+        for script in ('zodiac-lines.js', 'sky.js', 'team.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
         page.add_style_tag(content=(ROOT/'src/style.css').read_text())
+        page.add_script_tag(content=(ROOT/'src/zodiac-lines.js').read_text())
         page.add_script_tag(content=(ROOT/'src/sky.js').read_text())
         page.add_script_tag(content=(ROOT/'src/team.js').read_text())
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
@@ -68,6 +69,7 @@ def test_synapse_employee_flow():
         assert 1 <= page.locator('#graphSvg .skill-node').count() < 104
         page.locator('#constellationMode').select_option('Scorpius')
         assert 'Scorpius' in page.locator('#skyExplanation').inner_text()
+        assert page.locator('#graphSvg .sky-skeleton').count()>0
         page.locator('#graphReset').click()
         assert page.locator('#constellationMode').input_value()=='auto'
         page.locator('#graphSvg .skill-node').first.click()
