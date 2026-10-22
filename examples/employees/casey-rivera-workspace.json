@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "profile": {
+    "confirmed": [
+      "curriculum-design",
+      "training-facilitation",
+      "mentoring",
+      "knowledge-transfer",
+      "onboarding-plans",
+      "documentation-stewardship",
+      "technical-writing",
+      "qualification-planning",
+      "technical-communication",
+      "cross-team-facilitation",
+      "requirements-analysis",
+      "safety-process-awareness"
+    ],
+    "surveys": {
+      "curriculum-design": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "training-facilitation": {
+        "confidence": 4,
+        "performed": "before",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "mentoring": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "knowledge-transfer": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "onboarding-plans": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "documentation-stewardship": {
+        "confidence": 4,
+        "performed": "before",
+        "method": "ai",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "technical-writing": {
+        "confidence": 2,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "qualification-planning": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "technical-communication": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "cross-team-facilitation": {
+        "confidence": 3,
+        "performed": "before",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      }
+    },
+    "credentials": [
+      {
+        "id": "demo-credential-casey-rivera-1",
+        "name": "Synthetic Facilitator Workshop",
+        "authority": "Synthetic course provider",
+        "expiry": "2027-12-31",
+        "created": "2026-10-22"
+      }
+    ],
+    "consent": false,
+    "candidates": [
+      "peer-coaching",
+      "change-management"
+    ],
+    "displayName": "Casey Rivera",
+    "demoPersona": "casey-rivera"
+  },
+  "roi": {},
+  "workforce": {}
+}
