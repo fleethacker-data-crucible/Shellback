@@ -214,7 +214,13 @@ def test_synapse_employee_flow():
         page.locator('[data-roi="minutesSaved"]').fill('0')
         after=page.locator('#roiTotal').inner_text()
         assert before!=after
-        assert page.locator('#roiCash').inner_text().startswith('
+        assert page.locator('#roiCash').inner_text().startswith('$')
+        assert page.locator('#roiCapacity').inner_text().startswith('$')
+        assert page.locator('#roiSensitivity > div').count()==3
+        assert 'Cash-only net after operating cost' in page.locator('#roi').inner_text()
+        page.locator('[data-roi="adoption"]').fill('0')
+        assert page.locator('#roiCash').inner_text()=='$0'
+        assert page.locator('#roiCapacity').inner_text()=='$0'
         saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
         assert len(saved['profile']['confirmed'])==1
         assert len(saved['profile']['surveys'])==1
