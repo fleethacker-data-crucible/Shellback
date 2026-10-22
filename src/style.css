@@ -241,3 +241,34 @@
 @media(max-width:1400px){.graph-layout{grid-template-columns:1fr}.graph-detail{min-height:0}.radar-layout{grid-template-columns:1fr}.radar-figure{min-height:360px}}
 @media(max-width:800px){.graph-panel{padding:15px}.galaxy-surface,.galaxy-surface svg{min-height:300px}.radar-premium .radar-premium-label{font-size:10px}.roi-sensitivity{grid-template-columns:1fr}}
 @media(max-width:530px){.roi-submetrics{grid-template-columns:1fr}.viz-statline span{padding:6px 10px}.viz-hero{gap:7px}.galaxy-surface{border-radius:10px}}
+
+
+/* v0.6 confirmed skills spider-web semantics */
+.radar-spider .radar-spider-web{
+ stroke:#70bfc7;stroke-width:2.65;fill-opacity:.78;
+ filter:drop-shadow(0 0 12px rgba(74,209,209,.18));
+ transition:opacity .16s ease;
+}
+.radar-spider .radar-spider-branch{
+ stroke:#a8eadb;stroke-linecap:round;
+ filter:drop-shadow(0 0 6px rgba(87,235,208,.18));
+ pointer-events:none;
+}
+.radar-spider .radar-spider-branch.is-unrated{stroke:#92b3c7;stroke-dasharray:3 4}
+.radar-spider .radar-spider-node{cursor:pointer;transition:stroke-width .1s}
+.radar-spider .radar-spider-node.is-rated{filter:drop-shadow(0 0 9px rgba(113,253,221,.72))}
+.radar-spider .radar-spider-node.is-unrated{filter:drop-shadow(0 0 3px rgba(167,198,220,.2))}
+.radar-spider .radar-spider-node:hover{stroke-width:3.4}
+.spider-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:12px}
+.spider-toolbar .breadcrumbs{margin:0}
+.spider-toolbar button#refreshRadar{white-space:nowrap;border-color:#4d857d;color:#b8fbe8;background:linear-gradient(115deg,#183d47,#122f41)}
+.spider-toolbar button#refreshRadar:hover{border-color:#80f9de;background:linear-gradient(115deg,#20535a,#173a4b)}
+.persona-loader{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:13px 0}
+.persona-loader label{width:100%;font-size:11px;color:#b6c9d4;font-weight:750}
+.persona-loader select{flex:1;max-width:390px;min-width:200px;padding:10px 11px;border:1px solid #3e6874;border-radius:9px;background:#132e42;color:#e6faf8}
+.persona-loader button{white-space:nowrap}
+#demoPersonaState{margin-top:6px;padding:8px 12px;background:#10273799;border-radius:8px;border:1px solid #28495c}
+#surveyAttestationHint{margin:0 0 10px}
+#surveySkill:disabled,#surveyForm button:disabled,#surveyForm select:disabled{opacity:.5;cursor:not-allowed}
+.graph-toolbar #graphScope{min-width:175px}
+@media(max-width:570px){.spider-toolbar button#refreshRadar{width:100%}.persona-loader select,.persona-loader button{width:100%;max-width:unset}}
