@@ -149,3 +149,6 @@
 .wf-knowledge-record .row{display:flex}.wf-knowledge-record .button-row{margin-top:12px}
 .wf-pane .empty{padding:22px 14px}
 @media(max-width:760px){.wf-domain-row{grid-template-columns:minmax(105px,1fr) minmax(55px,1fr) 36px;gap:7px}.wf-domain-row small{grid-column:1/-1;text-align:left}}
+
+.wf-separator{border:0;border-top:1px solid #355668;margin:22px 0 17px}
+.wf-pane button:disabled{opacity:.45;cursor:not-allowed}
