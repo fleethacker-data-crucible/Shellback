@@ -723,7 +723,7 @@ function normalize(value,known){
  const mission=value.mission||{};w.mission={requirements:list(mission.requirements,40).map(r=>({id:trim(r?.id,64)||U(),skill:known(r?.skill)?r.skill:'',min:Math.max(1,Math.min(20,Math.round(Number(r?.min)||1))),credential:trim(r?.credential,100)})).filter(r=>r.skill),selected:list(mission.selected,100).filter(x=>typeof x==='string'&&x.length<=80)};
  return w
 }
-function data(){let s=ctx.get();if(!s.workforce||typeof s.workforce!=='object'||Array.isArray(s.workforce))s.workforce=fresh();return s.workforce}
+function data(){let s=ctx.get();if(!s.workforce||typeof s.workforce!=='object'||Array.isArray(s.workforce)||!Array.isArray(s.workforce.modules)||!Array.isArray(s.workforce.attempts)||!Array.isArray(s.workforce.goals)||!Array.isArray(s.workforce.knowledge)||!s.workforce.mentorship||!s.workforce.mission)s.workforce=normalize(s.workforce,id=>ctx.skills.some(x=>x.id===id));return s.workforce}
 function team(){const s=ctx.get();return s.teams?.items?.find(t=>t.id===s.teams.active)}
 function people(){const t=team(),p=[...(t?.members||[])];const s=ctx.get();if(s.profile.consent&&s.profile.confirmed.length)p.push({id:'self-current',name:'My local profile',skills:s.profile.confirmed,surveys:{},availability:data().mentorship.availability,mentorOptIn:data().mentorship.enabled,mentorTopics:data().mentorship.topics,qualificationClaims:(s.profile.credentials||[]).map(c=>c.name),self:true});return p}
 function skill(id){return ctx.skills.find(x=>x.id===id)}
