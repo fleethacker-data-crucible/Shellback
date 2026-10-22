@@ -29,6 +29,7 @@ def test_synapse_employee_flow():
         page.locator('#loadResumeSample').click()
         assert page.locator('[data-confirm]').count()>3
         page.locator('[data-confirm]').first.click()
+        print('PROFILE_DIAGNOSTIC', {'count':page.locator('#profileCount').inner_text(), 'errors':errors, 'flash':page.locator('#flash').inner_text(), 'candidate_count':page.locator('[data-confirm]').count()})
         assert page.locator('#profileCount').inner_text()=='1'
         page.locator('#confidence').select_option('3')
         page.locator('#performed').select_option('recent')
