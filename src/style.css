@@ -303,3 +303,50 @@
 .galaxy-empty-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
 .galaxy-empty-actions button{font-size:12px}
 @media(max-width:640px){.galaxy-view-modes{width:100%}.galaxy-view-modes button{flex:1;min-width:0;padding:10px 8px}}
+
+
+/* v0.7 · evidence-review credential intake and contextual confidence pulse */
+.profile-onboarding-card{
+ background:linear-gradient(145deg,#153d4c,#0d283c);
+ border-color:#427978;display:flex;flex-direction:column;align-items:flex-start;
+ justify-content:center;gap:12px;padding:25px;
+}
+.profile-onboarding-card .eyebrow{color:#83f2d7}
+.profile-onboarding-card h3{font-size:22px;color:#e7fff9;max-width:420px}
+.profile-onboarding-card p{font-size:13px;color:#b8d9dc;line-height:1.65}
+.profile-onboarding-card button{margin-top:8px}
+.profile-onboarding-card .note{margin-top:4px}
+.radar-aside{display:flex;flex-direction:column;gap:13px;min-width:0}
+.radar-aside .detail-card{margin:0}
+.pulse-card{background:linear-gradient(145deg,#153847,#102739);border:1px solid #39727a;border-radius:16px;padding:18px;box-shadow:inset 0 1px #66f0d319}
+.pulse-card .eyebrow{color:#7ef3d6}
+.pulse-card h3{font-size:19px;margin:5px 0 10px}
+.pulse-card .panel-heading p{color:#aacdd3;font-size:12px;line-height:1.6}
+.pulse-card .inline-form{display:flex;flex-direction:column;gap:3px}
+.pulse-card .inline-form>label{font-size:11px;margin-top:10px;color:#bedee1;font-weight:700}
+.pulse-card .inline-form select,.pulse-card .inline-form textarea{width:100%;min-width:0;background:#0d2739;border:1px solid #477385;border-radius:9px;color:#effffc;padding:10px;font:inherit}
+.pulse-card .survey-question{margin:8px 0;padding:13px;border:1px solid #3c7779;border-radius:12px;background:#113546;color:#e0fff9;font-size:12px;line-height:1.5}
+.pulse-card #surveyAttestationHint{padding:9px 12px;background:#133b47;border-left:3px solid #70e8d0;color:#bcdfdb;border-radius:8px;font-size:11px}
+.pulse-card .pulse-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 5px}
+.pulse-card .pulse-actions button{flex:1;min-width:145px}
+.pulse-card .pulse-progress{font-size:11px;color:#92ded3;line-height:1.55;padding:8px 0}
+.my-skill-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.my-skill-actions .secondary{font-size:11px;padding:7px 10px;border:1px solid #508a83}
+.my-skill-actions .danger{padding:6px 9px;font-size:12px}
+.credential-review-panel{margin-bottom:18px;border-color:#447078;background:linear-gradient(140deg,#102b3c,#122b41)}
+.credential-review-panel .panel-heading{display:flex;justify-content:space-between;gap:16px;align-items:start;flex-wrap:wrap}
+.credential-review-panel h3{font-size:20px}
+.credential-review-panel h3 .tiny-pill{vertical-align:middle;margin-left:4px}
+.credential-suggestions{display:grid;gap:10px}
+.credential-suggestion{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border:1px solid #3b6071;border-radius:12px;background:#0b2638;flex-wrap:wrap}
+.credential-suggestion strong{color:#e7fff8;font-size:13px;display:block;margin-bottom:5px}
+.credential-suggestion small{font-size:11px;color:#aecfda;display:block;line-height:1.5}
+.credential-suggestion .tiny-pill{display:inline-block;margin-top:8px;font-size:9px}
+.credential-suggestion .button-row{margin:0;gap:7px}
+.credential-suggestion .button-row button{font-size:11px;padding:8px 10px}
+.intake-credential-summary{margin:15px 0 0;padding:12px 14px;border:1px solid #436e76;border-radius:10px;background:#11343e;color:#c7ebe8;font-size:12px}
+.intake-credential-summary strong{color:#adffeb}
+.intake-credential-summary p{margin:6px 0 10px;line-height:1.55}
+.intake-credential-summary button{padding:8px 11px}
+@media(min-width:1360px){.radar-layout{grid-template-columns:minmax(0,1.35fr) minmax(350px,.8fr)}}
+@media(max-width:660px){.credential-suggestion .button-row{width:100%}.credential-suggestion .button-row button{flex:1}.pulse-card{padding:13px}.my-skill-actions{width:100%}}
