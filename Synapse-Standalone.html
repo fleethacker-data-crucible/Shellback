@@ -717,7 +717,7 @@ const now=()=>new Date().toISOString().slice(0,10);
 const modes=['unknown','available','limited','unavailable'];
 const trim=(v,n=240)=>String(v??'').trim().slice(0,n);
 let ctx,tab='qualforge',revealed=false,selectedModule=null,filterSkill='all';
-function fresh(){return {modules:[],attempts:[],goals:[],mentorship:{enabled:false,topics:[],availability:'unknown',intro:''},knowledge:[],mission:{requirements:[],selected:[]}}}
+function fresh(){return {modules:[],attempts:[],goals:[],mentorship:{enabled:false,topics:[],availability:'unknown',intro:''},knowledge:[],mission:{requirements:[],selected:[],teamId:''}}}
 function normalize(value,known){
  let w=fresh();if(!value||typeof value!=='object'||Array.isArray(value))return w;
  const list=(xs,n)=>Array.isArray(xs)?xs.slice(0,n):[];
@@ -727,7 +727,7 @@ function normalize(value,known){
  w.goals=list(value.goals,120).map(g=>({id:trim(g?.id,64)||U(),skill:known(g?.skill)?g.skill:'',target:trim(g?.target,250),due:/^\d{4}-\d{2}-\d{2}$/.test(g?.due||'')?g.due:'',status:g?.status==='done'?'done':'planned'})).filter(g=>g.skill&&g.target);
  const m=value.mentorship||{};w.mentorship={enabled:m.enabled===true,topics:list(m.topics,30).filter(known),availability:modes.includes(m.availability)?m.availability:'unknown',intro:trim(m.intro,500)};
  w.knowledge=list(value.knowledge,250).map(k=>({id:trim(k?.id,64)||U(),topic:trim(k?.topic,150),skill:known(k?.skill)?k.skill:'',owner:trim(k?.owner,90),context:trim(k?.context,1200),steps:trim(k?.steps,3000),handoff:trim(k?.handoff,1500),source:trim(k?.source,250),approved:k?.approved===true,created:/^\d{4}-\d{2}-\d{2}$/.test(k?.created||'')?k.created:now()})).filter(k=>k.topic&&k.skill);
- const mission=value.mission||{};w.mission={requirements:list(mission.requirements,40).map(r=>({id:trim(r?.id,64)||U(),skill:known(r?.skill)?r.skill:'',min:Math.max(1,Math.min(20,Math.round(Number(r?.min)||1))),credential:trim(r?.credential,100)})).filter(r=>r.skill),selected:list(mission.selected,100).filter(x=>typeof x==='string'&&x.length<=80)};
+ const mission=value.mission||{};w.mission={requirements:list(mission.requirements,40).map(r=>({id:trim(r?.id,64)||U(),skill:known(r?.skill)?r.skill:'',min:Math.max(1,Math.min(20,Math.round(Number(r?.min)||1))),credential:trim(r?.credential,100)})).filter(r=>r.skill),selected:list(mission.selected,100).filter(x=>typeof x==='string'&&x.length<=80),teamId:trim(mission.teamId,80)};
  return w
 }
 function data(){let s=ctx.get();if(!s.workforce||typeof s.workforce!=='object'||Array.isArray(s.workforce)||!Array.isArray(s.workforce.modules)||!Array.isArray(s.workforce.attempts)||!Array.isArray(s.workforce.goals)||!Array.isArray(s.workforce.knowledge)||!s.workforce.mentorship||!s.workforce.mission)s.workforce=normalize(s.workforce,id=>ctx.skills.some(x=>x.id===id));return s.workforce}
@@ -763,9 +763,12 @@ function renderSkillfleet(){
  }).join(''):'<p class="muted">No self-entered credentials yet. Use Credential desk for optional renewal reminders.</p>';
 }
 function renderTeamforge(){
- const w=data(),p=people(),req=w.mission.requirements,ids=new Set(p.map(x=>x.id)),selected=w.mission.selected.filter(id=>ids.has(id));
- // Prioritize explicit selections; on first entry use all local team contributors.
- if(!w.mission.selected.length){selected.push(...p.map(x=>x.id));w.mission.selected=[...selected]}
+ const w=data(),p=people(),req=w.mission.requirements,ids=new Set(p.map(x=>x.id));
+ // Selection belongs to the currently active team; do not carry a roster from
+ // the synthetic cohort into a newly created or imported peer team.
+ const activeId=team()?.id||'';
+ if(w.mission.teamId!==activeId){w.mission.teamId=activeId;w.mission.selected=p.map(x=>x.id)}
+ const selected=w.mission.selected.filter(id=>ids.has(id));
  const roster=p.filter(x=>selected.includes(x.id));
  $('wfMissionSkill').innerHTML=options();
  $('wfMissionRequirements').innerHTML=req.length?req.map(r=>`<div class="wf-detail-line"><div><strong>${E(name(r.skill))}</strong><small>${r.min} contributors · ${r.credential?'Qualification text: '+E(r.credential):'No qualification requirement specified'}</small></div><button class="danger" data-wfneeddelete="${E(r.id)}">×</button></div>`).join(''):'<p class="muted">Add mission requirements to compare declared coverage and optional qualification claims.</p>';
