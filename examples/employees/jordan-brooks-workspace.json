@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "profile": {
+    "confirmed": [
+      "sql-pipelines",
+      "data-quality",
+      "data-modeling",
+      "power-bi",
+      "dashboard-design",
+      "aws-architecture",
+      "infrastructure-as-code",
+      "python-development",
+      "ci-cd-pipelines",
+      "ai-orchestration",
+      "data-governance",
+      "metrics-definition"
+    ],
+    "surveys": {
+      "sql-pipelines": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "data-quality": {
+        "confidence": 3,
+        "performed": "before",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "data-modeling": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "power-bi": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "dashboard-design": {
+        "confidence": 2,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "aws-architecture": {
+        "confidence": 4,
+        "performed": "before",
+        "method": "ai",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "infrastructure-as-code": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "python-development": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "ci-cd-pipelines": {
+        "confidence": 2,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "ai-orchestration": {
+        "confidence": 3,
+        "performed": "before",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      }
+    },
+    "credentials": [
+      {
+        "id": "demo-credential-jordan-brooks-1",
+        "name": "Synthetic Cloud Architecture Workshop",
+        "authority": "Synthetic course provider",
+        "expiry": "2027-07-15",
+        "created": "2026-10-22"
+      }
+    ],
+    "consent": false,
+    "candidates": [
+      "workflow-automation",
+      "ai-outcome-validation"
+    ],
+    "displayName": "Jordan Brooks",
+    "demoPersona": "jordan-brooks"
+  },
+  "roi": {},
+  "workforce": {}
+}
