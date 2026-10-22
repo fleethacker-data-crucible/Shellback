@@ -325,6 +325,13 @@ function render(o){
    // A subdued ripple behind the cursor, not a large force field.
    if(d<92){let push=Math.pow(1-d/92,2)*.52;fx+=(dx/d)*push;fy+=(dy/d)*push}
   }
+  if(focus&&focus!==p.s.id&&adj.get(focus)?.has(p.s.id)&&!reduce){
+   // Restore the first prototype's "breathing branches": related nodes fan
+   // outward a few pixels while their elastic edges stay attached.
+   const anchor=byId.get(focus),dx=p.homeX-anchor.homeX,dy=p.homeY-anchor.homeY;
+   const d=Math.hypot(dx,dy)||1;
+   fx+=dx/d*.28;fy+=dy/d*.28;
+  }
   if(!reduce&&!caught){fx+=.002*Math.sin(t*.0008+p.s.si*1.7);fy+=.002*Math.cos(t*.0006+p.s.di)}
   const friction=caught?.56:.84;
   p.vx=reduce?0:(p.vx+fx*dt)*Math.pow(friction,dt);
