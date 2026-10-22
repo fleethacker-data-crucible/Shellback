@@ -13,7 +13,7 @@ def test_synapse_employee_flow():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('sky.js', 'team.js', 'fleet.js', 'workforce.js', 'app.js'):
+        for script in ('sky.js', 'team.js', 'fleet.js', 'workforce.js', 'demo-profiles.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
@@ -22,11 +22,16 @@ def test_synapse_employee_flow():
         page.add_script_tag(content=(ROOT/'src/team.js').read_text())
         page.add_script_tag(content=(ROOT/'src/fleet.js').read_text())
         page.add_script_tag(content=(ROOT/'src/workforce.js').read_text())
+        page.add_script_tag(content=(ROOT/'src/demo-profiles.js').read_text())
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert page.locator('#metricDomains').inner_text()=='13'
         assert 'No login' in page.locator('.demo-identity').inner_text()
         page.locator('button[data-view="profile"]').first.click()
+        assert page.locator('#surveySkill').is_disabled()
+        assert page.locator('#saveSurvey').is_disabled()
+        assert page.locator('#demoPersona option').count()==5
+
         page.locator('#loadResumeSample').click()
         assert page.locator('[data-confirm]').count()>3
         # Resume results must immediately update both visualizations, but not
@@ -34,7 +39,8 @@ def test_synapse_employee_flow():
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-evidence-halo.is-pending').count()>0
         assert 'résumé candidates' in page.locator('#radarStatus').inner_text()
-        assert 'Confidence not rated' in page.locator('#radarCanvas').inner_text()
+        assert 'No skills attested' in page.locator('#radarCanvas').inner_text()
+        assert page.locator('#radarCanvas .radar-spider-web').count()==0
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node.is-pending').count()>0
         assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==0
@@ -42,15 +48,31 @@ def test_synapse_employee_flow():
         page.locator('[data-confirm]').first.click()
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==1
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
+        assert page.locator('#graphSvg .sky-skill-node').count()==8
+        page.locator('#graphScope').select_option('all')
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
+        page.locator('#graphScope').select_option('focus')
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-evidence-halo.is-confirmed').count()>0
+        assert page.locator('#radarCanvas .radar-spider-web').count()==1
+        assert page.locator('#radarCanvas .radar-spider-node.is-unrated').count()>=1
         page.locator('button[data-view="profile"]').first.click()
         assert page.locator('#profileCount').inner_text()=='1'
+        # Only one attested capability is eligible for a task pulse.
+        assert len([x for x in page.locator('#surveySkill option').all() if x.get_attribute('value')])==1
+        assert page.locator('#saveSurvey').is_enabled()
         page.locator('#confidence').select_option('3')
         page.locator('#performed').select_option('recent')
         page.locator('#method').select_option('ai')
         page.locator('#saveSurvey').click()
         assert page.locator('#surveyCount').inner_text()=='1'
+        page.locator('button[data-view="radar"]').first.click()
+        assert page.locator('#radarCanvas .radar-spider-node.is-rated').count()>=1
+        page.locator('#refreshRadar').click()
+        assert page.locator('#radarCanvas .radar-spider-web').count()==1
+        page.locator('button[data-view="profile"]').first.click()
         page.locator('label.toggle').click()
         assert page.locator('#sharingState').inner_text()=='ON'
         page.locator('button[data-view="team"]').first.click()
@@ -164,6 +186,9 @@ def test_synapse_employee_flow():
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-svg').count()>0
         page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==8
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
+        page.locator('#graphScope').select_option('all')
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         assert page.locator('#constellationMode').count()==0
         page.locator('#graphSearch').fill('SQL')
@@ -228,7 +253,19 @@ def test_synapse_employee_flow():
         page.locator('#loadDemoProfile').click()
         assert page.locator('#profileCount').inner_text()=='20'
         assert page.locator('#surveyCount').inner_text()=='20'
-        assert page.locator('#radarCanvas .radar-premium-point').count()>0
+        assert page.locator('#radarCanvas .radar-spider-node.is-rated').count()>0
+        # Fresh manual attestation must refresh spider shape without a reload.
+        page.locator('button[data-view="radar"]').first.click()
+        before_shape=page.locator('#radarCanvas .radar-spider-web').get_attribute('points')
+        page.locator('button[data-view="profile"]').first.click()
+        already=set(page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1')).profile.confirmed"))
+        skill_to_add=next(v for v in page.locator('#manualSkill option').evaluate_all("(nodes) => nodes.map(n=>n.value).filter(Boolean)") if v not in already)
+        page.locator('#manualSkill').select_option(skill_to_add)
+        page.locator('#manualAdd').click()
+        page.locator('button[data-view="radar"]').first.click()
+        assert page.locator('#radarCanvas .radar-spider-web').get_attribute('points') != before_shape
+        page.locator('#refreshRadar').click()
+        assert page.locator('#radarCanvas .radar-spider-node').count()>0
         assert not errors, errors
         browser.close()
 
@@ -243,6 +280,7 @@ def test_standalone_distribution():
         page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
         errors=[]
         page.on('pageerror', lambda e: errors.append(str(e)))
+        page.on('dialog', lambda dialog: dialog.accept())
         page.goto(standalone.resolve().as_uri())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert 'No login' in page.locator('.demo-identity').inner_text()
@@ -251,6 +289,29 @@ def test_standalone_distribution():
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .sky-branch').count()>=35
         assert page.locator('#graphSvg .sky-semantic').count()>=12
+        # Four bundled fictional personas must produce different attested spider webs.
+        persona_ids=['morgan-vale','riley-chen','jordan-brooks','casey-rivera']
+        shapes=set()
+        for pid in persona_ids:
+            page.locator('button[data-view="profile"]').first.click()
+            page.locator('#demoPersona').select_option(pid)
+            page.locator('#loadPersona').click()
+            expected=json.loads((ROOT/'examples'/'employees'/f'{pid}-workspace.json').read_text())
+            assert page.locator('#profileCount').inner_text()==str(len(expected['profile']['confirmed']))
+            assert expected['profile']['displayName'] in page.locator('#demoPersonaState').inner_text()
+            assert page.locator('#surveySkill').is_enabled()
+            page.locator('button[data-view="radar"]').first.click()
+            assert page.locator('#radarCanvas .radar-spider-web').count()==1
+            shapes.add(page.locator('#radarCanvas .radar-spider-web').get_attribute('points'))
+            page.locator('button[data-view="graph"]').first.click()
+            assert 1 <= page.locator('#graphSvg .galaxy-domain-hub').count() < 13
+        assert len(shapes)>=3
+        # Full workspace JSON import restores another employee's visible web.
+        page.locator('#importFile').set_input_files(str(ROOT/'examples'/'employees'/'riley-chen-workspace.json'))
+        page.wait_for_function("() => document.querySelector('#demoPersonaState').textContent.includes('Riley Chen')")
+        page.locator('button[data-view="radar"]').first.click()
+        assert page.locator('#radarCanvas .radar-spider-node').count()>0
+        page.locator('button[data-view="graph"]').first.click()
         skill=page.locator('#graphSvg .sky-skill-node').first
         name=skill.get_attribute('aria-label')
         skill.hover(force=True)
@@ -263,6 +324,12 @@ def test_standalone_distribution():
         assert page.locator('[data-workforce-pane="mentorlink"]').is_visible()
         page.locator('button[data-view="team"]').first.click()
         assert page.locator('#fleetLab').count()==1
+        page.locator('#teamName').fill('Demo peer exchange')
+        page.locator('#createTeam').click()
+        for pid in ['morgan-vale','jordan-brooks','casey-rivera']:
+            page.locator('#importPeerFile').set_input_files(str(ROOT/'examples'/'employees'/f'{pid}-peer-card.json'))
+            page.wait_for_function("(expected) => document.querySelectorAll('#teamMemberList [data-peerview]').length >= expected", arg=['morgan-vale','jordan-brooks','casey-rivera'].index(pid)+1)
+        assert page.locator('#teamMemberList [data-peerview]').count()>=3
         page.locator('#fleetTabMentors').click()
         assert page.locator('#fleetMentorMatches').is_visible()
         page.locator('button[data-view="roi"]').first.click()
