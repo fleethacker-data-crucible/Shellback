@@ -38,7 +38,7 @@ const tasks={
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
 const SKILLS=domainDefs.flatMap(([domain,labels],di)=>labels.map((name,si)=>({id:slug(name),name,domain,di,si,task:tasks[name]||`Apply ${name.toLowerCase()} to a clearly defined, reviewable work task using approved procedures.`})));
 const skillById=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
-const roiDefaults={employees:100,trainingCost:2000,trainingAvoidance:15,trainingHours:8,hourlyRate:75,externalSpend:100000,externalAvoidance:10,minutesSaved:55,weeks:46,realization:70,annualCost:60000};
+const roiDefaults={employees:100,trainingCost:2000,trainingAvoidance:15,trainingHours:8,hourlyRate:75,externalSpend:100000,externalAvoidance:10,minutesSaved:55,weeks:46,realization:70,adoption:75,overlap:25,annualCost:60000};
 const STORAGE_KEY='synapse-mvp-v1';
 const newState=()=>({version:1,profile:{confirmed:[],surveys:{},credentials:[],consent:false,candidates:[]},roi:{...roiDefaults},fleetPlans:{},workforce:{}});
 let state;
@@ -123,9 +123,35 @@ function addCredential(){const name=$('credName').value.trim().slice(0,160),auth
 function renderCredentials(){const box=$('credentialList');if(!state.profile.credentials.length){box.innerHTML='<div class="empty">No credentials recorded. Add one to plan renewal reminders manually.</div>';return}box.innerHTML=[...state.profile.credentials].sort((a,b)=>(a.expiry||'9999').localeCompare(b.expiry||'9999')).map(c=>{const days=c.expiry?Math.ceil((new Date(c.expiry+'T12:00:00')-new Date())/86400000):null;const timing=days===null?'No expiry entered':days<0?'Expired (self-entered)':days<=90?`${days} days to renewal`:`Renewal in ${days} days`;return `<div class="cred-card"><div><b>${escapeHTML(c.name)}</b><small>${escapeHTML(c.authority||'Authority unspecified')} · ${escapeHTML(c.expiry||'No date')}</small><span class="cred-status">${escapeHTML(timing)} · Unverified</span></div><button data-delete-cred="${escapeHTML(c.id)}" aria-label="Delete credential">✕</button></div>`}).join('');box.querySelectorAll('[data-delete-cred]').forEach(el=>el.onclick=()=>{state.profile.credentials=state.profile.credentials.filter(c=>c.id!==el.dataset.deleteCred);persist();renderCredentials();flash('Credential removed.')})}
 function aggregateCohort(){const people=[...synthetics.map(p=>({skills:p.skills})),...(state.profile.consent?[{skills:state.profile.confirmed}]:[])];const total=people.length;return {people,total,counts:domainDefs.map((_,di)=>people.filter(p=>p.skills.some(id=>skillById[id]?.di===di)).length)}}
 function renderTeam(){window.SynapseTeam?.render();window.SynapseFleet?.render()}
-const roiLabels={employees:['Pilot participants','people'],trainingCost:['Annual training spend per person','$'],trainingAvoidance:['Avoided duplicate training','%'],trainingHours:['Annual training hours per person','hours'],hourlyRate:['Loaded hourly rate','$'],externalSpend:['Annual outside specialist spend','$'],externalAvoidance:['External spend avoidance','%'],minutesSaved:['Minutes recovered per person / week','minutes'],weeks:['Working weeks / year','weeks'],realization:['Usable share of recovered time','%'],annualCost:['Annual platform operating cost','$']};
-function renderRoi(){const panel=$('roiInputs');panel.innerHTML=Object.entries(roiLabels).map(([k,[name,unit]])=>`<label>${escapeHTML(name)}<input type="number" min="0" step="${unit==='%'?'1':'any'}" data-roi="${k}" value="${state.roi[k]}" aria-label="${escapeHTML(name)}"><small class="muted">${unit}</small></label>`).join('');panel.querySelectorAll('[data-roi]').forEach(input=>input.oninput=()=>{const val=Number(input.value);if(!Number.isFinite(val)||val<0)return;const key=input.dataset.roi;state.roi[key]=['trainingAvoidance','externalAvoidance','realization'].includes(key)?Math.min(val,100):Math.min(val,100000000);persist();updateRoiOutputs()});updateRoiOutputs()}
-function updateRoiOutputs(){const p=state.roi,training=p.employees*p.trainingCost*p.trainingAvoidance/100,hours=p.employees*p.trainingHours*p.hourlyRate*p.trainingAvoidance/100,external=p.externalSpend*p.externalAvoidance/100,capacity=p.employees*(p.minutesSaved/60)*p.weeks*p.hourlyRate*p.realization/100,total=training+hours+external+capacity;const rows=[['Duplicate training spend avoided',training],['Training time recovered (not cash)',hours],['External specialist spend avoided',external],['Workflow capacity recovered (not cash)',capacity]];$('roiTotal').textContent=fmt.format(total);$('roiBreakdown').innerHTML=rows.map(([label,value])=>`<div class="roi-line"><span>${label}</span><b>${fmt.format(value)}</b></div>`).join('');$('roiCost').textContent=fmt.format(p.annualCost);$('roiNet').textContent=fmt.format(total-p.annualCost);$('roiMultiple').textContent=p.annualCost?`${(total/p.annualCost).toFixed(2)}×`:'Not defined (zero cost)'}
+const roiLabels={employees:['Pilot participants','people'],trainingCost:['Annual training spend per person','$'],trainingAvoidance:['Avoided duplicate training','%'],trainingHours:['Annual training hours per person','hours'],hourlyRate:['Loaded hourly rate','$'],externalSpend:['Annual outside specialist spend','$'],externalAvoidance:['External spend avoidance','%'],minutesSaved:['Minutes recovered per person / week','minutes'],weeks:['Working weeks / year','weeks'],realization:['Usable share of recovered time','%'],adoption:['Employees adopting the workflow','%'],overlap:['Estimated overlapping time benefits','%'],annualCost:['Annual platform operating cost','$']};
+function renderRoi(){const panel=$('roiInputs');panel.innerHTML=Object.entries(roiLabels).map(([k,[name,unit]])=>`<label>${escapeHTML(name)}<input type="number" min="0" step="${unit==='%'?'1':'any'}" data-roi="${k}" value="${state.roi[k]}" aria-label="${escapeHTML(name)}"><small class="muted">${unit}</small></label>`).join('');panel.querySelectorAll('[data-roi]').forEach(input=>input.oninput=()=>{const val=Number(input.value);if(!Number.isFinite(val)||val<0)return;const key=input.dataset.roi;state.roi[key]=['trainingAvoidance','externalAvoidance','realization','adoption','overlap'].includes(key)?Math.min(val,100):Math.min(val,100000000);persist();updateRoiOutputs()});updateRoiOutputs()}
+function roiScenario(p,adoptionFactor=1){
+ const participants=Math.max(0,Number(p.employees)||0),uptake=Math.min(1,Math.max(0,Number(p.adoption??75)*adoptionFactor/100)),people=participants*uptake;
+ const avoidance=Math.min(1,Math.max(0,Number(p.trainingAvoidance)/100)),externalAvoidance=Math.min(1,Math.max(0,Number(p.externalAvoidance)/100));
+ const cashTraining=people*Number(p.trainingCost)*avoidance;
+ const cashExternal=Number(p.externalSpend)*externalAvoidance*uptake;
+ const trainingHours=people*Number(p.trainingHours)*Number(p.hourlyRate)*avoidance;
+ const grossWorkflow=people*(Number(p.minutesSaved)/60)*Number(p.weeks)*Number(p.hourlyRate)*Number(p.realization)/100;
+ const overlap=Math.min(1,Math.max(0,Number(p.overlap??25)/100));
+ const overlapDeduction=Math.min(trainingHours,grossWorkflow)*overlap;
+ const workflow=Math.max(0,grossWorkflow-overlapDeduction);
+ const cash=cashTraining+cashExternal,capacity=trainingHours+workflow,cost=Number(p.annualCost)||0;
+ return {people,cashTraining,cashExternal,trainingHours,grossWorkflow,overlapDeduction,workflow,cash,capacity,cost,total:cash+capacity,netCash:cash-cost}
+}
+function updateRoiOutputs(){
+ const p=state.roi,o=roiScenario(p),lower=roiScenario(p,.5),higher=roiScenario(p,1.2);
+ const money=x=>fmt.format(x);
+ const rows=[['Cash: duplicate training spend avoided',o.cashTraining],['Cash: external specialist spend avoided',o.cashExternal],['Capacity only: training hours recovered',o.trainingHours],['Capacity only: workflow hours recovered',o.workflow],['Less: overlapping capacity removed',-o.overlapDeduction]];
+ $('roiTotal').textContent=money(o.total);
+ $('roiBreakdown').innerHTML=rows.map(([label,value])=>`<div class="roi-line"><span>${label}</span><b>${value<0?'−':''}${money(Math.abs(value))}</b></div>`).join('');
+ $('roiCost').textContent=money(o.cost);
+ $('roiNet').textContent=money(o.netCash);
+ $('roiMultiple').textContent=o.cost?`${(o.cash/o.cost).toFixed(2)}×`:'Not defined (zero cost)';
+ $('roiCash').textContent=money(o.cash);
+ $('roiCapacity').textContent=money(o.capacity);
+ $('roiAdoptionPeople').textContent=`${Math.round(o.people).toLocaleString()} of ${Number(p.employees).toLocaleString()} modeled`;
+ $('roiSensitivity').innerHTML=`<div><b>${money(lower.netCash)}</b><span>Lower adoption (50% of base)</span></div><div><b>${money(o.netCash)}</b><span>Base cash-only net</span></div><div><b>${money(higher.netCash)}</b><span>Higher adoption (120% of base, capped at 100%)</span></div>`;
+}
 function renderGraph(){
  if(!window.SynapseSky)return;
  const report=window.SynapseSky.render({pending:candidateIds,svg:$('graphSvg'),surface:$('graphSurface'),detail:$('graphDetail'),legend:$('graphLegend'),skills:SKILLS,domains:domainDefs,colors,profile:state.profile,filter:graphFilter,query:graphSearch,selected:graphSelected,modeLabel,onSelect:id=>{graphSelected=id;renderGraph()},onReflect:id=>{navigate('profile');$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey()}});
