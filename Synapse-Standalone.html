@@ -1,20 +1,4 @@
 <!doctype html>
-<!-- d3-celestial BSD-3-Clause redistribution terms
-Source: https://github.com/ofrohn/d3-celestial
-Selected Western constellation line data copyright Olaf Frohn (2015).
-Copyright (c) 2015, Olaf Frohn
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="description" content="Synapse — employee-centered workforce capability intelligence, offline MVP">
 <title>Synapse | Workforce Capability Intelligence</title><style>
@@ -101,6 +85,39 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 .sky-skill-node:focus-visible circle.sky-hit-target{stroke:#dbfff8;stroke-opacity:.9;stroke-width:2}
 @media(prefers-reduced-motion:reduce){.sky-link{transition:none}}
 
+
+/* Galaxy visualization: structured capability clusters, not astrology */
+.galaxy-surface{background:radial-gradient(ellipse at center,#0d2b3c 0%,#09172c 45%,#040b18 100%);border:1px solid #355a70}
+.galaxy-domain-hub{pointer-events:none}
+.galaxy-domain-label{
+ fill:#b5d7e0;font-size:10px;font-weight:650;letter-spacing:.018em;
+ paint-order:stroke;stroke:#091928;stroke-width:3px;stroke-linejoin:round;
+}
+.galaxy-surface .sky-semantic{stroke:#dfa971;stroke-dasharray:5 5;stroke-width:1.6}
+.galaxy-surface .sky-branch{stroke:#65e0c9;stroke-width:1.5}
+.galaxy-surface .sky-local{stroke:#609ebc;stroke-width:1.12}
+.galaxy-surface .sky-link{pointer-events:none}
+.fleet-lab-panel{margin-top:20px}
+.fleet-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:19px}
+.fleet-tabs button{min-width:125px}
+.fleet-tabs .fleet-tab-active,.fleet-tabs [aria-pressed=true]{border-color:#5cdbcf!important;background:#1a4855!important;color:#d9fff8!important}
+.fleet-pane[hidden]{display:none!important}
+.fleet-pane h4{margin:5px 0 8px;color:#e3f7ff}
+.fleet-pane label{font-size:12px;color:#aac4d6}
+.fleet-pane select{width:100%;max-width:420px;display:block;padding:11px;margin:6px 0 11px;border:1px solid #315269;background:#0d1d2d;color:#f1f9ff;border-radius:8px}
+.fleet-roster-entry{display:flex;align-items:center;gap:12px;margin:4px 0;padding:10px 12px;border:1px solid #294357;border-radius:9px;background:#11283a;cursor:pointer}
+.fleet-roster-entry input{accent-color:#5ce8ce;width:16px;height:16px;flex-shrink:0}
+.fleet-roster-entry strong{display:block;color:#d4eff3;font-size:12px}
+.fleet-roster-entry small{display:block;color:#8bafc3;font-size:10px;margin-top:3px}
+.fleet-results{margin-top:16px;padding:12px;border-radius:12px;background:#0d1c30;border:1px solid #2b455d;min-height:85px;max-height:470px;overflow:auto}
+.fleet-results h4{margin-bottom:7px}
+.fleet-skill-result{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #254158;padding:11px 3px}
+.fleet-skill-result:last-child{border-bottom:0}
+.fleet-skill-result strong{display:block;color:#cfece9;font-size:12px}
+.fleet-skill-result small{display:block;color:#90afc2;margin-top:4px;font-size:10px}
+.fleet-skill-result .tiny-pill{white-space:normal;text-align:right;flex-shrink:0;max-width:50%}
+@media(max-width:680px){.fleet-skill-result{align-items:flex-start;flex-direction:column}.fleet-skill-result .tiny-pill{text-align:left;max-width:100%}}
+
 </style></head>
 <body>
 <div class="shell">
@@ -109,7 +126,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
     <nav id="nav" aria-label="Application sections">
       <button data-view="overview" class="active"><span class="navicon">▦</span> Overview</button>
       <button data-view="radar"><span class="navicon">◈</span> Capability radar</button>
-      <button data-view="graph"><span class="navicon">⌘</span> Skills constellation</button>
+      <button data-view="graph"><span class="navicon">⌘</span> Skills galaxy</button>
       <button data-view="profile"><span class="navicon">◉</span> My capability profile</button>
       <button data-view="credentials"><span class="navicon">▤</span> Credential desk</button>
       <button data-view="team"><span class="navicon">▥</span> Team intelligence</button>
@@ -125,7 +142,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
     <div class="two-col"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">01 / A CAPABILITY MAP</div><h3>Explore your domain landscape</h3><p>Radar values appear only when task confidence has been supplied.</p></div><button class="text-button" data-view="radar">Open radar ↗</button></div><div id="overviewRadar" class="chart-preview"></div></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">02 / BUILD A PROFILE</div><h3>From experiences to evidence</h3><p>Everything begins with informed employee control.</p></div></div><div class="steps"><div><b>01</b><span><strong>Suggest</strong><small>Paste a résumé or enter experiences. Identify candidate skills only.</small></span></div><div><b>02</b><span><strong>Confirm</strong><small>Review every candidate; missing ones can be added manually.</small></span></div><div><b>03</b><span><strong>Reflect</strong><small>Answer concrete task-confidence questions, separately recording execution mode.</small></span></div><div><b>04</b><span><strong>Develop</strong><small>Maintain credential plans and opt in to anonymous coverage sharing.</small></span></div></div></section></div>
   </section>
   <section id="radar" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / RADAR</div><h2>Capability, not a scorecard.</h2><p>Choose a domain to drill into its skills. Spokes use your latest *self-reported task confidence* on a 0–4 scale. Unanswered skills are marked “no data,” never zero proficiency.</p></div><div class="panel"><div id="radarBreadcrumb" class="breadcrumbs"></div><div class="radar-layout"><div class="radar-figure" id="radarCanvas"></div><div><div id="radarSkillList"></div><div id="radarInfo" class="detail-card"></div></div></div></div></section>
-  <section id="graph" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / KNOWLEDGE GRAPH</div><h2>The skills constellation.</h2><p>See how capabilities relate across disciplines. Brightness now reflects optional self-reported task confidence. The stars shift and respond to your cursor; unanswered skills stay neutral, not weak. Auto-match to recognizable astronomical zodiac constellation patterns or choose one manually.</p></div><div class="panel graph-panel"><div class="graph-toolbar"><label>Domain <select id="graphFilter"><option value="all">All domains</option></select></label><label>Find a skill <input id="graphSearch" placeholder="e.g. SQL, AWS, training..." type="search"></label><label>Sky pattern <select id="constellationMode"><option value="auto">✦ Auto match to my skills</option></select></label><button id="graphReset" class="secondary">Reset view</button><span class="hint">Click, hover, or tab to a node</span></div><div class="graph-layout"><div class="graph-surface" id="graphSurface"><svg id="graphSvg" role="img" aria-label="Interactive graph of connected skill nodes" viewBox="0 0 950 550" preserveAspectRatio="xMidYMid meet"></svg><div id="graphHoverTip" class="sky-hover-tip" role="tooltip" hidden></div><div id="graphDetail" class="graph-detail"></div></div><div id="graphLegend" class="graph-legend"></div><div id="skyExplanation" class="sky-explanation" aria-live="polite"></div></div></section>
+  <section id="graph" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / CAPABILITY GALAXY</div><h2>Your connected skills galaxy.</h2><p>Explore organically clustered capabilities, visible learning bridges between domains, and a responsive skill network. Each cluster represents a discipline; bright stars reflect volunteered task confidence, and unrated skills remain neutral—not deficient.</p></div><div class="panel graph-panel"><div class="graph-toolbar"><label>Domain <select id="graphFilter"><option value="all">All domains</option></select></label><label>Find a skill <input id="graphSearch" placeholder="e.g. SQL, AWS, training..." type="search"></label><button id="graphReset" class="secondary">Reset galaxy</button><span class="hint">Approach a star to identify it · click to pin · Tab for keyboard focus</span></div><div class="graph-layout"><div class="graph-surface galaxy-surface" id="graphSurface"><svg id="graphSvg" role="img" aria-label="Interactive galaxy of 104 connected skill nodes grouped into 13 capability clusters" viewBox="0 0 950 550" preserveAspectRatio="xMidYMid meet"></svg><div id="graphHoverTip" class="sky-hover-tip" role="tooltip" hidden></div></div><div id="graphDetail" class="graph-detail"></div></div><div id="graphLegend" class="graph-legend"></div><div id="skyExplanation" class="sky-explanation" aria-live="polite"></div></div></section>
   <section id="profile" class="view"><div class="section-intro"><div class="eyebrow">YOUR WORKSPACE / EMPLOYEE OWNED</div><h2>My capability profile.</h2><p>Draft a profile from relevant experience, confirm suggestions, and submit optional confidence surveys. Nothing is silently inferred as demonstrated proficiency.</p></div><div class="demo-profile-action"><button class="secondary" id="loadDemoProfile">✦ Populate synthetic example profile</button><small>Fictional survey data only. Replaces the current local profile after confirmation.</small></div><div class="three-stats"><div><span>Confirmed skills</span><strong id="profileCount">0</strong></div><div><span>Task pulse responses</span><strong id="surveyCount">0</strong></div><div><span>Sharing</span><strong id="sharingState">OFF</strong></div></div>
     <div class="two-col profile-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">A / EXPERIENCE INTAKE</div><h3>Résumé-assisted onboarding</h3><p>Processed locally with explainable keyword matching; not AI inference and not a formal skills assessment.</p></div></div><div class="inline-form"><label for="resumeFile">Upload a plain-text résumé (.txt)</label><input id="resumeFile" type="file" accept=".txt,text/plain"><label for="resumeText">Or paste selected experience</label><textarea id="resumeText" rows="6" placeholder="Designed AWS infrastructure, wrote SQL pipelines, used Power BI ..."></textarea><div class="button-row"><button class="primary" id="scanResume">Find candidate skills</button><button class="secondary" id="loadResumeSample">Use synthetic example</button></div></div><div id="candidateBox" class="candidates"></div></section>
       <section class="panel"><div class="panel-heading"><div><div class="eyebrow">B / SELF-REPORT</div><h3>Confidence pulse</h3><p>Answer for a specific task—not your general worth or performance. You can update previous answers.</p></div></div><div id="surveyForm" class="inline-form"><label for="surveySkill">Choose a task</label><select id="surveySkill"></select><div id="surveyQuestion" class="survey-question"></div><label for="confidence">How confident are you that you could do this task today?</label><select id="confidence"><option value="">Choose a response</option><option value="0">0 — Not yet confident</option><option value="1">1 — With substantial support</option><option value="2">2 — With some support</option><option value="3">3 — Confident with references</option><option value="4">4 — Confident independently</option></select><label for="performed">Have you performed this task?</label><select id="performed"><option value="">Choose experience</option><option value="never">Not yet</option><option value="before">Previously</option><option value="recent">Within last 90 days (self-declared)</option></select><label for="method">How was it performed?</label><select id="method"><option value="">Choose execution mode</option><option value="none">Not yet performed</option><option value="independent">Independently</option><option value="ai">With approved AI assistance</option><option value="guided">With guidance / collaboration</option></select><label for="surveyNote">Optional context (local only)</label><textarea id="surveyNote" rows="2" placeholder="What did you work on? Avoid sensitive details."></textarea><button class="primary" id="saveSurvey">Save task reflection</button><small class="muted">This does not validate qualifications, credential status, or access permissions.</small></div></section></div>
@@ -141,249 +158,242 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
   <div id="teamStats" class="three-stats"></div>
   <section class="panel"><div class="panel-heading"><div><div class="eyebrow">03 / CAPABILITY INTELLIGENCE</div><h3>Find gaps and develop bench strength</h3><p>At least three voluntarily shared profiles are required to display coverage totals. Self-declared skill mentions and self-reported independent capability are distinct measures.</p></div></div><div class="two-col"><div><h4>Domain coverage</h4><div id="teamBars" class="team-bars"></div></div><div><h4>Bench-strength signals</h4><div id="teamBench"></div></div></div><h4>Priority skills</h4><div class="manual-add"><label for="criticalSkill">Focus capability</label><select id="criticalSkill"></select><button id="addCritical" class="secondary">Track this skill</button></div><div id="teamCritical"></div><h4>Uncovered and single-person skills</h4><div id="teamSkillGaps"></div></section>
   <p class="note">The default sample team is entirely synthetic. Other team workspaces are empty until cards are imported. The local UI is not an access-control boundary; an operational team-sharing service requires identity, authorization, encryption, labor/privacy review, and audit logging.</p></section>
-  <section id="roi" class="view"><div class="section-intro"><div class="eyebrow">BUSINESS CASE / SCENARIO MODEL</div><h2>Make value assumptions visible.</h2><p>Adjust assumptions to estimate annual economic benefit. All figures are hypothetical, not verified savings or budget authority. Workflow capacity is valued separately from released cash.</p></div><div class="two-col"><section class="panel"><div class="panel-heading"><h3>Scenario inputs</h3></div><div id="roiInputs" class="roi-inputs"></div><button id="resetRoi" class="secondary">Reset assumptions</button></section><section class="panel"><div class="eyebrow">ESTIMATED ANNUAL BENEFIT</div><div class="big-number" id="roiTotal">$0</div><div id="roiBreakdown" class="roi-breakdown"></div><div class="roi-summary"><span>Annual operating cost</span><strong id="roiCost">$0</strong><span>Benefit less operating cost</span><strong id="roiNet">$0</strong><span>Benefit / operating cost</span><strong id="roiMultiple">—</strong></div></section></div><div class="notice">Non-overlap rule: recovered workflow capacity is *not* automatically cash savings. Do not count the same staff hours again as training-hour savings. Validate baselines and attributions before claiming ROI.</div></section>
+  <section class="panel fleet-lab-panel" id="fleetLab"><div class="panel-heading"><div><div class="eyebrow">04 / FLEETHACKER CAPABILITY LAB</div><h3>Compose teams. Discover mentors. Protect knowledge.</h3><p>Based on TEAMFORGE, MENTORLINK and KNOWLEDGE RELAY. Planning prompts use explicitly shared skill mentions; they do not establish qualifications.</p></div></div>
+ <div class="fleet-tabs" role="group" aria-label="Capability lab modules">
+  <button id="fleetTabCompose" class="secondary" data-fleet-tab="compose" aria-pressed="true">Team composer</button>
+  <button id="fleetTabMentors" class="secondary" data-fleet-tab="mentors" aria-pressed="false">Mentor discovery</button>
+  <button id="fleetTabRelay" class="secondary" data-fleet-tab="relay" aria-pressed="false">Knowledge relay</button>
+ </div>
+ <div id="fleetComposer" class="fleet-pane"><div class="two-col"><div><h4>Mission skill needs</h4><p class="muted">Use your team priority skills or choose additional needs. Every score is a coverage signal, not a suitability or readiness judgment.</p><div id="fleetMissionSkills"></div><label for="fleetAddSkill">Add a mission capability</label><div class="manual-add"><select id="fleetAddSkill"></select><button id="fleetAddSkillBtn" class="secondary">Add skill</button></div></div><div><h4>Proposed roster</h4><p class="muted">Select volunteers who supplied their profile cards. This selection stays local.</p><div id="fleetRoster"></div></div></div><div id="fleetCompositionResult" class="fleet-results"></div></div>
+ <div id="fleetMentors" class="fleet-pane" hidden><h4>Opt-in mentor discovery</h4><p class="muted">People appear only because their profile was deliberately shared with this team. Shared confidence is optional and not independently assessed. Contact/consent must be confirmed outside Synapse.</p><label for="fleetMentorSkill">Find shared expertise in</label><select id="fleetMentorSkill"></select><div id="fleetMentorMatches" class="fleet-results"></div></div>
+ <div id="fleetRelay" class="fleet-pane" hidden><h4>Knowledge transfer watchlist</h4><p class="muted">Highlights single-contributor and unrepresented skills, without predicting retirements, attrition, performance, or personal risk. Select priority skills to build a voluntary transfer plan.</p><div id="fleetRelayList" class="fleet-results"></div></div>
+ <p class="note">FLEETHACKER demo modules are offline-only. No automated qualification adjudication, personnel ranking, passive monitoring, or remote discovery. Production integrations would require consent, authoritative qualification checks, and access controls.</p>
+ </section>
+ <section id="roi" class="view"><div class="section-intro"><div class="eyebrow">BUSINESS CASE / SCENARIO MODEL</div><h2>Make value assumptions visible.</h2><p>Adjust assumptions to estimate annual economic benefit. All figures are hypothetical, not verified savings or budget authority. Workflow capacity is valued separately from released cash.</p></div><div class="two-col"><section class="panel"><div class="panel-heading"><h3>Scenario inputs</h3></div><div id="roiInputs" class="roi-inputs"></div><button id="resetRoi" class="secondary">Reset assumptions</button></section><section class="panel"><div class="eyebrow">ESTIMATED ANNUAL BENEFIT</div><div class="big-number" id="roiTotal">$0</div><div id="roiBreakdown" class="roi-breakdown"></div><div class="roi-summary"><span>Annual operating cost</span><strong id="roiCost">$0</strong><span>Benefit less operating cost</span><strong id="roiNet">$0</strong><span>Benefit / operating cost</span><strong id="roiMultiple">—</strong></div></section></div><div class="notice">Non-overlap rule: recovered workflow capacity is *not* automatically cash savings. Do not count the same staff hours again as training-hour savings. Validate baselines and attributions before claiming ROI.</div></section>
   <section id="trust" class="view"><div class="section-intro"><div class="eyebrow">FOUNDATIONS / TRUST</div><h2>Evidence stays in its lane.</h2><p>Separating signals is a core product requirement. There is no opaque universal skill score and no automatic employment decision.</p></div><div class="governance-grid"><article class="panel"><strong>01 · Résumé claim</strong><p>A keyword match proposes a skill for review. It cannot establish ability or currency.</p></article><article class="panel"><strong>02 · Confidence</strong><p>Self-report to a task-specific prompt; not a verified measure of competency.</p></article><article class="panel"><strong>03 · Execution mode</strong><p>Independent, guided, and approved AI-assisted accomplishment are separate, not collapsed.</p></article><article class="panel"><strong>04 · Recent activity</strong><p>Only voluntary declarations. Missing or old records mean unknown, not deficient.</p></article><article class="panel"><strong>05 · Credentials</strong><p>Self-entered inventory; authoritative verification requires approved external systems.</p></article><article class="panel"><strong>06 · Employee agency</strong><p>Correct, withdraw sharing, export, or delete the local profile. No passive telemetry.</p></article></div><section class="panel"><h3>Data boundaries</h3><p id="storageStatus">This browser stores only local application data. Nothing is sent to a server by this MVP.</p><div class="button-row"><button id="downloadJson" class="secondary">Export JSON backup</button><button id="resetDemo" class="danger">Reset everything to synthetic demo</button></div><p class="note">Local storage is accessible to anyone using the same browser profile. For real personnel data, deploy an approved backend with identity, access control, encryption, audit logging, records retention, privacy and labor review, and an ATO where required. Do not place actual personnel data into this offline prototype on a shared workstation.</p></section></section>
   <footer><span>SYNAPSE <b>v0.2 MVP</b></span><span>Designed for trust · Built for discovery · Synthetic demonstration</span></footer></main></div>
 <script>
-/* Western constellation-line polylines, adapted from d3-celestial:
- * Copyright (c) 2015 Olaf Frohn. BSD-3-Clause.
- * See THIRD_PARTY_NOTICES.md. Original GeoJSON J2000 RA/Dec data:
- * https://github.com/ofrohn/d3-celestial/blob/master/data/constellations.lines.json
- * Normalized for aesthetic 2D projection; data remains illustrative, not a sky chart.
- */
-window.SynapseZodiac={"Aries":{"lines":[[[0.89,0.2614],[0.2985,0.4889],[0.1253,0.6479],[0.11,0.7386]]],"anchors":[[0.8555,0.2747],[0.7865,0.3012],[0.7175,0.3277],[0.6486,0.3543],[0.5796,0.3808],[0.5106,0.4073],[0.4416,0.4339],[0.3726,0.4604],[0.3036,0.4869],[0.2481,0.5352],[0.1937,0.5851],[0.1392,0.6351],[0.1161,0.7022]]},"Taurus":{"lines":[[[0.89,0.3392],[0.5276,0.4514],[0.4849,0.4669],[0.4328,0.4728],[0.4513,0.4264],[0.4847,0.3868],[0.8233,0.1584]],[[0.4328,0.4728],[0.3206,0.5488],[0.1238,0.6156],[0.3352,0.7062]],[[0.1238,0.6156],[0.11,0.6326],[0.1808,0.8416]]],"anchors":[[0.8237,0.3597],[0.6912,0.4007],[0.5587,0.4418],[0.4359,0.4651],[0.5222,0.3615],[0.6372,0.2839],[0.7522,0.2064],[0.389,0.5025],[0.2674,0.5669],[0.1361,0.6114],[0.2394,0.6651],[0.114,0.6445],[0.1585,0.7759]]},"Gemini":{"lines":[[[0.11,0.4957],[0.1797,0.4954],[0.3606,0.3974],[0.5952,0.2059],[0.7976,0.1444],[0.89,0.289],[0.809,0.3313],[0.6727,0.5153],[0.5346,0.5682],[0.3069,0.7244],[0.3723,0.8556]],[[0.6727,0.5153],[0.6552,0.7191]]],"anchors":[[0.188,0.4909],[0.3271,0.4155],[0.4537,0.3214],[0.5762,0.2214],[0.7232,0.167],[0.8409,0.2122],[0.8306,0.32],[0.7293,0.4389],[0.6137,0.5379],[0.474,0.6098],[0.3435,0.6993],[0.3577,0.8263],[0.662,0.6403]]},"Cancer":{"lines":[[[0.6989,0.7835],[0.5681,0.5327],[0.5548,0.4007],[0.5868,0.11]],[[0.5681,0.5327],[0.3011,0.89]]],"anchors":[[0.6784,0.7441],[0.6373,0.6654],[0.5963,0.5867],[0.5653,0.505],[0.5564,0.4167],[0.5628,0.3284],[0.5725,0.2402],[0.5822,0.1519],[0.5402,0.57],[0.4871,0.6411],[0.4339,0.7122],[0.3808,0.7833],[0.3277,0.8544]]},"Leo":{"lines":[[[0.2526,0.6875],[0.246,0.5594],[0.326,0.4772],[0.6687,0.459],[0.89,0.6179],[0.6696,0.595],[0.2526,0.6875]],[[0.326,0.4772],[0.3052,0.3817],[0.1538,0.3125],[0.11,0.3721]]],"anchors":[[0.2489,0.6166],[0.3051,0.4987],[0.4378,0.4713],[0.5795,0.4637],[0.7115,0.4897],[0.8268,0.5725],[0.8262,0.6113],[0.685,0.5966],[0.5461,0.6224],[0.4075,0.6531],[0.2689,0.6839],[0.2802,0.3703],[0.152,0.3149]]},"Virgo":{"lines":[[[0.11,0.3853],[0.1309,0.4677],[0.2572,0.5098],[0.3513,0.5233],[0.4736,0.5941],[0.5395,0.6913],[0.7593,0.602],[0.8762,0.5961]],[[0.44,0.3087],[0.4116,0.4395],[0.3513,0.5233]],[[0.4736,0.5941],[0.5806,0.5086],[0.6971,0.4715],[0.89,0.4655]]],"anchors":[[0.1253,0.4455],[0.2271,0.4998],[0.3488,0.5229],[0.4567,0.5843],[0.5324,0.6808],[0.6428,0.6493],[0.758,0.6025],[0.4388,0.3144],[0.4124,0.4358],[0.4871,0.5833],[0.585,0.5072],[0.7037,0.4713],[0.8279,0.4674]]},"Libra":{"lines":[[[0.4035,0.7181],[0.2844,0.3647],[0.5202,0.11],[0.6874,0.3168],[0.7009,0.8272],[0.7156,0.89]],[[0.2844,0.3647],[0.6874,0.3168]]],"anchors":[[0.3793,0.6464],[0.331,0.503],[0.288,0.3608],[0.3908,0.2498],[0.4936,0.1388],[0.5907,0.1972],[0.6858,0.3148],[0.6913,0.4655],[0.6953,0.6168],[0.6993,0.768],[0.3118,0.3614],[0.462,0.3436],[0.6123,0.3257]]},"Scorpius":{"lines":[[[0.1188,0.32],[0.1292,0.2037],[0.1649,0.11]],[[0.1292,0.2037],[0.2754,0.3026],[0.333,0.3306],[0.3784,0.3899],[0.4786,0.5922],[0.4905,0.7172],[0.5096,0.8608],[0.6328,0.89],[0.8093,0.882],[0.8812,0.7864],[0.8455,0.7499],[0.7832,0.6858]]],"anchors":[[0.1243,0.259],[0.153,0.1412],[0.203,0.2536],[0.3069,0.3179],[0.3867,0.4067],[0.4411,0.5164],[0.4822,0.6299],[0.4951,0.7517],[0.5216,0.8636],[0.641,0.8896],[0.7633,0.8841],[0.8552,0.8209],[0.8259,0.7297]]},"Sagittarius":{"lines":[[[0.2264,0.6794],[0.2661,0.6143],[0.2468,0.4896],[0.2891,0.3691],[0.203,0.2497]],[[0.6204,0.89],[0.628,0.7848],[0.499,0.4911],[0.3963,0.412],[0.2891,0.3691]],[[0.8181,0.8191],[0.8452,0.6387],[0.8216,0.3931],[0.7057,0.3543],[0.6364,0.3441],[0.5774,0.3645],[0.4545,0.393],[0.3963,0.412],[0.2468,0.4896],[0.1548,0.5059],[0.2661,0.6143],[0.499,0.4911],[0.5253,0.4306],[0.4545,0.393],[0.5116,0.2683],[0.5424,0.2487],[0.5901,0.192],[0.6145,0.1618],[0.6149,0.11]],[[0.5116,0.2683],[0.4694,0.251],[0.4479,0.2958],[0.4545,0.393]]],"anchors":[[0.2579,0.5613],[0.2542,0.3207],[0.6011,0.7237],[0.4944,0.4875],[0.8212,0.7988],[0.8358,0.5412],[0.7163,0.3578],[0.4642,0.3908],[0.2269,0.4931],[0.2938,0.5997],[0.51,0.4657],[0.5151,0.266],[0.462,0.2665]]},"Capricornus":{"lines":[[[0.11,0.2354],[0.1393,0.3189],[0.2078,0.4302],[0.3582,0.7041],[0.4082,0.7646],[0.7122,0.5991],[0.89,0.3683],[0.8294,0.388],[0.6737,0.3943],[0.5314,0.4089],[0.11,0.2354]]],"anchors":[[0.1363,0.3104],[0.217,0.447],[0.2935,0.5863],[0.3738,0.723],[0.5004,0.7144],[0.64,0.6384],[0.759,0.5383],[0.856,0.4125],[0.79,0.3896],[0.6314,0.3986],[0.4774,0.3867],[0.3304,0.3262],[0.1835,0.2657]]},"Aquarius":{"lines":[[[0.11,0.4927],[0.1323,0.4835],[0.3066,0.4218],[0.46,0.327],[0.5311,0.3463],[0.5632,0.3216],[0.5925,0.3233],[0.6698,0.4581],[0.7831,0.4871],[0.7452,0.7037]],[[0.3066,0.4218],[0.4629,0.5718]],[[0.46,0.327],[0.5095,0.4618]],[[0.5632,0.3216],[0.5473,0.2963]],[[0.8058,0.6843],[0.7831,0.4871],[0.89,0.6431]]],"anchors":[[0.1749,0.4684],[0.3057,0.4221],[0.4237,0.3494],[0.5488,0.3327],[0.6379,0.4024],[0.7419,0.4766],[0.7665,0.5819],[0.3174,0.4322],[0.4175,0.5282],[0.4861,0.3981],[0.8011,0.6437],[0.7853,0.5059],[0.8508,0.5859]]},"Pisces":{"lines":[[[0.6786,0.3417],[0.6694,0.244],[0.7036,0.2941],[0.6786,0.3417],[0.6685,0.4048],[0.7562,0.5058],[0.8171,0.6157],[0.89,0.7292],[0.8528,0.7217],[0.7997,0.6809],[0.7505,0.6692],[0.6785,0.6438],[0.6313,0.6382],[0.5688,0.6436],[0.3527,0.6564],[0.2679,0.6784],[0.2155,0.665],[0.1821,0.6828],[0.1682,0.72],[0.2109,0.756],[0.2771,0.7467],[0.2961,0.7164],[0.2679,0.6784]],[[0.1682,0.72],[0.11,0.7105]]],"anchors":[[0.6724,0.2761],[0.6855,0.3285],[0.7033,0.4448],[0.781,0.5505],[0.848,0.6638],[0.84,0.7119],[0.7218,0.6591],[0.5931,0.6415],[0.4616,0.65],[0.3307,0.6621],[0.2042,0.671],[0.222,0.7544],[0.272,0.684]]}};
-
-</script><script>
-(function skyFactory(global) {
+(function galaxyFactory(global){
 'use strict';
-/* Western constellation silhouettes derived from BSD-licensed astronomical reference lines when available; fallback drawings are illustrative.
-   Auto matching uses only domain confidence / declared interest, not astrology. */
-const templates=[
-['Aries','♈',[[.20,.68],[.37,.53],[.51,.36],[.60,.29],[.70,.37],[.83,.52]]],
-['Taurus','♉',[[.12,.19],[.36,.32],[.52,.52],[.75,.30],[.89,.18],[.75,.30],[.83,.69],[.52,.52],[.31,.78],[.36,.32]]],
-['Gemini','♊',[[.28,.12],[.34,.40],[.35,.72],[.25,.88],[.35,.72],[.65,.71],[.79,.87],[.65,.71],[.68,.40],[.77,.13],[.68,.40],[.34,.40]]],
-['Cancer','♋',[[.20,.24],[.45,.43],[.69,.24],[.45,.43],[.65,.69],[.82,.83],[.65,.69],[.39,.82]]],
-['Leo','♌',[[.14,.66],[.30,.55],[.42,.32],[.54,.22],[.67,.34],[.51,.52],[.42,.32],[.30,.55],[.67,.69],[.87,.77]]],
-['Virgo','♍',[[.14,.29],[.30,.44],[.47,.31],[.59,.49],[.76,.42],[.88,.64],[.70,.82],[.59,.49],[.43,.75],[.30,.44],[.16,.68]]],
-['Libra','♎',[[.20,.35],[.50,.41],[.79,.28],[.50,.41],[.33,.74],[.20,.35],[.33,.74],[.72,.77],[.79,.28]]],
-['Scorpius','♏',[[.13,.20],[.29,.30],[.40,.40],[.51,.50],[.62,.61],[.65,.78],[.78,.86],[.89,.69],[.79,.58],[.71,.64]]],
-['Sagittarius','♐',[[.18,.78],[.35,.63],[.49,.45],[.70,.19],[.84,.19],[.70,.19],[.79,.35],[.49,.45],[.73,.60],[.51,.81],[.35,.63],[.22,.30],[.49,.45]]],
-['Capricornus','♑',[[.12,.35],[.29,.26],[.40,.50],[.56,.73],[.80,.62],[.90,.26],[.80,.62],[.69,.44],[.40,.50],[.12,.35]]],
-['Aquarius','♒',[[.17,.17],[.32,.29],[.46,.20],[.60,.31],[.76,.22],[.60,.31],[.52,.53],[.41,.66],[.25,.78],[.52,.53],[.72,.73],[.82,.85]]],
-['Pisces','♓',[[.12,.29],[.24,.18],[.37,.25],[.39,.41],[.27,.51],[.43,.60],[.58,.66],[.73,.58],[.87,.67],[.86,.83],[.73,.89],[.62,.80],[.58,.66]]]
-];
-function resample(points,n) {
- let length=0,segments=[];
- for(let i=1;i<points.length;i++){length+=Math.hypot(points[i][0]-points[i-1][0],points[i][1]-points[i-1][1]);segments.push(length)}
- return Array.from({length:n},(_,i)=>{let at=i*length/(n-1),j=segments.findIndex(s=>s>=at);if(j<0)j=segments.length-1;let prior=j?segments[j-1]:0,t=(at-prior)/Math.max(.000001,segments[j]-prior),a=points[j],b=points[j+1];return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]})
-}
-const patterns=templates.map(t=>global.SynapseZodiac?.[t[0]]?.anchors||resample(t[2],13)),svgNS='http://www.w3.org/2000/svg';
-/* Curated conceptual relationships inherited from the original graph. These describe
-   useful learning pathways, not an employee's observed work or a causal dependency. */
-const skillBridges=[
- ['sql-pipelines','power-bi'],['sql-pipelines','data-quality'],
- ['aws-architecture','identity-access'],['aws-architecture','infrastructure-as-code'],
- ['powershell-automation','workflow-automation'],['git-workflows','ci-cd-pipelines'],
- ['ai-orchestration','ai-outcome-validation'],['shipyard-process-mapping','qualification-planning'],
- ['root-cause-analysis','data-quality'],['knowledge-transfer','mentoring'],
- ['systems-thinking','systems-integration'],['responsible-ai-use','security-controls'],
- ['rapid-prototyping','frontend-engineering'],['requirements-analysis','acceptance-criteria'],
- ['threat-modeling','risk-assessment'],['cloud-observability','monitoring-alerting'],
- ['dashboard-design','metrics-definition'],['technical-writing','technical-work-instructions'],
- ['test-automation','regression-testing'],['product-judgment','stakeholder-alignment'],
- ['cross-team-facilitation','agile-facilitation'],['data-governance','audit-evidence'],
- ['incident-readiness','resilience-recovery'],['ai-outcome-validation','quality-assurance']
-];
+/* The skill galaxy encodes relationships and employee-chosen self-report only.
+   The domain orbit/spiral is decorative, not a horoscope or personnel score. */
+let active=null;
+const svgNS='http://www.w3.org/2000/svg',GOLDEN=2.399963229728653;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-let live=null;
-function stop(){if(live){live.dead=true;cancelAnimationFrame(live.raf);live=null}}
-function signal(skill,profile){
- let r=profile.surveys?.[skill.id];
- if(r&&Number.isFinite(Number(r.confidence)))return {rated:true,confidence:clamp(Number(r.confidence),0,4),intensity:.16+.20*Number(r.confidence)};
- if(profile.confirmed?.includes(skill.id))return {rated:false,claimed:true,intensity:.38};
- return {rated:false,claimed:false,intensity:.14};
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const bridges=[
+ ['sql-pipelines','power-bi'],['sql-pipelines','data-quality'],['aws-architecture','identity-access'],
+ ['aws-architecture','infrastructure-as-code'],['powershell-automation','workflow-automation'],
+ ['git-workflows','ci-cd-pipelines'],['ai-orchestration','ai-outcome-validation'],
+ ['shipyard-process-mapping','qualification-planning'],['root-cause-analysis','data-quality'],
+ ['knowledge-transfer','mentoring'],['systems-thinking','systems-integration'],
+ ['responsible-ai-use','security-controls'],['rapid-prototyping','frontend-engineering'],
+ ['requirements-analysis','acceptance-criteria'],['threat-modeling','risk-assessment'],
+ ['cloud-observability','monitoring-alerting'],['dashboard-design','metrics-definition'],
+ ['technical-writing','technical-work-instructions'],['test-automation','regression-testing'],
+ ['product-judgment','stakeholder-alignment'],['cross-team-facilitation','agile-facilitation'],
+ ['data-governance','audit-evidence'],['incident-readiness','resilience-recovery'],
+ ['ai-outcome-validation','quality-assurance']
+];
+function stop(){if(active){active.stopped=true;global.cancelAnimationFrame?.(active.raf);active=null}}
+function strength(s,profile){
+ const answer=profile.surveys?.[s.id];
+ if(answer&&Number.isInteger(Number(answer.confidence))&&Number(answer.confidence)>=0&&Number(answer.confidence)<=4){
+  return {rated:true,value:Number(answer.confidence),glow:.20+Number(answer.confidence)*.20}
+ }
+ if(profile.confirmed?.includes(s.id))return {rated:false,claimed:true,glow:.39};
+ return {rated:false,claimed:false,glow:.15};
 }
-function rankTemplates(skills,profile){
- let sig=[],known=0;
- for(let i=0;i<13;i++){let domain=skills.filter(s=>s.di===i),rated=domain.map(s=>profile.surveys?.[s.id]).filter(Boolean);
- if(rated.length){sig.push(rated.reduce((sum,r)=>sum+Number(r.confidence)/4,0)/rated.length);known++}
- else sig.push(domain.some(s=>profile.confirmed?.includes(s.id))?.27:.06)}
- const total=sig.reduce((a,b)=>a+b,0)||1,normalized=sig.map(x=>x/total);
- const results=templates.map(([name,glyph],index)=>{let p=patterns[index],radii=p.map(([x,y])=>Math.hypot(x-.5,y-.5)+.12),sum=radii.reduce((a,b)=>a+b,0),score=normalized.reduce((acc,v,i)=>acc+Math.pow(v-radii[i]/sum,2),0);return {name,glyph,index,score}}).sort((a,b)=>a.score-b.score);
- return {known,results};
+function layout(skills,profile){
+ const hubs=Array.from({length:13},(_,di)=>{
+  const angle=di*GOLDEN-.45,rad=64+Math.sqrt((di+.7)/13)*190;
+  return {di,x:475+Math.cos(angle)*rad*1.37,y:275+Math.sin(angle)*rad*.88}
+ });
+ return skills.map(s=>{
+  const h=hubs[s.di],a=(s.si*GOLDEN)+s.di*.37,r=24+Math.sqrt((s.si+1)/8)*52;
+  // Slight rebalancing of orbits is driven by volunteered signals, not demographics.
+  const claim=profile.confirmed?.includes(s.id),signal=strength(s,profile);
+  const x=h.x+Math.cos(a)*(r+(claim?4:0)),y=h.y+Math.sin(a)*r*.78;
+  return {s,x,y,homeX:x,homeY:y,vx:0,vy:0,signal};
+ });
 }
 function render(o){
  stop();
- const {svg,surface,detail,legend,skills,colors,profile,filter='all',query='',selected=null,choice='auto',onSelect,onReflect,modeLabel}=o;
- const rank=rankTemplates(skills,profile),idx=templates.findIndex(t=>t[0]===choice),chosen=idx>=0?idx:(rank.known?rank.results[0].index:0),shape=templates[chosen],anchors=patterns[chosen].map(([x,y],i)=>({x:105+750*x,y:72+410*y,di:i}));
- const displayed=skills.filter(s=>(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase())));
- const visible=new Set(displayed.map(s=>s.id));
- const particles=skills.map(s=>{let hub=anchors[s.di],a=s.si*Math.PI/4+s.di*.18,r=21+(s.si%4)*9,x=hub.x+Math.cos(a)*r,y=hub.y+Math.sin(a)*r;return {s,homeX:x,homeY:y,x,y,vx:0,vy:0,info:signal(s,profile),show:visible.has(s.id)}});
- const byId=new Map(particles.map(p=>[p.s.id,p])),edges=[],adj=new Map(),edgeKeys=new Set();
- function link(a,b,kind='local'){
+ const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,onSelect,onReflect,modeLabel}=o;
+ const all=layout(skills,profile),byId=new Map(all.map(p=>[p.s.id,p])),shown=new Set(skills.filter(s=>
+  (filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))
+ ).map(s=>s.id));
+ const edges=[],adj=new Map(),seen=new Set;
+ function link(a,b,type='local'){
   if(!byId.has(a)||!byId.has(b)||a===b)return;
-  const key=[a,b].sort().join('|');if(edgeKeys.has(key))return;edgeKeys.add(key);
-  edges.push({a,b,kind});
-  for(const [u,v] of [[a,b],[b,a]]){if(!adj.has(u))adj.set(u,new Set());adj.get(u).add(v)}
+  const k=[a,b].sort().join('|');if(seen.has(k))return;seen.add(k);
+  edges.push({a,b,type});for(const [u,v] of [[a,b],[b,a]]){if(!adj.has(u))adj.set(u,new Set);adj.get(u).add(v)}
  }
  for(let di=0;di<13;di++){
   const arr=skills.filter(s=>s.di===di).sort((a,b)=>a.si-b.si);
-  for(let i=0;i<arr.length-1;i++)link(arr[i]?.id,arr[i+1]?.id);
-  // Branch the hub skill into more than a ring, restoring the first graph's
-  // explorable parent/child-looking topology without claiming a taxonomy hierarchy.
-  for(const si of [2,4,6,7])link(arr[0]?.id,arr[si]?.id,'branch');
+  for(let i=0;i<arr.length-1;i++)link(arr[i].id,arr[i+1].id);
+  for(let i of [2,4,6,7])link(arr[0]?.id,arr[i]?.id,'branch');
  }
- for(let di=0;di<12;di++)link(skills.find(s=>s.di===di)?.id,skills.find(s=>s.di===di+1)?.id,'spine');
- for(const [a,b] of skillBridges)link(a,b,'semantic');
+ // Connect clusters across disciplines, preserving the original meaningful bridges.
+ for(const [a,b] of bridges)link(a,b,'semantic');
+ const ns=(tag,attributes={},parent=svg)=>{const el=document.createElementNS(svgNS,tag);for(const [a,b] of Object.entries(attributes))el.setAttribute(a,String(b));parent.appendChild(el);return el};
  svg.replaceChildren();svg.setAttribute('viewBox','0 0 950 550');
- function node(tag,props,parent=svg){let e=document.createElementNS(svgNS,tag);for(let [k,v] of Object.entries(props||{}))e.setAttribute(k,String(v));parent.appendChild(e);return e}
- let defs=node('defs'),f=node('filter',{id:'synapse-sky-glow',x:'-100%',y:'-100%',width:'300%',height:'300%'},defs);
- node('feGaussianBlur',{stdDeviation:4,result:'blur'},f);let m=node('feMerge',{},f);node('feMergeNode',{in:'blur'},m);node('feMergeNode',{in:'SourceGraphic'},m);
- let background=node('g',{'aria-hidden':'true'}),skeleton=node('g',{'aria-hidden':'true'}),lines=node('g',{'aria-hidden':'true'}),nodeLayer=node('g'),trailLayer=node('g',{'pointer-events':'none'});
- for(let i=0;i<115;i++){node('circle',{cx:((i*73+29)%936)+7,cy:((i*191+51)%528)+6,r:i%10===0?1.2:.57,fill:'#cce4f8',opacity:i%9===0?.25:.10},background)}
- const realFigure=global.SynapseZodiac?.[shape[0]];if(realFigure){for(const figline of realFigure.lines)for(let i=0;i<figline.length-1;i++){const a=figline[i],b=figline[i+1];node('line',{x1:105+750*a[0],y1:72+410*a[1],x2:105+750*b[0],y2:72+410*b[1],class:'sky-skeleton'},skeleton)}}else for(let i=0;i<12;i++)node('line',{x1:anchors[i].x,y1:anchors[i].y,x2:anchors[i+1].x,y2:anchors[i+1].y,class:'sky-skeleton'},skeleton);
- let drawn=edges.map(({a,b,kind})=>({a,b,kind,el:node('path',{class:'sky-link sky-'+kind,fill:'none','data-relation-a':a,'data-relation-b':b,'data-relation-type':kind},lines)}));
- let elements=new Map;
- for(let p of particles){if(!p.show)continue;let g=node('g',{class:'sky-skill-node',role:'button',tabindex:0,'data-skill':p.s.id,'aria-label':p.s.name},nodeLayer);
- let glow=node('circle',{r:12,fill:colors[p.s.di],opacity:0,filter:'url(#synapse-sky-glow)'},g);
- let ring=node('circle',{r:7,fill:'none',stroke:colors[p.s.di],'stroke-opacity':.16},g);
- let dot=node('circle',{r:3,fill:p.info.rated?colors[p.s.di]:'#8da5b9',opacity:p.info.intensity},g);
- // Hit targets stay large while visual star points remain small.
- let hit=node('circle',{r:16,fill:'transparent',class:'sky-hit-target','pointer-events':'all'},g);
- node('title',{},g).textContent=`${p.s.name} · ${p.info.rated?'Self-reported '+p.info.confidence+'/4':p.info.claimed?'Confirmed experience mention, unrated':'Unknown confidence'}`;
- g.addEventListener('click',()=>onSelect?.(p.s.id));
- g.addEventListener('focus',()=>{keyboardFocus=p.s.id;showTip(p.s.id)});
- g.addEventListener('blur',()=>{keyboardFocus=null;if(!stickyId)hideTip()});
- g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect?.(p.s.id)}});
- elements.set(p.s.id,{g,glow,ring,dot,p});
+ const defs=ns('defs');
+ const nebula=ns('radialGradient',{id:'synapse-galaxy-core',cx:'50%',cy:'50%',r:'50%'},defs);
+ ns('stop',{offset:'0%', 'stop-color':'#5cf1ce','stop-opacity':'.25'},nebula);
+ ns('stop',{offset:'35%', 'stop-color':'#2478c2','stop-opacity':'.11'},nebula);
+ ns('stop',{offset:'100%','stop-color':'#1b2353','stop-opacity':'0'},nebula);
+ const halo=ns('filter',{id:'synapse-galaxy-glow',x:'-130%',y:'-130%',width:'360%',height:'360%'},defs);
+ ns('feGaussianBlur',{stdDeviation:'4.5',result:'blur'},halo);const merge=ns('feMerge',{},halo);
+ ns('feMergeNode',{in:'blur'},merge);ns('feMergeNode',{in:'SourceGraphic'},merge);
+ const field=ns('g',{'aria-hidden':'true'}),fibrils=ns('g',{'aria-hidden':'true'}),lineLayer=ns('g',{'aria-hidden':'true'}),nodeLayer=ns('g'),trailLayer=ns('g',{'pointer-events':'none'});
+ ns('ellipse',{cx:475,cy:276,rx:450,ry:275,fill:'url(#synapse-galaxy-core)'},field);
+ // Seeded tiny stars: no runtime randomness, so galaxy remains stable between visits.
+ for(let i=0;i<240;i++){
+  const theta=i*GOLDEN,rad=10+Math.sqrt(i/240)*268;
+  const x=475+Math.cos(theta)*rad*1.58,y=272+Math.sin(theta)*rad*.92;
+  const c=i%6===0?'#9b9ef3':i%5===0?'#73e8cb':'#d5eafa';
+  ns('circle',{cx:x.toFixed(2),cy:y.toFixed(2),r:i%19===0?'1.2':'.57',fill:c,opacity:i%7===0?'.34':'.12'},field);
  }
- let pointer={x:-900,y:-900,active:false},trail=[],last={x:-900,y:-900},lastTime=0,stickyId=null,keyboardFocus=null,tipId=null;
- const reduce=!!global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ const centers=Array.from({length:13},(_,di)=>{
+  const p=all.find(p=>p.s.di===di);
+  const h=(()=>{const a=di*GOLDEN-.45,r=64+Math.sqrt((di+.7)/13)*190;return {x:475+Math.cos(a)*r*1.37,y:275+Math.sin(a)*r*.88}})();
+  const group=ns('g',{class:'galaxy-domain-hub','data-domain':di},fibrils);
+  ns('circle',{cx:h.x,cy:h.y,r:72,fill:colors[di],opacity:'.028'},group);
+  ns('circle',{cx:h.x,cy:h.y,r:46,fill:'none',stroke:colors[di],'stroke-opacity':'.19','stroke-width':'.75','stroke-dasharray':'2 7'},group);
+  ns('circle',{cx:h.x,cy:h.y,r:9,fill:colors[di],opacity:'.16',filter:'url(#synapse-galaxy-glow)'},group);
+  let label=ns('text',{x:h.x+14,y:h.y-12,class:'galaxy-domain-label'},group);
+  label.textContent=domains?.[di]?.[0]||p?.s.domain||'Domain';
+  return h;
+ });
+ const paths=edges.map(e=>({...e,el:ns('path',{class:`sky-link sky-${e.type}`,fill:'none','data-relation-a':e.a,'data-relation-b':e.b,'data-relation-type':e.type},lineLayer)}));
+ const elements=new Map;
+ for(const p of all){
+  if(!shown.has(p.s.id))continue;
+  let g=ns('g',{class:'sky-skill-node','data-skill':p.s.id,role:'button',tabindex:0,'aria-label':p.s.name},nodeLayer);
+  let glow=ns('circle',{r:12,fill:colors[p.s.di],filter:'url(#synapse-galaxy-glow)',opacity:0},g);
+  let ring=ns('circle',{r:7,fill:'none',stroke:colors[p.s.di],'stroke-opacity':'.17'},g);
+  let star=ns('circle',{r:3,fill:p.signal.rated?colors[p.s.di]:'#8ca3b8',opacity:p.signal.glow},g);
+  ns('circle',{r:16,fill:'transparent','pointer-events':'all',class:'sky-hit-target'},g);
+  ns('title',{},g).textContent=`${p.s.name} · ${p.signal.rated?`${p.signal.value}/4 self-reported confidence`:p.signal.claimed?'Experience mention, unrated':'Unknown confidence'}`;
+  g.addEventListener('click',()=>onSelect?.(p.s.id));
+  g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect?.(p.s.id)}});
+  g.addEventListener('focus',()=>{keyboard=p.s.id;showTip(p.s.id)});
+  g.addEventListener('blur',()=>{keyboard=null;if(!locked)hideTip()});
+  elements.set(p.s.id,{g,glow,ring,star,p});
+ }
  const tooltip=surface.querySelector('#graphHoverTip');
+ let pointer={x:0,y:0,active:false},locked=null,keyboard=null,tipId=null,trail=[],lastTime=0;
+ const reduce=!!global.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  function hideTip(){if(tooltip){tooltip.hidden=true;tooltip.classList.remove('visible')}tipId=null}
  function showTip(id){
-  const p=byId.get(id);if(!p||!p.show||!tooltip)return hideTip();
+  const p=byId.get(id);if(!shown.has(id)||!p||!tooltip)return hideTip();
   if(tipId!==id){
-   tipId=id;const connections=[...(adj.get(id)||[])].filter(k=>visible.has(k));
-   const bridges=edges.filter(e=>(e.a===id||e.b===id)&&e.kind==='semantic').map(e=>e.a===id?e.b:e.a).filter(k=>visible.has(k));
-   const examples=[...new Set([...bridges,...connections])].slice(0,3).map(k=>byId.get(k)?.s.name).filter(Boolean);
+   const related=[...(adj.get(id)||[])].filter(k=>shown.has(k));
+   const cross=edges.filter(e=>e.type==='semantic'&&(e.a===id||e.b===id)).map(e=>e.a===id?e.b:e.a).filter(k=>shown.has(k));
+   const recommended=[...new Set([...cross,...related])].slice(0,3).map(k=>byId.get(k)?.s.name).filter(Boolean);
    tooltip.innerHTML='<strong>'+esc(p.s.name)+'</strong><span>'+esc(p.s.domain)+'</span><small>'+
-     (p.info.rated?'Self-reported confidence: '+p.info.confidence+'/4':p.info.claimed?'Experience confirmed; confidence unrated':'Confidence not reported')+
-     '</small>'+(examples.length?'<small class="sky-tip-related">Linked to '+esc(examples.join(' · '))+'</small>':'');
-  }
-  tooltip.hidden=false;tooltip.classList.add('visible');
+    (p.signal.rated?'Self-reported confidence '+p.signal.value+'/4':p.signal.claimed?'Experience confirmed; confidence unrated':'Confidence unknown (unanswered)')+
+    '</small>'+(recommended.length?'<small class="sky-tip-related">Linked: '+esc(recommended.join(' · '))+'</small>':'');
+   tipId=id;
+  }tooltip.hidden=false;tooltip.classList.add('visible');
  }
- function placeTip(p){
-  if(!tooltip||tooltip.hidden||!p)return;
-  const svgBox=svg.getBoundingClientRect(),box=surface.getBoundingClientRect();
-  const scale=Math.min(svgBox.width/950,svgBox.height/550);
-  const x=svgBox.left-box.left+(svgBox.width-950*scale)/2+p.x*scale;
-  const y=svgBox.top-box.top+(svgBox.height-550*scale)/2+p.y*scale;
-  const tipW=tooltip.offsetWidth||225,tipH=tooltip.offsetHeight||90;
-  tooltip.style.left=clamp(x+18,8,Math.max(8,box.width-tipW-8))+'px';
-  tooltip.style.top=clamp(y-tipH-14,8,Math.max(8,box.height-tipH-8))+'px';
+ function tipAt(p){
+  if(!p||!tooltip||tooltip.hidden)return;
+  const r=svg.getBoundingClientRect(),box=surface.getBoundingClientRect(),scale=Math.min(r.width/950,r.height/550);
+  const x=r.left-box.left+(r.width-950*scale)/2+p.x*scale,y=r.top-box.top+(r.height-550*scale)/2+p.y*scale;
+  const tw=tooltip.offsetWidth||205,th=tooltip.offsetHeight||75;
+  tooltip.style.left=clamp(x+17,8,Math.max(8,box.width-tw-8))+'px';
+  tooltip.style.top=clamp(y-th-14,8,Math.max(8,box.height-th-8))+'px';
  }
- function seekSticky(){
-  if(!pointer.active){stickyId=null;return}
-  if(stickyId){
-   const p=byId.get(stickyId);
-   if(!p?.show||Math.hypot(pointer.x-p.homeX,pointer.y-p.homeY)>76||
-       Math.hypot(pointer.x-p.x,pointer.y-p.y)>54){stickyId=null}
+ function capture(){
+  if(!pointer.active){locked=null;return}
+  if(locked){
+   const p=byId.get(locked);
+   if(!p||!shown.has(locked)||Math.hypot(pointer.x-p.x,pointer.y-p.y)>55||Math.hypot(pointer.x-p.homeX,pointer.y-p.homeY)>82)locked=null;
   }
-  if(!stickyId){
-   let closest=28;
-   for(const p of particles){if(!p.show)continue;
-    const d=Math.hypot(pointer.x-p.x,pointer.y-p.y);
-    if(d<closest){closest=d;stickyId=p.s.id}
-   }
-  }
+  if(!locked){let nearest=29;for(const p of all){if(!shown.has(p.s.id))continue;let d=Math.hypot(pointer.x-p.x,pointer.y-p.y);if(d<nearest){nearest=d;locked=p.s.id}}}
  }
  surface.onpointermove=e=>{
-  const rect=svg.getBoundingClientRect();if(!rect.width||!rect.height)return;
-  const scale=Math.min(rect.width/950,rect.height/550);
-  pointer.x=(e.clientX-rect.left-(rect.width-950*scale)/2)/scale;
-  pointer.y=(e.clientY-rect.top-(rect.height-550*scale)/2)/scale;
-  pointer.active=true;seekSticky();
-  if(Math.hypot(pointer.x-last.x,pointer.y-last.y)>3){trail.push({x:pointer.x,y:pointer.y,ttl:16});if(trail.length>12)trail.shift();last={x:pointer.x,y:pointer.y}}
+  const r=svg.getBoundingClientRect();if(!r.width||!r.height)return;
+  const scale=Math.min(r.width/950,r.height/550);
+  pointer={active:true,x:(e.clientX-r.left-(r.width-950*scale)/2)/scale,y:(e.clientY-r.top-(r.height-550*scale)/2)/scale};
+  capture();if(!reduce){trail.push({x:pointer.x,y:pointer.y,life:16});if(trail.length>10)trail.shift()}
  };
- surface.onpointerleave=()=>{pointer.active=false;stickyId=null;if(!keyboardFocus)hideTip()};
- surface.onpointercancel=()=>{pointer.active=false;stickyId=null;if(!keyboardFocus)hideTip()};
- let instance={dead:false,raf:0};live=instance;
- function frame(t){
- if(instance.dead)return;
- if(!svg.closest('.view.active')){instance.raf=requestAnimationFrame(frame);return}
- let dt=clamp((t-(lastTime||t))/16.7,.4,2);lastTime=t;
- const focus=stickyId||keyboardFocus;
- for(const p of particles){
-  if(!p.show)continue;
-  const caught=pointer.active&&stickyId===p.s.id;
-  let fx=(p.homeX-p.x)*.034,fy=(p.homeY-p.y)*.034;
-  if(caught&&!reduce){fx=(pointer.x-p.x)*.14;fy=(pointer.y-p.y)*.14}
-  else if(pointer.active&&!reduce){
-   let dx=p.x-pointer.x,dy=p.y-pointer.y,d=Math.hypot(dx,dy)||1;
-   // A subdued ripple behind the cursor, not a large force field.
-   if(d<92){let push=Math.pow(1-d/92,2)*.52;fx+=(dx/d)*push;fy+=(dy/d)*push}
+ surface.onpointerleave=()=>{pointer.active=false;locked=null;if(!keyboard)hideTip()};
+ surface.onpointercancel=()=>{pointer.active=false;locked=null;if(!keyboard)hideTip()};
+ const instance={stopped:false,raf:0};active=instance;
+ function tick(ms){
+  if(instance.stopped)return;
+  if(!svg.closest('.view.active')){instance.raf=global.requestAnimationFrame(tick);return}
+  const dt=clamp((ms-(lastTime||ms))/16.7,.45,2);lastTime=ms;
+  const focus=keyboard||locked;
+  for(const p of all){if(!shown.has(p.s.id))continue;const caught=pointer.active&&locked===p.s.id;
+   let fx=(p.homeX-p.x)*.035,fy=(p.homeY-p.y)*.035;
+   if(caught&&!reduce){fx=(pointer.x-p.x)*.15;fy=(pointer.y-p.y)*.15}
+   else if(pointer.active&&!reduce){
+    const dx=p.x-pointer.x,dy=p.y-pointer.y,d=Math.hypot(dx,dy)||1;
+    if(d<90){const f=(1-d/90)**2*.44;fx+=dx/d*f;fy+=dy/d*f}
+   }
+   if(focus!==null&&focus!==undefined&&focus!==p.s.id&&adj.get(focus)?.has(p.s.id)&&!reduce){
+    const center=byId.get(focus),dx=p.homeX-center.homeX,dy=p.homeY-center.homeY,d=Math.hypot(dx,dy)||1;
+    fx+=dx/d*.23;fy+=dy/d*.23;
+   }
+   if(!caught&&!reduce){fx+=.0019*Math.sin(ms*.0008+p.s.si);fy+=.0019*Math.cos(ms*.0007+p.s.di)}
+   p.vx=reduce?0:(p.vx+fx*dt)*Math.pow(caught?.54:.85,dt);
+   p.vy=reduce?0:(p.vy+fy*dt)*Math.pow(caught?.54:.85,dt);
+   p.x=reduce?p.homeX:p.x+p.vx*dt;p.y=reduce?p.homeY:p.y+p.vy*dt;
+   elements.get(p.s.id).g.setAttribute('transform',`translate(${p.x.toFixed(2)},${p.y.toFixed(2)})`);
   }
-  if(focus&&focus!==p.s.id&&adj.get(focus)?.has(p.s.id)&&!reduce){
-   // Restore the first prototype's "breathing branches": related nodes fan
-   // outward a few pixels while their elastic edges stay attached.
-   const anchor=byId.get(focus),dx=p.homeX-anchor.homeX,dy=p.homeY-anchor.homeY;
-   const d=Math.hypot(dx,dy)||1;
-   fx+=dx/d*.28;fy+=dy/d*.28;
+  for(const e of paths){const a=byId.get(e.a),b=byId.get(e.b);
+   if(!shown.has(e.a)||!shown.has(e.b)){e.el.style.display='none';continue}e.el.style.display='';
+   const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;
+   const bow=e.type==='semantic'?Math.min(38,d*.16):e.type==='branch'?11:0;
+   const mx=(a.x+b.x)/2-dy/d*bow,my=(a.y+b.y)/2+dx/d*bow;
+   e.el.setAttribute('d',bow?`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`:`M ${a.x} ${a.y} L ${b.x} ${b.y}`);
+   const highlighted=[focus,selected].some(id=>id&&(e.a===id||e.b===id));
+   e.el.style.strokeOpacity=highlighted?'.95':e.type==='semantic'?'.53':e.type==='branch'?'.46':'.27';
+   e.el.style.strokeWidth=highlighted?'2.5':'';
   }
-  if(!reduce&&!caught){fx+=.002*Math.sin(t*.0008+p.s.si*1.7);fy+=.002*Math.cos(t*.0006+p.s.di)}
-  const friction=caught?.56:.84;
-  p.vx=reduce?0:(p.vx+fx*dt)*Math.pow(friction,dt);
-  p.vy=reduce?0:(p.vy+fy*dt)*Math.pow(friction,dt);
-  p.x=reduce?p.homeX:p.x+p.vx*dt;p.y=reduce?p.homeY:p.y+p.vy*dt;
-  const el=elements.get(p.s.id);el.g.setAttribute('transform',`translate(${p.x.toFixed(2)},${p.y.toFixed(2)})`);
+  for(const [id,el] of elements){const highlight=id===focus||id===selected;
+   const dim=(focus||selected)&&!highlight&&!adj.get(focus||selected)?.has(id);
+   el.g.style.opacity=dim?'.33':'1';
+   el.star.setAttribute('r',highlight?7:el.p.signal.rated?4.25:3);
+   el.star.setAttribute('opacity',highlight?'1':el.p.signal.glow);
+   el.glow.setAttribute('opacity',highlight?'.6':el.p.signal.rated?String(el.p.signal.glow*.16):'0');
+   el.ring.setAttribute('r',highlight?12:7);
+   el.ring.setAttribute('stroke-opacity',highlight?'.95':el.p.signal.rated?'.55':'.16');
+  }
+  if(focus){showTip(focus);tipAt(byId.get(focus))}else hideTip();
+  trailLayer.replaceChildren();if(pointer.active&&!reduce){
+   trail=trail.filter(v=>v.life-->0);
+   for(const p of trail)ns('circle',{cx:p.x,cy:p.y,r:1+p.life/12,fill:'#72e9d6',opacity:p.life/190},trailLayer);
+  }
+  instance.raf=global.requestAnimationFrame(tick);
  }
- for(const e of drawn){
-  const a=byId.get(e.a),b=byId.get(e.b);
-  if(!a.show||!b.show){e.el.style.display='none';continue}
-  e.el.style.display='';
-  const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,curve=e.kind==='semantic'?Math.min(34,d*.12):e.kind==='branch'?8:0;
-  const mx=(a.x+b.x)/2-dy/d*curve,my=(a.y+b.y)/2+dx/d*curve;
-  e.el.setAttribute('d',curve?`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`:`M ${a.x} ${a.y} L ${b.x} ${b.y}`);
-  const focused=focus&&(focus===e.a||focus===e.b),pinned=selected&&(selected===e.a||selected===e.b);
-  e.el.style.strokeOpacity=focused||pinned?'.91':e.kind==='semantic'?'.49':e.kind==='branch'?'.44':e.kind==='spine'?'.33':'.28';
-  e.el.style.strokeWidth=focused||pinned?'2.3':'';
+ tick(0);
+ const chosen=byId.get(selected)?.s,answer=chosen&&profile.surveys?.[chosen.id];
+ detail.innerHTML=chosen?`<div class="eyebrow">SKILL SIGNAL</div><h3>${esc(chosen.name)}</h3><p>${esc(chosen.task)}</p>
+ <dl><dt>Domain</dt><dd>${esc(chosen.domain)}</dd><dt>Self-reported confidence</dt><dd>${answer?esc(answer.confidence)+'/4':'Unanswered / unknown'}</dd><dt>Execution mode</dt><dd>${answer?esc(modeLabel(answer.method)):'Not reported'}</dd><dt>Experience mention</dt><dd>${profile.confirmed.includes(chosen.id)?'Employee confirmed':'Not confirmed'}</dd><dt>Qualifications</dt><dd>Not verified in the MVP</dd></dl>
+ <button class="secondary" id="graphAction">Reflect on task ↗</button>`:
+ `<div class="eyebrow">SKILL GALAXY</div><h3>Connected human capability</h3><p>Each colored cluster is a skill domain. Branches connect skills within a discipline; amber bridges connect related capabilities across disciplines.</p><p>Brighter stars reflect higher self-reported task confidence. Grey stars are unrated, not incapable. Move near a star to identify and catch it.</p><p>No astrology or personnel proficiency ranking.</p>`;
+ if(chosen){
+  const next=[...(adj.get(chosen.id)||[])].filter(k=>shown.has(k)).slice(0,12);
+  if(next.length){
+   const section=document.createElement('section');section.className='sky-relationships';
+   section.innerHTML='<h4>Connected capabilities ('+next.length+')</h4><p>Conceptual skill links—not recorded employee collaboration or authoritative prerequisites.</p>'+
+    next.map(k=>'<button class="sky-related" data-related-skill="'+esc(k)+'">'+esc(byId.get(k).s.name)+'</button>').join('');
+   detail.appendChild(section);section.addEventListener('click',e=>{const b=e.target.closest('[data-related-skill]');if(b)onSelect?.(b.dataset.relatedSkill)});
+  }
+  detail.querySelector('#graphAction').onclick=()=>onReflect?.(chosen.id);
  }
- for(const [id,el] of elements){
-  const prominent=id===selected||id===focus,dim=(focus||selected)&&id!==focus&&id!==selected&&!adj.get(focus||selected)?.has(id);
-  el.g.style.opacity=dim?'.35':'1';el.dot.setAttribute('r',prominent?7:el.p.info.rated?4.3:3);
-  el.dot.setAttribute('opacity',prominent?1:el.p.info.intensity);
-  el.glow.setAttribute('opacity',prominent?'.52':el.p.info.rated?String(.14*el.p.info.intensity):'0');
-  el.ring.setAttribute('stroke-opacity',prominent?'.96':el.p.info.rated?'.56':'.15');
-  el.ring.setAttribute('r',prominent?12:7)
- }
- if(focus){showTip(focus);placeTip(byId.get(focus))}else hideTip();
- trailLayer.replaceChildren();if(pointer.active&&!reduce){
-  trail=trail.filter(p=>p.ttl-->0);
-  for(const p of trail)node('circle',{cx:p.x,cy:p.y,r:1+p.ttl/12,fill:'#6cf1d3',opacity:p.ttl/135},trailLayer)
- }
- instance.raf=requestAnimationFrame(frame);
- }
- frame(0);
- const s=skills.find(s=>s.id===selected),v=s&&profile.surveys?.[s.id];
- detail.innerHTML=s?`<div class="eyebrow">SKILL SIGNAL</div><h3>${esc(s.name)}</h3><p>${esc(s.task)}</p><dl><dt>Domain</dt><dd>${esc(s.domain)}</dd><dt>Self-reported confidence</dt><dd>${v?esc(v.confidence)+'/4':'Unanswered / unknown'}</dd><dt>Execution method</dt><dd>${v?esc(modeLabel(v.method)):'Not reported'}</dd><dt>Experience</dt><dd>${v?esc(v.performed):'Unknown'}</dd><dt>Employee-confirmed mention</dt><dd>${profile.confirmed.includes(s.id)?'Yes':'Not provided'}</dd><dt>Qualification verification</dt><dd>Not available</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:`<div class="eyebrow">ILLUSTRATIVE SKY PATTERN</div><h3>${shape[1]} ${esc(shape[0])}</h3><p>${choice==='auto'?'Automatic visual selection':'Manual visual selection'}. ${rank.known?`${rank.known} domain(s) with rated responses.`:'No rated domains yet, showing a placeholder.'}</p><p>Bright = higher <em>self-reported confidence</em>. Dim colored = lower self-report. Grey = unanswered, <strong>not incapable</strong>.</p><p>Approach a star to magnetically catch it and see its skill name. Colored branches trace same-domain and cross-domain skill relationships; select a star to explore them.</p><p class="muted">Figure projected from Western constellation line data (d3-celestial, BSD-3-Clause). Visual alignment is decorative, not astrological inference.</p>`;
- if(s){
- const related=[...(adj.get(s.id)||[])].filter(k=>visible.has(k)).slice(0,12);
- const relatedNames=related.map(id=>byId.get(id)?.s.name).filter(Boolean);
- if(relatedNames.length){
-  const section=document.createElement('section');section.className='sky-relationships';
-  section.innerHTML='<h4>Connected capabilities ('+relatedNames.length+')</h4><p>Conceptual taxonomy / learning links, not recorded collaboration.</p>'+
-    related.map(id=>'<button class="sky-related" type="button" data-related-skill="'+esc(id)+'">'+esc(byId.get(id).s.name)+'</button>').join('');
-  detail.appendChild(section);
-  section.addEventListener('click',e=>{const btn=e.target.closest('[data-related-skill]');if(btn)onSelect?.(btn.dataset.relatedSkill)});
- }
- detail.querySelector('#graphAction').onclick=()=>onReflect?.(s.id);
+ legend.innerHTML='<span class="legend-item"><i style="background:#5fe8c5"></i>Rated: confidence brightness</span>'+
+  '<span class="legend-item"><i style="background:#8096b7"></i>Unrated / unknown</span>'+
+  '<span class="legend-item"><i style="background:#dfad79"></i>Cross-domain knowledge bridges</span>'+
+  '<span class="legend-item"><i style="background:#65e0c9"></i>Within-domain branches</span>';
+ return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).length,clusters:13,relations:edges.length};
 }
- legend.innerHTML=`<span class="legend-item"><i style="background:#62e5cf"></i>Rated: brightness by confidence</span><span class="legend-item"><i style="background:#7892a7"></i>Unrated: unknown</span><span class="legend-item">${shape[1]} ${esc(shape[0])} · ${choice==='auto'?'Auto':'Manual'} · ${rank.known}/13 surveyed domains</span>`;
- return {name:shape[0],known:rank.known,matches:rank.results.slice(0,3)};
-}
-global.SynapseSky={render,stop,rankTemplates,skillBridges,templates:templates.map(([name,glyph])=>({name,glyph}))};
+global.SynapseSky={render,stop,layout,strength,bridges};
 })(window);
 
 </script><script>
@@ -455,6 +465,7 @@ function render(){
  }
  $('criticalSkill').innerHTML=ctx.skills.map(sk=>`<option value="${esc(sk.id)}">${esc(sk.name)}</option>`).join('');
  $('teamCritical').innerHTML=(team.priorities||[]).map(sid=>`<span class="focus-pill">${esc(ctx.skills.find(s=>s.id===sid)?.name||sid)} ${allowed?`· ${skillCounts[sid]||0} declared`:''} <button aria-label="Remove priority" data-criticalremove="${esc(sid)}">×</button></span>`).join('')||'<p class="muted">No priority skills selected.</p>';
+ global.SynapseFleet?.render();
 }
 function init(options){
  ctx=options;ensure();
@@ -470,6 +481,85 @@ function init(options){
  render();
 }
 global.SynapseTeam={init,render,ensure,normalizeCard,rank:()=>ctx?build(current()):null};
+})(window);
+
+</script><script>
+(function fleetFactory(global){
+'use strict';
+let ctx=null,tab='compose';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&#39;'}[c]));
+const skillName=id=>ctx.skills.find(s=>s.id===id)?.name||id;
+const known=id=>ctx.skills.some(s=>s.id===id);
+const activeTeam=()=>{let s=ctx.get();return s.teams?.items?.find(t=>t.id===s.teams.active)};
+const allPeople=t=>[...(t?.members||[]),...(ctx.get().profile.consent&&ctx.get().profile.confirmed.length?[{
+id:'my-local-self',name:'My local profile',skills:ctx.get().profile.confirmed, surveys:{},self:true
+}]:[])];
+const distinct=x=>[...new Set(x)];
+function getState(){
+ const s=ctx.get();if(!s.fleetPlans||typeof s.fleetPlans!=='object'||Array.isArray(s.fleetPlans))s.fleetPlans={};
+ const t=activeTeam();if(!t)return {people:[],members:[],mission:[],selected:[],team:null};
+ const p=s.fleetPlans[t.id]||{};
+ const people=allPeople(t),ids=new Set(people.map(x=>x.id));
+ const mission=distinct(Array.isArray(p.mission)?p.mission.filter(known):(t.priorities||[]).filter(known)).slice(0,25);
+ const selected=distinct(Array.isArray(p.selected)?p.selected.filter(id=>ids.has(id)):people.map(x=>x.id));
+ const normalized={mission,selected};s.fleetPlans[t.id]=normalized;
+ return {people,mission,selected,team:t};
+}
+function save(fn){const m=getState(),p=ctx.get().fleetPlans[m.team?.id];if(!p)return;fn(p);ctx.persist();render()}
+function scores(people,mission){
+ return mission.map(id=>{
+  const claimed=people.filter(p=>p.skills?.includes(id));
+  const independent=people.filter(p=>p.surveys?.[id]?.method==='independent'&&Number(p.surveys[id].confidence)>=3);
+  const guided=people.filter(p=>['guided','ai'].includes(p.surveys?.[id]?.method));
+  return {id,claimed,independent,guided};
+ })
+}
+function open(tabname){
+ tab=tabname;
+ for(const [key,id] of [['compose','fleetComposer'],['mentors','fleetMentors'],['relay','fleetRelay']])$(id).hidden=key!==tabname;
+ document.querySelectorAll('[data-fleet-tab]').forEach(el=>{const on=el.dataset.fleetTab===tabname;el.setAttribute('aria-pressed',String(on));el.classList.toggle('fleet-tab-active',on)});
+ render();
+}
+function render(){
+ if(!ctx||!$('fleetLab'))return;
+ const {people,mission,selected,team}=getState();if(!team)return;
+ const chosen=people.filter(p=>selected.includes(p.id));
+ $('fleetMissionSkills').innerHTML=mission.length?mission.map(id=>`<span class="focus-pill">${esc(skillName(id))}<button type="button" data-fleetremove="${esc(id)}" aria-label="Remove mission skill">×</button></span>`).join(''):'<p class="empty">No mission needs yet. Add a capability to explore team coverage.</p>';
+ const add=$('fleetAddSkill'),val=add.value;
+ add.innerHTML=ctx.skills.map(sk=>`<option value="${esc(sk.id)}">${esc(sk.name)}</option>`).join('');
+ if(known(val))add.value=val;
+ $('fleetRoster').innerHTML=people.length?people.map(p=>`<label class="fleet-roster-entry"><input type="checkbox" data-fleetperson="${esc(p.id)}" ${selected.includes(p.id)?'checked':''}><span><strong>${esc(p.name)}</strong><small>${p.synthetic?'Synthetic sample':p.self?'Local profile':'Voluntarily imported card'} · ${(p.skills||[]).length} self-declared mentions</small></span></label>`).join(''):'<div class="empty">Import voluntary peer cards into this team first.</div>';
+ const coverage=scores(chosen,mission);
+ $('fleetCompositionResult').innerHTML=mission.length?`<h4>Proposed team coverage (${chosen.length} opted-in profiles selected)</h4>
+ <p class="muted">This planning comparison deliberately does not assign individuals any fit, readiness, or performance score.</p>`+
+ coverage.map(r=>`<div class="fleet-skill-result"><div><strong>${esc(skillName(r.id))}</strong><small>${r.claimed.length} declared experience mention(s) · ${r.independent.length} optional independent task response(s)</small></div><span class="tiny-pill">${r.claimed.length===0?'NO SHARED EVIDENCE':r.claimed.length===1?'SINGLE SOURCE':'SHARED COVERAGE'}</span></div>`).join(''):'<div class="empty">Select or add mission skills to begin team composition.</div>';
+ const mentor=$('fleetMentorSkill'),mentVal=mentor.value;mentor.innerHTML=ctx.skills.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+ if(known(mentVal))mentor.value=mentVal;const id=mentor.value;
+ const matched=people.filter(p=>p.skills?.includes(id));
+ $('fleetMentorMatches').innerHTML=matched.length?matched.map(p=>{
+  const response=p.surveys?.[id];return `<div class="fleet-skill-result"><div><strong>${esc(p.name)}</strong><small>${esc(skillName(id))} · reviewed mention${p.synthetic?' · SYNTHETIC':''}</small></div><span class="tiny-pill">${response?`Shared self-report ${response.confidence}/4 · ${esc(response.method)}`:'CONFIDENCE NOT SHARED'}</span></div>`;
+ }).join(''):'<div class="empty">No peer has voluntarily shared a confirmed mention for this skill. This does not mean no expert exists.</div>';
+ const relayIds=distinct([...mission,...(team.priorities||[])]);
+ const allCovered=scores(people,relayIds);
+ const single=allCovered.filter(x=>x.claimed.length<=1);
+ const watch=single.length?single:allCovered;
+ $('fleetRelayList').innerHTML=watch.length?watch.map(r=>{
+  const names=r.claimed.map(p=>p.name),issue=r.claimed.length===0?'Unrepresented in shared cards':r.claimed.length===1?'Only one person has shared this skill':'Multiple shared mentions';
+  return `<div class="fleet-skill-result"><div><strong>${esc(skillName(r.id))}</strong><small>${esc(issue)}${names.length?' · '+esc(names.join(', ')):''}</small></div><span class="tiny-pill">${r.independent.length} optional independent responses</span></div>`;
+ }).join(''):'<div class="empty">Set priority capabilities in the team area or add mission skills in Team composer to build a transfer watchlist.</div>';
+}
+function init(options){
+ ctx=options;
+ document.querySelectorAll('[data-fleet-tab]').forEach(b=>b.addEventListener('click',()=>open(b.dataset.fleetTab)));
+ $('fleetAddSkillBtn').onclick=()=>{const id=$('fleetAddSkill').value;if(!known(id))return;save(p=>{if(!p.mission.includes(id))p.mission.push(id)})};
+ $('fleetMissionSkills').onclick=e=>{const b=e.target.closest('[data-fleetremove]');if(b)save(p=>p.mission=p.mission.filter(id=>id!==b.dataset.fleetremove))};
+ $('fleetRoster').onchange=e=>{const box=e.target.closest('[data-fleetperson]');if(!box)return;save(p=>{p.selected=box.checked?distinct([...p.selected,box.dataset.fleetperson]):p.selected.filter(id=>id!==box.dataset.fleetperson)})};
+ $('fleetMentorSkill').onchange=render;
+ $('teamSelect')?.addEventListener('change',()=>queueMicrotask(render));
+ render();
+}
+global.SynapseFleet={init,render,open,scores};
 })(window);
 
 </script><script>
@@ -515,7 +605,7 @@ const SKILLS=domainDefs.flatMap(([domain,labels],di)=>labels.map((name,si)=>({id
 const skillById=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
 const roiDefaults={employees:100,trainingCost:2000,trainingAvoidance:15,trainingHours:8,hourlyRate:75,externalSpend:100000,externalAvoidance:10,minutesSaved:55,weeks:46,realization:70,annualCost:60000};
 const STORAGE_KEY='synapse-mvp-v1';
-const newState=()=>({version:1,profile:{confirmed:[],surveys:{},credentials:[],consent:false},roi:{...roiDefaults}});
+const newState=()=>({version:1,profile:{confirmed:[],surveys:{},credentials:[],consent:false},roi:{...roiDefaults},fleetPlans:{}});
 let state;
 try{const loaded=JSON.parse(localStorage.getItem(STORAGE_KEY));state=validateState(loaded)?loaded:newState()}catch{state=newState()}
 let candidateIds=[];let radarDomain=null;let graphSelected=null;let graphFilter='all';let graphSearch='';let noticeTimer;
@@ -532,12 +622,12 @@ const keywordAliases={
  'sql-pipelines':['sql','postgresql','t-sql','sql server'],'data-modeling':['data model','schema design'],'etl-elt':['etl','elt','extract transform'],'aws-architecture':['aws','amazon web services'],'infrastructure-as-code':['terraform','cloudformation','iac'],'cloud-networking':['vpc','route53'],'identity-access':['iam','sso'], 'javascript-development':['javascript','typescript','js'],'powershell-automation':['powershell','ps1'],'python-development':['python'],'api-design':['rest api','restful','api development'], 'power-bi':['power bi','powerbi'],'ci-cd-pipelines':['ci/cd','github actions','azure pipelines'],'git-workflows':['git','github','gitlab'],'agile-facilitation':['agile','scrum','sprint'],'ai-orchestration':['llm','ai agent','agentic','prompt engineering'],'ai-outcome-validation':['ai validation','ai evaluation'],'responsible-ai-use':['responsible ai','ai governance'],'rapid-prototyping':['prototyp','proof of concept'],'knowledge-transfer':['knowledge transfer','cross-training'],'systems-thinking':['systems thinking']
 };
 function validateState(x){return !!(x&&x.version===1&&x.profile&&Array.isArray(x.profile.confirmed)&&x.profile.surveys&&typeof x.profile.surveys==='object'&&Array.isArray(x.profile.credentials)&&typeof x.profile.consent==='boolean'&&x.roi&&typeof x.roi==='object')}
-function safeStateImport(x){if(!validateState(x))throw Error('This is not a valid Synapse v1 export.');const confirmed=[...new Set(x.profile.confirmed.filter(v=>typeof v==='string'&&skillById[v]))];const surveys={};for(const [id,v] of Object.entries(x.profile.surveys)){if(!skillById[id]||!v||!Number.isInteger(Number(v.confidence))||Number(v.confidence)<0||Number(v.confidence)>4)continue;surveys[id]={confidence:Number(v.confidence),performed:['never','before','recent'].includes(v.performed)?v.performed:'never',method:['none','independent','guided','ai'].includes(v.method)?v.method:'none',note:String(v.note??'').slice(0,1000),updated:String(v.updated??dateToday()).slice(0,10)}}const credentials=x.profile.credentials.slice(0,100).map(c=>({id:String(c.id??cryptoRandom()).slice(0,50),name:String(c.name??'').slice(0,160),authority:String(c.authority??'').slice(0,160),expiry:/^\d{4}-\d{2}-\d{2}$/.test(c.expiry||'')?c.expiry:'',created:String(c.created??dateToday()).slice(0,10)})).filter(c=>c.name);const roi={...roiDefaults};for(const k of Object.keys(roi)){let n=Number(x.roi[k]);if(Number.isFinite(n)&&n>=0&&n<=100000000)roi[k]=n}const teams=(x.teams&&Array.isArray(x.teams.items))?{active:String(x.teams.active||'').slice(0,80),items:x.teams.items.slice(0,25).map(t=>({id:String(t.id||'').slice(0,80),name:String(t.name||'Imported team').slice(0,80),priorities:Array.isArray(t.priorities)?t.priorities.filter(id=>skillById[id]).slice(0,104):[],members:Array.isArray(t.members)?t.members.slice(0,100).map(m=>({id:String(m.id||'').slice(0,70),name:String(m.name||'Peer').slice(0,70),synthetic:m.synthetic===true,issued:String(m.issued||'').slice(0,10),skills:Array.isArray(m.skills)?m.skills.filter(id=>skillById[id]).slice(0,104):[],surveys:Object.fromEntries(Object.entries(m.surveys||{}).filter(([id,r])=>skillById[id]&&r&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4&&['none','guided','independent','ai'].includes(r.method)).slice(0,104).map(([id,r])=>[id,{confidence:Number(r.confidence),method:r.method}]))})):[]})).filter(t=>t.id&&t.name)}:undefined;return {version:1,profile:{confirmed,surveys,credentials,consent:x.profile.consent===true,shareId:typeof x.profile.shareId==='string'?x.profile.shareId.slice(0,70):undefined},roi,teams,skyChoice:window.SynapseSky?.templates.some(t=>t.name===x.skyChoice)?x.skyChoice:'auto'}}
+function safeStateImport(x){if(!validateState(x))throw Error('This is not a valid Synapse v1 export.');const confirmed=[...new Set(x.profile.confirmed.filter(v=>typeof v==='string'&&skillById[v]))];const surveys={};for(const [id,v] of Object.entries(x.profile.surveys)){if(!skillById[id]||!v||!Number.isInteger(Number(v.confidence))||Number(v.confidence)<0||Number(v.confidence)>4)continue;surveys[id]={confidence:Number(v.confidence),performed:['never','before','recent'].includes(v.performed)?v.performed:'never',method:['none','independent','guided','ai'].includes(v.method)?v.method:'none',note:String(v.note??'').slice(0,1000),updated:String(v.updated??dateToday()).slice(0,10)}}const credentials=x.profile.credentials.slice(0,100).map(c=>({id:String(c.id??cryptoRandom()).slice(0,50),name:String(c.name??'').slice(0,160),authority:String(c.authority??'').slice(0,160),expiry:/^\d{4}-\d{2}-\d{2}$/.test(c.expiry||'')?c.expiry:'',created:String(c.created??dateToday()).slice(0,10)})).filter(c=>c.name);const roi={...roiDefaults};for(const k of Object.keys(roi)){let n=Number(x.roi[k]);if(Number.isFinite(n)&&n>=0&&n<=100000000)roi[k]=n}const teams=(x.teams&&Array.isArray(x.teams.items))?{active:String(x.teams.active||'').slice(0,80),items:x.teams.items.slice(0,25).map(t=>({id:String(t.id||'').slice(0,80),name:String(t.name||'Imported team').slice(0,80),priorities:Array.isArray(t.priorities)?t.priorities.filter(id=>skillById[id]).slice(0,104):[],members:Array.isArray(t.members)?t.members.slice(0,100).map(m=>({id:String(m.id||'').slice(0,70),name:String(m.name||'Peer').slice(0,70),synthetic:m.synthetic===true,issued:String(m.issued||'').slice(0,10),skills:Array.isArray(m.skills)?m.skills.filter(id=>skillById[id]).slice(0,104):[],surveys:Object.fromEntries(Object.entries(m.surveys||{}).filter(([id,r])=>skillById[id]&&r&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4&&['none','guided','independent','ai'].includes(r.method)).slice(0,104).map(([id,r])=>[id,{confidence:Number(r.confidence),method:r.method}]))})):[]})).filter(t=>t.id&&t.name)}:undefined;return {version:1,profile:{confirmed,surveys,credentials,consent:x.profile.consent===true,shareId:typeof x.profile.shareId==='string'?x.profile.shareId.slice(0,70):undefined},roi,teams,fleetPlans:Object.fromEntries(Object.entries(x.fleetPlans&&typeof x.fleetPlans==='object'&&!Array.isArray(x.fleetPlans)?x.fleetPlans:{}).slice(0,25).filter(([id,p])=>id.length<=90&&p&&typeof p==='object').map(([id,p])=>[id,{mission:Array.isArray(p.mission)?p.mission.filter(k=>skillById[k]).slice(0,25):[],selected:Array.isArray(p.selected)?p.selected.filter(k=>typeof k==='string'&&k.length<=70).slice(0,100):[]}]))}}
 function cryptoRandom(){return 'cred-'+Math.random().toString(36).slice(2,11)}
 function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch{flash('Browser storage is unavailable. Export to keep your changes.')}}
 function flash(message){const el=$('flash');el.textContent=message;el.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('show'),4200)}
-function navigate(view){if(!$(view))return;if(view!=='graph')window.SynapseSky?.stop();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const titles={overview:'Mission capability, made visible.',radar:'Capability radar',graph:'Skills constellation',profile:'My capability profile',credentials:'Credential desk',team:'Team intelligence',roi:'ROI laboratory',trust:'Trust & governance'};$('pageTitle').textContent=titles[view];if(view==='radar')renderRadar();if(view==='graph')renderGraph();if(view==='team')renderTeam();if(view==='roi')renderRoi();window.scrollTo(0,0)}
-function init(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));$('exportBtn').onclick=exportJson;$('downloadJson').onclick=exportJson;$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=importJson;$('loadDemoProfile').onclick=loadDemoProfile;$('scanResume').onclick=scanResume;$('loadResumeSample').onclick=()=>{$('resumeText').value=sampleResume;scanResume()};$('resumeFile').onchange=readResumeFile;$('surveySkill').onchange=()=>{renderSurveyQuestion();loadPreviousSurvey()};$('saveSurvey').onclick=saveSurvey;$('manualAdd').onclick=addManualSkill;$('shareToggle').onchange=e=>{state.profile.consent=e.target.checked;persist();renderAll();flash(state.profile.consent?'Aggregate contribution enabled.':'Aggregate contribution withdrawn.')};$('clearMyData').onclick=()=>{if(!confirm('Clear your confirmed skills, surveys, and credentials? This cannot be undone without a backup.'))return;state.profile={confirmed:[],surveys:{},credentials:[],consent:false};persist();candidateIds=[];renderAll();flash('Your local profile was cleared.')};$('addCredential').onclick=addCredential;$('resetRoi').onclick=()=>{state.roi={...roiDefaults};persist();renderRoi();flash('Scenario restored to illustrative defaults.')};$('resetDemo').onclick=()=>{if(!confirm('Reset the local Synapse workspace? Export first if you need a backup.'))return;state=newState();$('constellationMode').value='auto';persist();candidateIds=[];renderAll();navigate('overview');flash('Reset complete.')};$('graphFilter').onchange=e=>{graphFilter=e.target.value;graphSelected=null;renderGraph()};$('graphSearch').oninput=e=>{graphSearch=e.target.value.trim().toLowerCase();renderGraph()};$('graphReset').onclick=()=>{graphFilter='all';graphSearch='';graphSelected=null;state.skyChoice='auto';$('constellationMode').value='auto';persist();$('graphFilter').value='all';$('graphSearch').value='';renderGraph()};domainDefs.forEach(([n],di)=>{const opt=document.createElement('option');opt.value=String(di);opt.textContent=n;$('graphFilter').appendChild(opt)});state.skyChoice=state.skyChoice||'auto';for(const shape of window.SynapseSky.templates){const opt=document.createElement('option');opt.value=shape.name;opt.textContent=shape.glyph+' '+shape.name;$('constellationMode').appendChild(opt)}$('constellationMode').value=state.skyChoice;$('constellationMode').onchange=e=>{state.skyChoice=e.target.value;persist();graphSelected=null;renderGraph()};window.SynapseTeam.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs,synthetics});renderAll();navigate('overview')}
+function navigate(view){if(!$(view))return;if(view!=='graph')window.SynapseSky?.stop();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const titles={overview:'Mission capability, made visible.',radar:'Capability radar',graph:'Skills galaxy',profile:'My capability profile',credentials:'Credential desk',team:'Team intelligence',roi:'ROI laboratory',trust:'Trust & governance'};$('pageTitle').textContent=titles[view];if(view==='radar')renderRadar();if(view==='graph')renderGraph();if(view==='team')renderTeam();if(view==='roi')renderRoi();window.scrollTo(0,0)}
+function init(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));$('exportBtn').onclick=exportJson;$('downloadJson').onclick=exportJson;$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=importJson;$('loadDemoProfile').onclick=loadDemoProfile;$('scanResume').onclick=scanResume;$('loadResumeSample').onclick=()=>{$('resumeText').value=sampleResume;scanResume()};$('resumeFile').onchange=readResumeFile;$('surveySkill').onchange=()=>{renderSurveyQuestion();loadPreviousSurvey()};$('saveSurvey').onclick=saveSurvey;$('manualAdd').onclick=addManualSkill;$('shareToggle').onchange=e=>{state.profile.consent=e.target.checked;persist();renderAll();flash(state.profile.consent?'Aggregate contribution enabled.':'Aggregate contribution withdrawn.')};$('clearMyData').onclick=()=>{if(!confirm('Clear your confirmed skills, surveys, and credentials? This cannot be undone without a backup.'))return;state.profile={confirmed:[],surveys:{},credentials:[],consent:false};persist();candidateIds=[];renderAll();flash('Your local profile was cleared.')};$('addCredential').onclick=addCredential;$('resetRoi').onclick=()=>{state.roi={...roiDefaults};persist();renderRoi();flash('Scenario restored to illustrative defaults.')};$('resetDemo').onclick=()=>{if(!confirm('Reset the local Synapse workspace? Export first if you need a backup.'))return;state=newState();persist();candidateIds=[];renderAll();navigate('overview');flash('Reset complete.')};$('graphFilter').onchange=e=>{graphFilter=e.target.value;graphSelected=null;renderGraph()};$('graphSearch').oninput=e=>{graphSearch=e.target.value.trim().toLowerCase();renderGraph()};$('graphReset').onclick=()=>{graphFilter='all';graphSearch='';graphSelected=null;$('graphFilter').value='all';$('graphSearch').value='';renderGraph()};domainDefs.forEach(([n],di)=>{const opt=document.createElement('option');opt.value=String(di);opt.textContent=n;$('graphFilter').appendChild(opt)});window.SynapseTeam.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs,synthetics});window.SynapseFleet.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs});renderAll();navigate('overview')}
 function renderAll(){renderMetrics();renderSurveyOptions();renderConfirmed();renderCredentials();renderTeam();renderRoi();renderRadar();renderOverviewRadar();renderGraph()}
 function renderMetrics(){const c=state.profile.confirmed.length;const s=Object.keys(state.profile.surveys).length;$('metricDomains').textContent=domainDefs.length;$('metricSkills').textContent=SKILLS.length;$('metricMine').textContent=c;$('metricSurveys').textContent=s;$('profileCount').textContent=c;$('surveyCount').textContent=s;$('sharingState').textContent=state.profile.consent?'ON':'OFF';$('shareToggle').checked=state.profile.consent;$('shareText').textContent=state.profile.consent?'On':'Off';$('storageStatus').textContent='Storage: local browser only (localStorage). No remote scripts, telemetry, or API calls.'}
 function score(id){const v=state.profile.surveys[id];return v?Number(v.confidence):null}
@@ -584,17 +674,17 @@ function renderConfirmed(){const box=$('mySkills');box.innerHTML=state.profile.c
 function addCredential(){const name=$('credName').value.trim().slice(0,160),authority=$('credAuthority').value.trim().slice(0,160),expiry=$('credExpiry').value;if(!name)return flash('Enter a credential or qualification name.');if(expiry&&!/^\d{4}-\d{2}-\d{2}$/.test(expiry))return flash('Choose a valid expiration date.');state.profile.credentials.push({id:cryptoRandom(),name,authority,expiry,created:dateToday()});persist();$('credName').value='';$('credAuthority').value='';$('credExpiry').value='';renderCredentials();flash('Self-entered credential added. Not verified against an authority.')}
 function renderCredentials(){const box=$('credentialList');if(!state.profile.credentials.length){box.innerHTML='<div class="empty">No credentials recorded. Add one to plan renewal reminders manually.</div>';return}box.innerHTML=[...state.profile.credentials].sort((a,b)=>(a.expiry||'9999').localeCompare(b.expiry||'9999')).map(c=>{const days=c.expiry?Math.ceil((new Date(c.expiry+'T12:00:00')-new Date())/86400000):null;const timing=days===null?'No expiry entered':days<0?'Expired (self-entered)':days<=90?`${days} days to renewal`:`Renewal in ${days} days`;return `<div class="cred-card"><div><b>${escapeHTML(c.name)}</b><small>${escapeHTML(c.authority||'Authority unspecified')} · ${escapeHTML(c.expiry||'No date')}</small><span class="cred-status">${escapeHTML(timing)} · Unverified</span></div><button data-delete-cred="${escapeHTML(c.id)}" aria-label="Delete credential">✕</button></div>`}).join('');box.querySelectorAll('[data-delete-cred]').forEach(el=>el.onclick=()=>{state.profile.credentials=state.profile.credentials.filter(c=>c.id!==el.dataset.deleteCred);persist();renderCredentials();flash('Credential removed.')})}
 function aggregateCohort(){const people=[...synthetics.map(p=>({skills:p.skills})),...(state.profile.consent?[{skills:state.profile.confirmed}]:[])];const total=people.length;return {people,total,counts:domainDefs.map((_,di)=>people.filter(p=>p.skills.some(id=>skillById[id]?.di===di)).length)}}
-function renderTeam(){window.SynapseTeam?.render()}
+function renderTeam(){window.SynapseTeam?.render();window.SynapseFleet?.render()}
 const roiLabels={employees:['Pilot participants','people'],trainingCost:['Annual training spend per person','$'],trainingAvoidance:['Avoided duplicate training','%'],trainingHours:['Annual training hours per person','hours'],hourlyRate:['Loaded hourly rate','$'],externalSpend:['Annual outside specialist spend','$'],externalAvoidance:['External spend avoidance','%'],minutesSaved:['Minutes recovered per person / week','minutes'],weeks:['Working weeks / year','weeks'],realization:['Usable share of recovered time','%'],annualCost:['Annual platform operating cost','$']};
 function renderRoi(){const panel=$('roiInputs');panel.innerHTML=Object.entries(roiLabels).map(([k,[name,unit]])=>`<label>${escapeHTML(name)}<input type="number" min="0" step="${unit==='%'?'1':'any'}" data-roi="${k}" value="${state.roi[k]}" aria-label="${escapeHTML(name)}"><small class="muted">${unit}</small></label>`).join('');panel.querySelectorAll('[data-roi]').forEach(input=>input.oninput=()=>{const val=Number(input.value);if(!Number.isFinite(val)||val<0)return;const key=input.dataset.roi;state.roi[key]=['trainingAvoidance','externalAvoidance','realization'].includes(key)?Math.min(val,100):Math.min(val,100000000);persist();updateRoiOutputs()});updateRoiOutputs()}
 function updateRoiOutputs(){const p=state.roi,training=p.employees*p.trainingCost*p.trainingAvoidance/100,hours=p.employees*p.trainingHours*p.hourlyRate*p.trainingAvoidance/100,external=p.externalSpend*p.externalAvoidance/100,capacity=p.employees*(p.minutesSaved/60)*p.weeks*p.hourlyRate*p.realization/100,total=training+hours+external+capacity;const rows=[['Duplicate training spend avoided',training],['Training time recovered (not cash)',hours],['External specialist spend avoided',external],['Workflow capacity recovered (not cash)',capacity]];$('roiTotal').textContent=fmt.format(total);$('roiBreakdown').innerHTML=rows.map(([label,value])=>`<div class="roi-line"><span>${label}</span><b>${fmt.format(value)}</b></div>`).join('');$('roiCost').textContent=fmt.format(p.annualCost);$('roiNet').textContent=fmt.format(total-p.annualCost);$('roiMultiple').textContent=p.annualCost?`${(total/p.annualCost).toFixed(2)}×`:'Not defined (zero cost)'}
 function renderGraph(){
  if(!window.SynapseSky)return;
- const report=window.SynapseSky.render({svg:$('graphSvg'),surface:$('graphSurface'),detail:$('graphDetail'),legend:$('graphLegend'),skills:SKILLS,domains:domainDefs,colors,profile:state.profile,filter:graphFilter,query:graphSearch,selected:graphSelected,choice:state.skyChoice||'auto',modeLabel,onSelect:id=>{graphSelected=id;renderGraph()},onReflect:id=>{navigate('profile');$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey()}});
- $('skyExplanation').textContent=`${report.name} visual template · ${report.known} rated domains · ${state.skyChoice&&state.skyChoice!=='auto'?'manually selected':'automatic geometry match'}. Schematic zodiac-inspired art; no astrological inference or real star coordinates.`;
+ const report=window.SynapseSky.render({svg:$('graphSvg'),surface:$('graphSurface'),detail:$('graphDetail'),legend:$('graphLegend'),skills:SKILLS,domains:domainDefs,colors,profile:state.profile,filter:graphFilter,query:graphSearch,selected:graphSelected,modeLabel,onSelect:id=>{graphSelected=id;renderGraph()},onReflect:id=>{navigate('profile');$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey()}});
+ $('skyExplanation').textContent=`${report.clusters} connected capability clusters · ${report.relations} illustrative skill relationships · ${report.known} voluntary task reflections. Layout reflects the skill taxonomy, not astrology or employee ranking.`;
 }
 function exportJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`synapse-workspace-${dateToday()}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);flash('Local JSON export created. Protect this file like other personal records.')}
-async function importJson(e){const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>2000000)return flash('JSON backup exceeds the 2 MB import limit.');try{const data=JSON.parse(await f.text());if(!confirm('Replace your current local workspace with this imported data?'))return;state=safeStateImport(data);$('constellationMode').value=state.skyChoice||'auto';persist();candidateIds=[];renderAll();flash('Local workspace imported and validated.')}catch(err){flash(`Import failed: ${err.message}`)}}
+async function importJson(e){const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>2000000)return flash('JSON backup exceeds the 2 MB import limit.');try{const data=JSON.parse(await f.text());if(!confirm('Replace your current local workspace with this imported data?'))return;state=safeStateImport(data);persist();candidateIds=[];renderAll();flash('Local workspace imported and validated.')}catch(err){flash(`Import failed: ${err.message}`)}}
 init();
 })();
 
