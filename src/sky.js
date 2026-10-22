@@ -46,9 +46,14 @@ function layout(skills,profile,pending=[]){
 }
 function render(o){
  stop();
- const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],onSelect,onReflect,modeLabel}=o;
+ const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],scope='focus',onSelect,onReflect,modeLabel}=o;
  const all=layout(skills,profile,pending),byId=new Map(all.map(p=>[p.s.id,p])),pendingSet=new Set(pending);
- const displayed=new Set(skills.filter(s=>(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
+ // Before onboarding, exploration displays the full taxonomy. Once the
+ // employee attests to skills, only domains with confirmed capabilities are
+ // shown by default. A résumé-only draft focuses on pending candidate domains.
+ const attested=new Set(profile.confirmed||[]),profileStarted=attested.size>0||pendingSet.size>0;
+ const activeDomains=new Set(skills.filter(s=>scope==='all'||!profileStarted||((attested.size?attested:pendingSet).has(s.id))).map(s=>s.di));
+ const displayed=new Set(skills.filter(s=>activeDomains.has(s.di)&&(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
  const adj=new Map,edges=[],seen=new Set;
  function link(a,b,type='local'){
   if(!byId.has(a)||!byId.has(b)||a===b)return;
@@ -72,6 +77,7 @@ function render(o){
   ns('circle',{cx:(475+Math.cos(theta)*r*1.58).toFixed(1),cy:(275+Math.sin(theta)*r*.96).toFixed(1),r:i%17===0?1.2:.55,fill:i%9===0?'#aeafe9':'#a9e5f3',opacity:i%9===0?.27:.11},sky)}
  const countByDomain=Array.from({length:13},(_,di)=>({confirmed:all.filter(p=>p.s.di===di&&p.confirmed).length,pending:all.filter(p=>p.s.di===di&&p.pending).length}));
  for(let di=0;di<13;di++){
+  if(!activeDomains.has(di))continue;
   const angle=di*GOLDEN-.45,rad=64+Math.sqrt((di+.7)/13)*190,stats=countByDomain[di],boost=stats.confirmed*4+stats.pending*2;
   const x=475+Math.cos(angle)*(rad*1.37+boost),y=275+Math.sin(angle)*(rad*.88+boost*.38),g=ns('g',{class:'galaxy-domain-hub','data-domain':di},hubLayer);
   ns('circle',{cx:x,cy:y,r:66+stats.confirmed*2+stats.pending,fill:colors[di],opacity:.016+stats.confirmed*.011+stats.pending*.004},g);
@@ -147,9 +153,9 @@ function render(o){
  surface.onpointerup=release;surface.onpointercancel=release;
  surface.onpointerleave=()=>{if(!drag){hover=null;if(!keyboard)hideTip();draw()}};
  draw();
- const chosen=byId.get(selected)?.s,answer=chosen&&profile.surveys?.[chosen.id];
+ const chosen=displayed.has(selected)?byId.get(selected)?.s:null,answer=chosen&&profile.surveys?.[chosen.id];
  detail.innerHTML=chosen?`<div class="eyebrow">CAPABILITY DETAIL</div><h3>${esc(chosen.name)}</h3><p>${esc(chosen.task)}</p><dl><dt>Discipline</dt><dd>${esc(chosen.domain)}</dd><dt>Profile signal</dt><dd>${profile.confirmed?.includes(chosen.id)?'Employee confirmed':pendingSet.has(chosen.id)?'Unreviewed résumé candidate':'Not provided'}</dd><dt>Self-reported confidence</dt><dd>${answer?esc(answer.confidence)+'/4':'Not answered'}</dd><dt>Execution mode</dt><dd>${answer?esc(modeLabel(answer.method)):'Not reported'}</dd><dt>Verification</dt><dd>Not established</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:
- `<div class="eyebrow">YOUR CAPABILITY UNIVERSE</div><h3>Read the galaxy at a glance</h3><p>Every cluster is a discipline. Brighter, larger clusters contain more résumé signals or employee-confirmed experience.</p><p><b>Mint ring</b> = you confirmed experience. <b>Amber dotted ring</b> = awaiting review after résumé intake. Brightness inside a star = voluntary confidence reflection.</p><p><b>Hover</b> to identify a skill without moving anything. <b>Click</b> to pin its relationships. <b>Click, hold and drag</b> a star to rearrange its network.</p><p class="muted">No inferred proficiency, qualification or personnel fitness score.</p>`;
+ `<div class="eyebrow">YOUR CAPABILITY UNIVERSE</div><h3>Read the galaxy at a glance</h3><p>Each visible cluster is a relevant discipline. Only disciplines with attested skills appear once you have a confirmed profile. Use “Show all domains” to explore the full taxonomy.</p><p><b>Mint ring</b> = you confirmed experience. <b>Amber dotted ring</b> = awaiting review after résumé intake. Brightness inside a star = voluntary confidence reflection.</p><p><b>Hover</b> to identify a skill without moving anything. <b>Click</b> to pin its relationships. <b>Click, hold and drag</b> a star to rearrange its network.</p><p class="muted">No inferred proficiency, qualification or personnel fitness score.</p>`;
  if(chosen){
   const next=[...(adj.get(chosen.id)||[])].filter(x=>displayed.has(x)).slice(0,12);
   if(next.length){const section=document.createElement('section');section.className='sky-relationships';section.innerHTML='<h4>Linked capabilities</h4><p>Conceptual learning pathways, not observed coworker interactions.</p>'+next.map(k=>`<button class="sky-related" data-related-skill="${esc(k)}">${esc(byId.get(k).s.name)}</button>`).join('');detail.appendChild(section);section.onclick=e=>{const b=e.target.closest('[data-related-skill]');if(b)onSelect?.(b.dataset.relatedSkill)}}
@@ -157,7 +163,7 @@ function render(o){
  }
  const c=all.filter(p=>p.confirmed).length,a=all.filter(p=>p.pending).length;
  legend.innerHTML=`<span class="legend-item"><i style="background:#5de7d2"></i>${c} confirmed experience</span><span class="legend-item"><i style="background:#f3bd76"></i>${a} résumé candidates</span><span class="legend-item"><i style="background:#98aec6"></i>Grey = no response</span><span class="legend-item"><i style="background:#e0ad79"></i>Cross-domain links</span>`;
- return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).length,clusters:13,relations:edges.length,confirmed:c,pending:a};
+ return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).filter(id=>attested.has(id)).length,clusters:activeDomains.size,relations:edges.length,confirmed:c,pending:a,visible:displayed.size,focused:scope!=='all'&&profileStarted};
 }
 global.SynapseSky={render,stop,layout,strength,bridges};
 })(window);
