@@ -25,10 +25,26 @@ def test_synapse_employee_flow():
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert page.locator('#metricDomains').inner_text()=='13'
+        assert 'No login' in page.locator('.demo-identity').inner_text()
         page.locator('button[data-view="profile"]').first.click()
         page.locator('#loadResumeSample').click()
         assert page.locator('[data-confirm]').count()>3
+        # Resume results must immediately update both visualizations, but not
+        # invent task confidence or mark suggested skills as confirmed.
+        page.locator('button[data-view="radar"]').first.click()
+        assert page.locator('.radar-evidence-halo.is-pending').count()>0
+        assert 'résumé candidates' in page.locator('#radarStatus').inner_text()
+        assert 'Confidence not rated' in page.locator('#radarCanvas').inner_text()
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node.is-pending').count()>0
+        assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==0
+        page.locator('button[data-view="profile"]').first.click()
         page.locator('[data-confirm]').first.click()
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==1
+        page.locator('button[data-view="radar"]').first.click()
+        assert page.locator('.radar-evidence-halo.is-confirmed').count()>0
+        page.locator('button[data-view="profile"]').first.click()
         assert page.locator('#profileCount').inner_text()=='1'
         page.locator('#confidence').select_option('3')
         page.locator('#performed').select_option('recent')
@@ -82,6 +98,7 @@ def test_synapse_employee_flow():
         page.locator('button[data-view="workforce"]').first.click()
         assert page.locator('#workforce').is_visible()
         assert page.locator('[data-workforce-tab]').count()==5
+        assert page.locator('[data-workforce-open]').count()==5
         page.locator('#wfModuleTitle').fill('Synthetic handoff study guide')
         page.locator('#wfModuleSkill').select_option('qualification-planning')
         page.locator('#wfModuleSource').fill('Synthetic exercise; no official PQS material')
@@ -148,6 +165,7 @@ def test_synapse_employee_flow():
         assert page.locator('.radar-svg').count()>0
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#constellationMode').count()==0
         page.locator('#graphSearch').fill('SQL')
         assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
@@ -167,6 +185,19 @@ def test_synapse_employee_flow():
         node.hover(force=True)
         page.wait_for_function('() => {const tip=document.querySelector("#graphHoverTip");return tip && !tip.hidden && tip.textContent.trim().length>0}')
         assert skill_name in page.locator('#graphHoverTip').inner_text()
+        # Ordinary hover must never move nodes: zero attraction/repulsion.
+        still=node.get_attribute('transform')
+        page.mouse.move(25,25)
+        node.hover(force=True)
+        page.wait_for_timeout(200)
+        assert node.get_attribute('transform')==still
+        # Only click-and-hold drag moves a node and its attached branches.
+        box=node.bounding_box()
+        page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2)
+        page.mouse.down()
+        page.mouse.move(box['x']+box['width']/2+48,box['y']+box['height']/2+29,steps=5)
+        page.mouse.up()
+        assert node.get_attribute('transform')!=still
         assert 'confidence' in page.locator('#graphHoverTip').inner_text().lower() or 'unrated' in page.locator('#graphHoverTip').inner_text().lower()
         node.click(force=True)
         assert 'SKILL SIGNAL' in page.locator('#graphDetail').inner_text()
@@ -183,6 +214,117 @@ def test_synapse_employee_flow():
         page.locator('[data-roi="minutesSaved"]').fill('0')
         after=page.locator('#roiTotal').inner_text()
         assert before!=after
+        assert page.locator('#roiCash').inner_text().startswith('
+        saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
+        assert len(saved['profile']['confirmed'])==1
+        assert len(saved['profile']['surveys'])==1
+        page.locator('button[data-view="profile"]').first.click()
+        page.locator('#loadDemoProfile').click()
+        assert page.locator('#profileCount').inner_text()=='20'
+        assert page.locator('#surveyCount').inner_text()=='20'
+        assert page.locator('#radarCanvas .radar-premium-point').count()>0
+        assert not errors, errors
+        browser.close()
+
+def test_standalone_distribution():
+    """The downloadable single HTML file must be equally interactive offline."""
+    standalone=ROOT/'Synapse-Standalone.html'
+    assert standalone.exists()
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(headless=True,
+            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
+            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
+        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
+        errors=[]
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(standalone.resolve().as_uri())
+        assert page.locator('#metricSkills').inner_text()=='104'
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
+        assert page.locator('#graphSvg .sky-branch').count()>=35
+        assert page.locator('#graphSvg .sky-semantic').count()>=12
+        page.locator('button[data-view="team"]').first.click()
+        assert page.locator('#fleetLab').count()==1
+        page.locator('button[data-view="workforce"]').first.click()
+        assert page.locator('[data-workforce-tab]').count()==5
+        page.locator('[data-workforce-tab="teamforge"]').click()
+        assert page.locator('#wfMissionRequirements').count()==1
+        page.locator('button[data-view="team"]').first.click()
+        page.locator('#fleetTabMentors').click()
+        assert page.locator('#fleetMentorMatches').is_visible()
+        page.locator('button[data-view="graph"]').first.click()
+        skill=page.locator('#graphSvg .sky-skill-node').first
+        name=skill.get_attribute('aria-label')
+        skill.hover(force=True)
+        page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
+        assert name in page.locator('#graphHoverTip').inner_text()
+        assert not errors, errors
+        browser.close()
+
+if __name__=='__main__':
+    test_synapse_employee_flow()
+    test_standalone_distribution()
+    print('PASS: modular and standalone Synapse browser smoke flows')
+)
+        assert page.locator('#roiCapacity').inner_text().startswith('
+        saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
+        assert len(saved['profile']['confirmed'])==1
+        assert len(saved['profile']['surveys'])==1
+        page.locator('button[data-view="profile"]').first.click()
+        page.locator('#loadDemoProfile').click()
+        assert page.locator('#profileCount').inner_text()=='20'
+        assert page.locator('#surveyCount').inner_text()=='20'
+        assert page.locator('#radar .radar-dot').count()>0
+        assert not errors, errors
+        browser.close()
+
+def test_standalone_distribution():
+    """The downloadable single HTML file must be equally interactive offline."""
+    standalone=ROOT/'Synapse-Standalone.html'
+    assert standalone.exists()
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(headless=True,
+            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
+            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
+        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
+        errors=[]
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(standalone.resolve().as_uri())
+        assert page.locator('#metricSkills').inner_text()=='104'
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
+        assert page.locator('#graphSvg .sky-branch').count()>=35
+        assert page.locator('#graphSvg .sky-semantic').count()>=12
+        page.locator('button[data-view="team"]').first.click()
+        assert page.locator('#fleetLab').count()==1
+        page.locator('button[data-view="workforce"]').first.click()
+        assert page.locator('[data-workforce-tab]').count()==5
+        page.locator('[data-workforce-tab="teamforge"]').click()
+        assert page.locator('#wfMissionRequirements').count()==1
+        page.locator('button[data-view="team"]').first.click()
+        page.locator('#fleetTabMentors').click()
+        assert page.locator('#fleetMentorMatches').is_visible()
+        page.locator('button[data-view="graph"]').first.click()
+        skill=page.locator('#graphSvg .sky-skill-node').first
+        name=skill.get_attribute('aria-label')
+        skill.hover(force=True)
+        page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
+        assert name in page.locator('#graphHoverTip').inner_text()
+        assert not errors, errors
+        browser.close()
+
+if __name__=='__main__':
+    test_synapse_employee_flow()
+    test_standalone_distribution()
+    print('PASS: modular and standalone Synapse browser smoke flows')
+)
+        assert page.locator('#roiSensitivity > div').count()==3
+        assert 'Cash-only net after operating cost' in page.locator('#roi').inner_text()
+        page.locator('[data-roi="adoption"]').fill('0')
+        assert page.locator('#roiCash').inner_text()=='$0'
+        assert page.locator('#roiCapacity').inner_text()=='$0'
         saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
         assert len(saved['profile']['confirmed'])==1
         assert len(saved['profile']['surveys'])==1
