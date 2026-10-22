@@ -51,3 +51,32 @@
 #teamCritical{margin:14px 0 21px}
 @media(max-width:850px){.radar-layout{grid-template-columns:1fr}.graph-surface,.graph-surface svg{min-height:320px}}
 @media(prefers-reduced-motion:reduce){.sky-skill-node,.sky-link{transition:none!important}}
+
+
+/* v0.2 interaction refinement: magnetic hover and explorable relationship branches */
+.graph-surface{position:relative}
+.sky-hover-tip[hidden]{display:none!important}
+.sky-hover-tip{
+ position:absolute;z-index:15;pointer-events:none;min-width:174px;max-width:255px;
+ padding:11px 13px;border:1px solid #56aeb5;border-radius:11px;
+ background:linear-gradient(145deg,rgba(19,51,72,.98),rgba(8,26,45,.98));
+ box-shadow:0 10px 34px rgba(0,0,0,.48),0 0 24px rgba(80,222,211,.14);
+ backdrop-filter:blur(6px);color:#dcf7f5;
+}
+.sky-hover-tip strong{font-size:13px;color:#efffff;line-height:1.4;display:block}
+.sky-hover-tip span{font-size:11px;color:#6ee0d5;display:block;margin:3px 0 5px}
+.sky-hover-tip small{font-size:10px;color:#bad1e1;display:block;line-height:1.45}
+.sky-tip-related{margin-top:7px;border-top:1px solid #326176;padding-top:6px}
+.sky-hit-target{cursor:pointer}
+.sky-link{pointer-events:none;stroke:#579cbd;stroke-width:1.25;stroke-linecap:round;transition:stroke-opacity .09s ease}
+.sky-link.sky-local{stroke:#5eacc4;stroke-width:1.15}
+.sky-link.sky-branch{stroke:#65e0c9;stroke-width:1.6}
+.sky-link.sky-spine{stroke:#9a91e8;stroke-width:1.5}
+.sky-link.sky-semantic{stroke:#dfaa73;stroke-width:1.5;stroke-dasharray:5 4}
+.sky-relationships{border-top:1px solid #35576d;margin-top:15px;padding-top:13px}
+.sky-relationships h4{font-size:12px;color:#ddfbf5;margin:2px 0 5px}
+.sky-relationships p{font-size:11px;color:#97b5c8;margin:0 0 10px}
+.sky-related{border:1px solid #336678;background:#17364b;color:#bce9e2;padding:5px 8px;border-radius:17px;font-size:10px;margin:3px;cursor:pointer;max-width:100%}
+.sky-related:hover,.sky-related:focus-visible{border-color:#65e5d6;background:#1d5c63;color:#fff}
+.sky-skill-node:focus-visible circle.sky-hit-target{stroke:#dbfff8;stroke-opacity:.9;stroke-width:2}
+@media(prefers-reduced-motion:reduce){.sky-link{transition:none}}
