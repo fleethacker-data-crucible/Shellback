@@ -42,18 +42,27 @@ def test_synapse_employee_flow():
         assert 'No skills attested' in page.locator('#radarCanvas').inner_text()
         assert page.locator('#radarCanvas .radar-spider-web').count()==0
         page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
+        assert page.locator('#graphSvg .sky-skill-node').count()==0
+        assert 'No confirmed capabilities yet' in page.locator('#graphDetail').inner_text()
+        page.locator('[data-galaxy-mode="pathways"]').click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
         assert page.locator('#graphSvg .sky-skill-node.is-pending').count()>0
-        assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==0
+        page.locator('[data-galaxy-mode="confirmed"]').click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==0
         page.locator('button[data-view="profile"]').first.click()
         page.locator('[data-confirm]').first.click()
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node.is-confirmed').count()==1
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
-        assert page.locator('#graphSvg .sky-skill-node').count()==8
-        page.locator('#graphScope').select_option('all')
+        assert page.locator('#graphSvg .sky-skill-node').count()==1
+        assert page.locator('#graphSvg path.sky-link').count()==0
+        page.locator('[data-galaxy-mode="pathways"]').click()
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
-        page.locator('#graphScope').select_option('focus')
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
+        page.locator('[data-galaxy-mode="confirmed"]').click()
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
+        assert page.locator('#graphSvg .sky-skill-node').count()==1
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-evidence-halo.is-confirmed').count()>0
         assert page.locator('#radarCanvas .radar-spider-web').count()==1
@@ -186,19 +195,22 @@ def test_synapse_employee_flow():
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-svg').count()>0
         page.locator('button[data-view="graph"]').first.click()
-        assert page.locator('#graphSvg .sky-skill-node').count()==8
+        assert page.locator('#graphSvg .sky-skill-node').count()==1
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
-        page.locator('#graphScope').select_option('all')
+        page.locator('[data-galaxy-mode="pathways"]').click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         assert page.locator('#constellationMode').count()==0
         page.locator('#graphSearch').fill('SQL')
         assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .galaxy-domain-label').count()==13
-        assert 'displayed disciplines' in page.locator('#skyExplanation').inner_text()
+        assert 'Pathways:' in page.locator('#skyExplanation').inner_text()
         assert page.locator('#constellationMode').count()==0
         page.locator('#graphReset').click()
         assert page.locator('#graphSearch').input_value()==''
+        assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
+        assert page.locator('#graphSvg .sky-skill-node').count()==1
+        page.locator('[data-galaxy-mode="pathways"]').click()
         # Branch topology must remain visible: same-domain offshoots and
         # the earlier meaningful cross-domain links, not just the decorative nebula.
         assert page.locator('#graphSvg path.sky-branch').count() >= 35
@@ -225,7 +237,7 @@ def test_synapse_employee_flow():
         assert node.get_attribute('transform')!=still
         assert 'confidence' in page.locator('#graphHoverTip').inner_text().lower() or 'experience' in page.locator('#graphHoverTip').inner_text().lower()
         node.click(force=True)
-        assert 'CAPABILITY DETAIL' in page.locator('#graphDetail').inner_text()
+        assert 'POSSIBLE CAPABILITY' in page.locator('#graphDetail').inner_text()
         assert 'Linked capabilities' in page.locator('#graphDetail').inner_text()
         assert page.locator('#graphDetail [data-related-skill]').count()>0
         page.locator('button[data-view="credentials"]').first.click()
@@ -266,6 +278,53 @@ def test_synapse_employee_flow():
         assert page.locator('#radarCanvas .radar-spider-web').get_attribute('points') != before_shape
         page.locator('#refreshRadar').click()
         assert page.locator('#radarCanvas .radar-spider-node').count()>0
+def test_galaxy_three_confirmed_skills():
+    """Exactly three attested Data Engineering skills must render exactly three nodes."""
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(headless=True,
+            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
+            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
+        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
+        errors=[]
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
+        for script in ('sky.js','team.js','fleet.js','workforce.js','demo-profiles.js','app.js'):
+            html=html.replace(f'<script src="src/{script}"></script>','')
+        page.set_content(html)
+        page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
+        for path in ('sky','team','fleet','workforce','demo-profiles','app'):
+            page.add_script_tag(content=(ROOT/'src'/f'{path}.js').read_text())
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==0
+        assert 'No confirmed capabilities yet' in page.locator('#graphDetail').inner_text()
+        # A new profile begins with zero attested nodes, even if the taxonomy has 104.
+        page.locator('button[data-view="profile"]').first.click()
+        for skill in ('sql-pipelines','data-modeling','data-quality'):
+            page.locator('#manualSkill').select_option(skill)
+            page.locator('#manualAdd').click()
+        assert page.locator('#profileCount').inner_text()=='3'
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
+        assert page.locator('#graphSvg .sky-skill-node').count()==3
+        assert set(page.locator('#graphSvg .sky-skill-node').evaluate_all("(els)=>els.map(e=>e.dataset.skill)"))=={'sql-pipelines','data-modeling','data-quality'}
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==1
+        assert page.locator('#graphSvg .sky-link').count()>=2
+        # Search narrows the confirmed view; it must not reveal unconfirmed nodes.
+        page.locator('#graphSearch').fill('Data Quality')
+        assert page.locator('#graphSvg .sky-skill-node').count()==1
+        page.locator('#graphSearch').fill('')
+        assert page.locator('#graphSvg .sky-skill-node').count()==3
+        page.locator('[data-galaxy-mode="pathways"]').click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
+        assert page.locator('#graphSvg path.sky-semantic').count()>=12
+        # Pathways doesn't create or confirm a new skill in the profile.
+        assert page.locator('#profileCount').inner_text()=='3'
+        page.locator('[data-galaxy-mode="confirmed"]').click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==3
+        assert not errors, errors
+        browser.close()
+
         assert not errors, errors
         browser.close()
 
@@ -285,6 +344,9 @@ def test_standalone_distribution():
         assert page.locator('#metricSkills').inner_text()=='104'
         assert 'No login' in page.locator('.demo-identity').inner_text()
         page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==0
+        assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
+        page.locator('[data-galaxy-mode="pathways"]').click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .sky-branch').count()>=35
@@ -304,6 +366,8 @@ def test_standalone_distribution():
             assert page.locator('#radarCanvas .radar-spider-web').count()==1
             shapes.add(page.locator('#radarCanvas .radar-spider-web').get_attribute('points'))
             page.locator('button[data-view="graph"]').first.click()
+            assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
+            assert page.locator('#graphSvg .sky-skill-node').count()==len(expected['profile']['confirmed'])
             assert 1 <= page.locator('#graphSvg .galaxy-domain-hub').count() < 13
         assert len(shapes)>=3
         # Full workspace JSON import restores another employee's visible web.
@@ -340,5 +404,6 @@ def test_standalone_distribution():
 
 if __name__=='__main__':
     test_synapse_employee_flow()
+    test_galaxy_three_confirmed_skills()
     test_standalone_distribution()
     print('PASS: modular and standalone Synapse browser smoke flows')
