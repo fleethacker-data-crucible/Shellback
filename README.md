@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.4 — five integrated FLEETHACKER workforce workflows**
+**Version 0.5 — evidence-responsive galaxy, premium radar, drag-only interaction and transparent ROI**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -8,25 +8,25 @@ Synapse is an employee-centered capability discovery and development prototype. 
 
 1. **Fastest:** download and double-click `Synapse-Standalone.html` (one file, all code embedded).
 2. **Development edition:** download/extract the repository or `Synapse-MVP.zip`, keeping `index.html` beside `src`. Open `index.html` in a recent Edge, Firefox, or Chrome browser.
-3. On **My capability profile**, use the synthetic example, explicitly confirm suggested skills and save an optional confidence pulse. Open **FLEETHACKER workforce** to explore the complete five-module toolkit.
+3. On **My capability profile**, use the synthetic example, explicitly confirm suggested skills and save an optional confidence pulse. Open **Workforce tools** to explore the complete five-module toolkit.
 
 **No installation, package manager, internet, PowerShell, server, account, or admin privileges required.** All JavaScript and CSS are local. `index.html` should remain beside the `src` directory. If your browser policy blocks local scripts or localStorage from `file:` pages, serve the directory using an **approved** local hosting mechanism; do not bypass workstation restrictions.
 
 ## Features
 
 - 13 capability domains and 104 task-oriented skills
-- Higher-fidelity radar with clear rings, light trails and truthful gaps for unanswered self-reports
-- Organic galaxy of 13 capability-domain clusters, with 104 reactive stars, persistent taxonomy branches, explicit cross-domain learning bridges, magnetic hover and reduced-motion support
+- Premium capability radar with confidence rings, mint employee-confirmed experience and amber pending résumé suggestions, without inventing confidence for unrated skills
+- Evidence-responsive galaxy with 13 discipline clusters and 104 skills. Hover labels nodes without movement; only click-hold-drag moves nodes and connected neighbors.
 - Radar with domain drill-down and unknown/missing-confidence behavior
 - 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
-- Plain-text (`.txt`) résumé / experience keyword matching to **unverified suggestions**; manual confirmation and removal
+- Plain-text résumé upload is scanned automatically. Amber candidates update the radar and galaxy immediately; employee confirmation turns them mint. Confidence remains separately self-reported.
 - Task-level survey capturing confidence, prior execution, voluntary activity recency, and independent vs approved-AI-assisted vs guided execution
 - Editable, unverified credential inventory with date horizon
 - Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
 - A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
 - **FLEETHACKER lab:** TEAMFORGE-inspired mission team composer, MENTORLINK opt-in mentor discovery, and KNOWLEDGE RELAY single-contributor knowledge watchlist
 - **FLEETHACKER workforce:** five modules with local training guides, study history, capability heatmaps, mission requirements, voluntary mentoring and owner-reviewed knowledge records
-- ROI scenario calculator with transparent formulas and separation of avoided spend versus recovered non-cash capacity
+- Adoption- and overlap-aware ROI calculator with cash vs noncash separation, cash-only net after cost, and three scenario sensitivity levels
 - Local state persistence, JSON export/import/validation, delete/reset controls, no network calls
 
 ## Privacy and data semantics
@@ -54,11 +54,15 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
 
-## Skills galaxy: no astrology
+## Radar and galaxy after résumé intake
 
-The galaxy groups the 104 capability nodes into **13 persistent capability-domain clusters** in a deterministic golden-angle spiral. The backdrop is decorative; it does not imply ability, employee type, role compatibility or proficiency. Clusters, lines and node positions derive from the explicit skill taxonomy and a curated list of conceptual learning relationships. There is no zodiac matching, horoscope, celestial-data dependency or constellation selector.
+The latest radar and galaxy use three distinct forms of information. **Amber** shows unreviewed local résumé keyword suggestions; **mint** shows employee-confirmed experience; **confidence (0–4)** is a separate, optional task-specific survey. Missing task confidence remains unknown, not zero. Uploading a plain-text résumé immediately updates the amber evidence overlays and the relative prominence of relevant discipline clusters. Confirmation turns those suggestions mint without fabricating proficiency.
 
-Every domain has an identifiable center and connected skills. Mint branches within domains and amber bridges across domains restore the first prototype's relationship network. Pointer movement is gently magnetic near a node, reveals skill/domain/self-reported confidence and nearby relationships, and temporarily expands its connected branches. A node can be clicked or keyboard-selected to reveal detailed self-reported signals and clickable connections. Unanswered skills remain visible and neutral. A browser reduced-motion preference disables particle movement.
+The galaxy preserves the original taxonomy branches and curated cross-domain skill bridges. **Hover never moves a node**: it only shows a skill tooltip and highlights connected branches. **Click** pins a skill and its related signals. **Click, hold and drag** temporarily moves that node and gently shifts its connected neighbors. After release, there is no attraction or repulsion. Reset galaxy restores the computed layout.
+
+## Login and local workspace boundaries
+
+The offline Synapse MVP never had an authenticated login. Local browser storage, employee-owned profile entries and opt-in peer-card exchange are not accounts. The interface explicitly says **Local demo · No login**. True enterprise login would require an approved identity provider (such as an authorized organizational SSO/CAC integration), backend account storage and server-enforced access controls. No fake PIN/password screen is presented as security.
 
 ## FLEETHACKER workforce intelligence lab
 
@@ -102,11 +106,15 @@ The workspace JSON backup also preserves guides, study history, mission needs, v
 
 **Privacy caveat:** This MVP has no live multi-user service, authentication, file recall/revocation, secure sharing, or server-side permissions. Previously shared files remain with the recipients. Identity displayed on a card is self-declared and unverified. Do not use real Navy personnel data, sensitive resumes or CUI in this demonstration.
 
-## ROI calculation
+## ROI calculation: separating cash from recovered capacity
 
-Annual illustrative benefits: `employees × trainingCost × avoidedTrainingPct` + `employees × trainingHours × loadedHourlyRate × avoidedTrainingPct` + `externalSpend × avoidancePct` + `employees × weeklyMinutes / 60 × workingWeeks × loadedHourlyRate × usableTimePct`. Training time and workflow time must refer to separate nonoverlapping work. The recovered hours represent **capacity** and not cash savings. All percentages are entered as 0–100. Cost is subtracted for the illustrative net-benefit view; the ratio is benefit divided by annual operating cost.
+Modeled cash savings: adopting participants × annual duplicate training spend × training avoidance percentage, plus outside specialist spend × external spend avoidance percentage × adoption. Actual avoided expenditure must be independently established; training spend must exclude labor being counted elsewhere.
 
-**Review note:** the older proposal's example that listed **55 min/week × 100 people × 46 weeks × $75/hr × 70% = $144,375** does not arithmetically reconcile; this tool computes **$221,375** for those exact inputs. No historical assumption has been silently forced to fit a desired total.
+Modeled training capacity: adopting participants × training hours × loaded hourly rate × training avoidance percentage. Modeled workflow capacity: adopting participants × weekly recovered minutes / 60 × weeks × loaded hourly rate × realized time percentage.
+
+The calculator deducts overlap percentage × the smaller of training and workflow capacity to avoid double-counting time. The **scenario economic potential** is cash plus adjusted noncash capacity; it is not all cash savings. **Cash-only net** = cash savings minus annual operating cost, and the benefit/cost ratio uses cash alone. A three-scenario adoption sensitivity displays cash-only net for lower, base and higher adoption.
+
+Prior proposal audit: 55 minutes × 100 people × 46 weeks × $75/hour × 70% = $221,375 (before adoption and overlap), not the $144,375 quoted in the old draft.
 
 ## Development / testing
 
