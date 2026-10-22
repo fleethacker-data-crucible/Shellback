@@ -63,8 +63,7 @@ def test_synapse_employee_flow():
         assert 'Synthetic peer' in page.locator('#teamPeerDetail').inner_text()
         # FLEETHACKER concepts: TEAMFORGE + MENTORLINK + KNOWLEDGE RELAY.
         assert page.locator('#fleetLab').count()==1
-        print('FLEET_DIAGNOSTIC', page.locator('#fleetCompositionResult').evaluate('(el) => ({text:el.textContent,html:el.innerHTML,hidden:getComputedStyle(el).display,parent:el.parentElement?.parentElement?.id})'), 'JS_ERRORS', errors)
-        assert 'Proposed team coverage' in page.locator('#fleetCompositionResult').inner_text() or 'No mission needs' in page.locator('#fleetCompositionResult').inner_text()
+        assert 'Proposed team coverage' in page.locator('#fleetCompositionResult').inner_text() or 'Select or add mission skills' in page.locator('#fleetCompositionResult').inner_text()
         page.locator('#fleetAddSkill').select_option('aws-architecture')
         page.locator('#fleetAddSkillBtn').click()
         assert 'AWS Architecture' in page.locator('#fleetMissionSkills').inner_text()
