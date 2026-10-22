@@ -278,6 +278,9 @@ def test_synapse_employee_flow():
         assert page.locator('#radarCanvas .radar-spider-web').get_attribute('points') != before_shape
         page.locator('#refreshRadar').click()
         assert page.locator('#radarCanvas .radar-spider-node').count()>0
+        assert not errors, errors
+        browser.close()
+
 def test_galaxy_three_confirmed_skills():
     """Exactly three attested Data Engineering skills must render exactly three nodes."""
     with sync_playwright() as pw:
@@ -322,9 +325,6 @@ def test_galaxy_three_confirmed_skills():
         assert page.locator('#profileCount').inner_text()=='3'
         page.locator('[data-galaxy-mode="confirmed"]').click()
         assert page.locator('#graphSvg .sky-skill-node').count()==3
-        assert not errors, errors
-        browser.close()
-
         assert not errors, errors
         browser.close()
 
