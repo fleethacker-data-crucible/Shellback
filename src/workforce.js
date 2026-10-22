@@ -132,5 +132,5 @@ function init(options){
  pane('qualforge');
 }
 const clampNum=(v,min,max)=>Math.min(max,Math.max(min,Math.round(Number(v)||min)));
-global.SynapseWorkforce={init,render,normalize,fresh};
+global.SynapseWorkforce={init,render,normalize,fresh,open:pane};
 })(window);
