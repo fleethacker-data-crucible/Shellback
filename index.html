@@ -77,6 +77,10 @@
     <label for="wfModuleAnswer">Employee-authored reference answer</label><textarea id="wfModuleAnswer" rows="4" placeholder="Document state, unresolved risks, responsible owner..."></textarea>
     <label for="wfModuleScenario">Applied scenario (optional)</label><textarea id="wfModuleScenario" rows="3" placeholder="A shift change occurs with an unresolved maintenance issue..."></textarea>
     <button id="wfModuleCreate" class="primary">Create study guide</button>
+    <divider></divider><h4>Import approved plain-text PQS-style outline</h4><p class="note">Paste nonsensitive, authorized task lines such as "1.1 Explain the turnover process." Synapse creates draft questions only; it never fabricates reference answers or qualification sign-offs.</p>
+    <label for="wfOutlineSkill">Skill domain for imported tasks</label><select id="wfOutlineSkill"></select>
+    <label for="wfOutlineText">Approved outline excerpt (up to 12,000 characters)</label><textarea id="wfOutlineText" rows="4" maxlength="12000" placeholder="1.1 Describe the incident turnover process&#10;1.2 Explain escalation requirements"></textarea>
+    <button id="wfOutlineImport" class="secondary">Convert outline into review-required study drafts</button>
    </div></section>
    <section class="panel"><h3>Practice a guide</h3><label for="wfModuleSelect">Select guide</label><select id="wfModuleSelect" class="wf-wide-select"></select><div id="wfStudyArea"></div></section>
   </div>
