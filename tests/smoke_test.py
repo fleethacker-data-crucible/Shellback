@@ -195,7 +195,7 @@ def test_synapse_employee_flow():
         assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .galaxy-domain-label').count()==13
-        assert 'connected domains' in page.locator('#skyExplanation').inner_text()
+        assert 'displayed disciplines' in page.locator('#skyExplanation').inner_text()
         assert page.locator('#constellationMode').count()==0
         page.locator('#graphReset').click()
         assert page.locator('#graphSearch').input_value()==''
