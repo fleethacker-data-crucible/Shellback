@@ -113,3 +113,39 @@
 .fleet-skill-result small{display:block;color:#90afc2;margin-top:4px;font-size:10px}
 .fleet-skill-result .tiny-pill{white-space:normal;text-align:right;flex-shrink:0;max-width:50%}
 @media(max-width:680px){.fleet-skill-result{align-items:flex-start;flex-direction:column}.fleet-skill-result .tiny-pill{text-align:left;max-width:100%}}
+
+
+/* FLEETHACKER 2026 workforce suite — QUALFORGE / SKILLFLEET / TEAMFORGE / MENTORLINK / KNOWLEDGE RELAY */
+.wf-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0}
+.wf-tabs button{font-size:11px;flex:1 1 150px;padding:11px 13px;white-space:normal;text-align:center}
+.wf-tabs button.wf-active{border:1px solid #5fe6cc;background:linear-gradient(145deg,#174955,#163547);color:#e5fff9;box-shadow:0 0 0 1px #63d8cd33}
+.wf-pane[hidden],.wf-answer[hidden]{display:none!important}
+.wf-intro{margin:15px 0 22px}.wf-intro h3{font-size:20px;margin:5px 0}.wf-intro p{color:#99b3c4;font-size:13px;line-height:1.6}
+.wf-wide-select,#workforce select,#workforce input:not([type=checkbox]),#workforce textarea{width:100%;background:#0e1e30;color:#e9f9ff;border:1px solid #38546b;border-radius:8px;padding:9px 11px;margin:5px 0 11px;font-family:inherit;font-size:12px}
+.wf-pane .two-col{align-items:start}
+.wf-pane .panel{min-width:0}
+.wf-pane h3{margin-bottom:13px}
+.wf-pane h4{color:#dcf2fb;font-size:13px;margin:15px 0 8px}
+.wf-pane label{color:#a3c0ce;font-size:12px;display:block}
+.wf-pane .inline-form textarea{resize:vertical}
+.wf-pane .wf-check{display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer}
+.wf-pane .wf-check input{width:16px;height:16px;margin:0;accent-color:#54e6c9;flex-shrink:0}
+.wf-pane .manual-add select{flex:1}
+.wf-pane .three-stats{margin-bottom:20px}
+.wf-pane .wf-detail-line{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #2a4256;font-size:12px}
+.wf-detail-line small{color:#8eafc4;display:block;margin-top:5px;font-size:10px}
+.wf-detail-line strong{color:#d0eaf0}
+.wf-detail-line .button-row{margin:0}
+.wf-detail-line button{font-size:10px;padding:7px 9px}
+.wf-answer{border:1px solid #447b78;background:linear-gradient(140deg,#103f47,#113344);padding:12px;border-radius:11px;margin:10px 0 15px;color:#d3f3e9}
+.wf-answer strong{color:#6ce8d4}.wf-answer p{font-size:12px;line-height:1.6}
+.wf-domain-row{display:grid;grid-template-columns:minmax(130px,220px) minmax(55px,1fr) 60px minmax(88px,130px);gap:12px;align-items:center;padding:9px 2px;border-bottom:1px solid #273f54}
+.wf-domain-row span{font-size:11px}.wf-domain-row strong{text-align:right;color:#d2f3f1;font-size:12px}.wf-domain-row small{color:#92b1bf;text-align:right;font-size:10px}
+.wf-requirement-result{padding:14px 15px;margin-bottom:10px;background:#12273d;border:1px solid #2e4f65;border-radius:10px}
+.wf-requirement-result strong{color:#bff3ed;margin-right:10px}
+.wf-requirement-result p{color:#b8ced8;font-size:12px;margin:8px 0 3px}
+.wf-knowledge-record{padding:16px;margin:13px 0;border-radius:12px;border:1px solid #345a69;background:linear-gradient(140deg,#122d3d,#0c1e30)}
+.wf-knowledge-record h4{margin:0}.wf-knowledge-record p{font-size:12px;color:#b9d3e0;line-height:1.55}
+.wf-knowledge-record .row{display:flex}.wf-knowledge-record .button-row{margin-top:12px}
+.wf-pane .empty{padding:22px 14px}
+@media(max-width:760px){.wf-domain-row{grid-template-columns:minmax(105px,1fr) minmax(55px,1fr) 36px;gap:7px}.wf-domain-row small{grid-column:1/-1;text-align:left}}
