@@ -110,6 +110,32 @@ def test_synapse_employee_flow():
         assert not errors, errors
         browser.close()
 
+def test_standalone_distribution():
+    """The downloadable single HTML file must be equally interactive offline."""
+    standalone=ROOT/'Synapse-Standalone.html'
+    assert standalone.exists()
+    with sync_playwright() as pw:
+        browser=pw.chromium.launch(headless=True,
+            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
+            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
+        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
+        errors=[]
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(standalone.resolve().as_uri())
+        assert page.locator('#metricSkills').inner_text()=='104'
+        page.locator('button[data-view="graph"]').first.click()
+        assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#graphSvg .sky-branch').count()>=35
+        assert page.locator('#graphSvg .sky-semantic').count()>=12
+        skill=page.locator('#graphSvg .sky-skill-node').first
+        name=skill.get_attribute('aria-label')
+        skill.hover(force=True)
+        page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
+        assert name in page.locator('#graphHoverTip').inner_text()
+        assert not errors, errors
+        browser.close()
+
 if __name__=='__main__':
     test_synapse_employee_flow()
-    print('PASS: complete Synapse browser smoke flow')
+    test_standalone_distribution()
+    print('PASS: modular and standalone Synapse browser smoke flows')
