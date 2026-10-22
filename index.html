@@ -13,6 +13,7 @@
       <button data-view="profile"><span class="navicon">◉</span> My capability profile</button>
       <button data-view="credentials"><span class="navicon">▤</span> Credential desk</button>
       <button data-view="team"><span class="navicon">▥</span> Team intelligence</button>
+      <button data-view="workforce"><span class="navicon">✧</span> FLEETHACKER workforce</button>
       <button data-view="roi"><span class="navicon">◇</span> ROI laboratory</button>
       <button data-view="trust"><span class="navicon">⬡</span> Trust & governance</button>
     </nav>
@@ -53,7 +54,99 @@
  <p class="note">FLEETHACKER demo modules are offline-only. No automated qualification adjudication, personnel ranking, passive monitoring, or remote discovery. Production integrations would require consent, authoritative qualification checks, and access controls.</p>
  </section>
 </section>
+<section id="workforce" class="view">
+ <div class="section-intro"><div class="eyebrow">FLEETHACKER 2026 / SYNAPSE WORKFORCE SUITE</div><h2>Five connected workforce tools. One employee-owned record.</h2><p>Explore training, team capability, mission requirements, voluntary mentoring and institutional knowledge transfer. These are transparent local planning workflows, not qualification sign-offs or automated personnel evaluations.</p></div>
+ <div class="notice">Synthetic and nonsensitive demonstration only. Employee claims, voluntary confidence, self-entered credentials and approved authoritative qualifications are not interchangeable. No official PQS data is bundled, and this prototype does not establish workforce readiness or system access.</div>
+ <div class="wf-tabs" role="group" aria-label="FLEETHACKER workforce modules">
+  <button type="button" class="secondary" data-workforce-tab="qualforge">QUALFORGE · Training</button>
+  <button type="button" class="secondary" data-workforce-tab="skillfleet">SKILLFLEET · Capability</button>
+  <button type="button" class="secondary" data-workforce-tab="teamforge">TEAMFORGE · Missions</button>
+  <button type="button" class="secondary" data-workforce-tab="mentorlink">MENTORLINK · Mentoring</button>
+  <button type="button" class="secondary" data-workforce-tab="relay">KNOWLEDGE RELAY</button>
+ </div>
+ <p id="workforceMessage" role="status" class="muted"></p>
+ <div data-workforce-pane="qualforge" class="wf-pane">
+  <div class="section-intro wf-intro"><div class="eyebrow">01 / QUALFORGE</div><h3>Qualification study without counterfeit sign-offs.</h3><p>Create guides from material you are authorized to use, practice scenario prompts, and review your progress. Responses are learning records only.</p></div>
+  <div id="wfQualStats" class="three-stats"></div>
+  <div class="two-col">
+   <section class="panel"><h3>Create a study guide</h3><div class="inline-form">
+    <label for="wfModuleTitle">Guide or task name</label><input id="wfModuleTitle" maxlength="120" placeholder="Synthetic example: Validate an incident handoff">
+    <label for="wfModuleSkill">Capability area</label><select id="wfModuleSkill"></select>
+    <label for="wfModuleSource">Approved source reference (optional)</label><input id="wfModuleSource" maxlength="220" placeholder="Synthetic exercise / locally approved reference">
+    <label for="wfModuleQuestion">Knowledge-check prompt</label><textarea id="wfModuleQuestion" rows="3" placeholder="What checks should happen before an incident turnover?"></textarea>
+    <label for="wfModuleAnswer">Employee-authored reference answer</label><textarea id="wfModuleAnswer" rows="4" placeholder="Document state, unresolved risks, responsible owner..."></textarea>
+    <label for="wfModuleScenario">Applied scenario (optional)</label><textarea id="wfModuleScenario" rows="3" placeholder="A shift change occurs with an unresolved maintenance issue..."></textarea>
+    <button id="wfModuleCreate" class="primary">Create study guide</button>
+   </div></section>
+   <section class="panel"><h3>Practice a guide</h3><label for="wfModuleSelect">Select guide</label><select id="wfModuleSelect" class="wf-wide-select"></select><div id="wfStudyArea"></div></section>
+  </div>
+  <section class="panel"><h3>Voluntary study history</h3><div id="wfStudyHistory"></div><p class="note">A self-review is not PQS completion, observed task execution, or an independent qualification assessment.</p></section>
+ </div>
+ <div data-workforce-pane="skillfleet" class="wf-pane" hidden>
+  <div class="section-intro wf-intro"><div class="eyebrow">02 / SKILLFLEET</div><h3>Coverage, credentials, and growth pathways.</h3><p>Compare team coverage at the domain level, inspect concentrations and maintain employee-driven development goals. Counts describe voluntary skill claims only.</p></div>
+  <div id="wfFleetSummary" class="three-stats"></div>
+  <section class="panel"><h3>Shared capability coverage</h3><div id="wfSkillfleetHeatmap"></div></section>
+  <div class="two-col">
+   <section class="panel"><h3>Professional growth plan</h3><div class="inline-form">
+    <label for="wfGoalSkill">Skill to develop</label><select id="wfGoalSkill"></select>
+    <label for="wfGoalTarget">Learning outcome or cross-training intention</label><input id="wfGoalTarget" maxlength="250" placeholder="Pair with teammate to learn dashboard validation">
+    <label for="wfGoalDue">Voluntary target date</label><input id="wfGoalDue" type="date">
+    <button id="wfGoalAdd" class="primary">Add development goal</button></div><div id="wfGoalRows"></div>
+   </section>
+   <section class="panel"><h3>Credential renewal signals</h3><div id="wfCredentialStatus"></div><p class="note">Credentials here are entered by the employee and remain unverified.</p></section>
+  </div>
+ </div>
+ <div data-workforce-pane="teamforge" class="wf-pane" hidden>
+  <div class="section-intro wf-intro"><div class="eyebrow">03 / TEAMFORGE</div><h3>Explainable mission staffing constraints.</h3><p>Identify required skills, minimum contributors, claimed qualifications and voluntarily shared availability. This is a gap-checking tool—not an automated staffing or personnel assignment decision.</p></div>
+  <div class="two-col">
+   <section class="panel"><h3>Mission requirements</h3><div class="inline-form">
+    <label for="wfMissionSkill">Needed capability</label><select id="wfMissionSkill"></select>
+    <label for="wfMissionMin">Minimum contributors</label><input id="wfMissionMin" inputmode="numeric" type="number" min="1" max="20" value="2">
+    <label for="wfMissionQualification">Qualification or certification text (optional; unverified matching)</label><input id="wfMissionQualification" maxlength="100" placeholder="Example: synthetic certification category">
+    <button id="wfMissionAdd" class="primary">Add mission requirement</button>
+   </div><div id="wfMissionRequirements"></div></section>
+   <section class="panel"><h3>Considered opt-in contributors</h3><div id="wfMissionRoster"></div></section>
+  </div>
+  <section class="panel"><h3>Mission coverage explanation</h3><div id="wfMissionResults"></div></section>
+ </div>
+ <div data-workforce-pane="mentorlink" class="wf-pane" hidden>
+  <div class="section-intro wf-intro"><div class="eyebrow">04 / MENTORLINK</div><h3>Find willing mentors, not just experienced people.</h3><p>Search peer profiles only when they have chosen to share mentoring availability. A self-reported skill alone does not make someone an assigned mentor.</p></div>
+  <div class="two-col">
+   <section class="panel"><h3>My voluntary mentoring offer</h3><div class="inline-form">
+    <label class="wf-check"><input id="wfMentorEnabled" type="checkbox"> I am open to voluntary mentoring conversations</label>
+    <label for="wfMentorAvailability">Availability to share</label><select id="wfMentorAvailability"><option value="unknown">Not specified</option><option value="available">Available</option><option value="limited">Limited</option><option value="unavailable">Unavailable</option></select>
+    <label for="wfMentorIntro">Short introduction (shared only with extra card opt-in)</label><textarea id="wfMentorIntro" rows="3" maxlength="500" placeholder="Topics I am happy to discuss..."></textarea>
+    <label for="wfMentorAdd">Add a mentoring topic</label><div class="manual-add"><select id="wfMentorAdd"></select><button id="wfMentorTopicAdd" class="secondary">Add topic</button></div><div id="wfMentorTopics"></div>
+    <p class="note">Changes stay local until you explicitly export an updated peer card with mentoring information enabled.</p>
+   </div></section>
+   <section class="panel"><h3>Opt-in expert directory</h3>
+    <label for="wfMentorSearch">Capability to learn</label><select id="wfMentorSearch"></select>
+    <div id="wfMentorMatches"></div>
+    <h4>Voluntary outreach draft</h4><label for="wfMentorProblem">Question or problem</label><textarea id="wfMentorProblem" rows="2" placeholder="I want to learn how to validate data pipelines..."></textarea><textarea id="wfMentorDraft" rows="5" readonly aria-label="Mentorship outreach draft"></textarea>
+   </section>
+  </div>
+ </div>
+ <div data-workforce-pane="relay" class="wf-pane" hidden>
+  <div class="section-intro wf-intro"><div class="eyebrow">05 / KNOWLEDGE RELAY</div><h3>Capture institutional know-how before it disappears.</h3><p>Use a structured, employee-reviewed interview and explicit source references. Keep notes in a local draft until an authorized owner marks them reviewed.</p></div>
+  <div class="two-col">
+   <section class="panel"><h3>Guided knowledge-transfer intake</h3><div class="inline-form">
+    <label for="wfKnowledgeTopic">Practice, lesson, or procedure</label><input id="wfKnowledgeTopic" maxlength="150" placeholder="Synthetic handoff: recurring dashboard data discrepancy">
+    <label for="wfKnowledgeSkill">Related capability</label><select id="wfKnowledgeSkill"></select>
+    <label for="wfKnowledgeOwner">Voluntary owner display name</label><input id="wfKnowledgeOwner" maxlength="90" placeholder="Synthetic domain SME">
+    <label for="wfKnowledgeContext">When does this situation arise? What could go wrong?</label><textarea id="wfKnowledgeContext" rows="3"></textarea>
+    <label for="wfKnowledgeSteps">What is the practical process? How do you validate results?</label><textarea id="wfKnowledgeSteps" rows="5"></textarea>
+    <label for="wfKnowledgeHandoff">Who or what is needed for the next handoff?</label><textarea id="wfKnowledgeHandoff" rows="3"></textarea>
+    <label for="wfKnowledgeSource">Approved source / document reference</label><input id="wfKnowledgeSource" maxlength="250" placeholder="Reference only; no sensitive document content">
+    <button id="wfKnowledgeAdd" class="primary">Save unreviewed knowledge draft</button>
+   </div></section>
+   <section class="panel"><h3>Knowledge concentration watch</h3><div id="wfOwnershipWatch"></div><p class="note">A missing owner here only means missing opt-in data—not that the organization lacks expertise.</p>
+    <h4>Search and controlled export</h4><label for="wfKnowledgeSearch">Search records</label><input id="wfKnowledgeSearch" placeholder="Search title, practice, skill..."><label class="wf-check"><input id="wfApprovedOnly" type="checkbox"> Owner-marked reviewed records only</label><button id="wfKnowledgeExport" class="secondary">Export reviewed knowledge package</button>
+   </section>
+  </div>
+  <section class="panel"><h3>Local lessons and transfer records</h3><div id="wfKnowledgeRecords"></div></section>
+ </div>
+ </section>
  <section id="roi" class="view"><div class="section-intro"><div class="eyebrow">BUSINESS CASE / SCENARIO MODEL</div><h2>Make value assumptions visible.</h2><p>Adjust assumptions to estimate annual economic benefit. All figures are hypothetical, not verified savings or budget authority. Workflow capacity is valued separately from released cash.</p></div><div class="two-col"><section class="panel"><div class="panel-heading"><h3>Scenario inputs</h3></div><div id="roiInputs" class="roi-inputs"></div><button id="resetRoi" class="secondary">Reset assumptions</button></section><section class="panel"><div class="eyebrow">ESTIMATED ANNUAL BENEFIT</div><div class="big-number" id="roiTotal">$0</div><div id="roiBreakdown" class="roi-breakdown"></div><div class="roi-summary"><span>Annual operating cost</span><strong id="roiCost">$0</strong><span>Benefit less operating cost</span><strong id="roiNet">$0</strong><span>Benefit / operating cost</span><strong id="roiMultiple">—</strong></div></section></div><div class="notice">Non-overlap rule: recovered workflow capacity is *not* automatically cash savings. Do not count the same staff hours again as training-hour savings. Validate baselines and attributions before claiming ROI.</div></section>
   <section id="trust" class="view"><div class="section-intro"><div class="eyebrow">FOUNDATIONS / TRUST</div><h2>Evidence stays in its lane.</h2><p>Separating signals is a core product requirement. There is no opaque universal skill score and no automatic employment decision.</p></div><div class="governance-grid"><article class="panel"><strong>01 · Résumé claim</strong><p>A keyword match proposes a skill for review. It cannot establish ability or currency.</p></article><article class="panel"><strong>02 · Confidence</strong><p>Self-report to a task-specific prompt; not a verified measure of competency.</p></article><article class="panel"><strong>03 · Execution mode</strong><p>Independent, guided, and approved AI-assisted accomplishment are separate, not collapsed.</p></article><article class="panel"><strong>04 · Recent activity</strong><p>Only voluntary declarations. Missing or old records mean unknown, not deficient.</p></article><article class="panel"><strong>05 · Credentials</strong><p>Self-entered inventory; authoritative verification requires approved external systems.</p></article><article class="panel"><strong>06 · Employee agency</strong><p>Correct, withdraw sharing, export, or delete the local profile. No passive telemetry.</p></article></div><section class="panel"><h3>Data boundaries</h3><p id="storageStatus">This browser stores only local application data. Nothing is sent to a server by this MVP.</p><div class="button-row"><button id="downloadJson" class="secondary">Export JSON backup</button><button id="resetDemo" class="danger">Reset everything to synthetic demo</button></div><p class="note">Local storage is accessible to anyone using the same browser profile. For real personnel data, deploy an approved backend with identity, access control, encryption, audit logging, records retention, privacy and labor review, and an ATO where required. Do not place actual personnel data into this offline prototype on a shared workstation.</p></section></section>
   <footer><span>SYNAPSE <b>v0.2 MVP</b></span><span>Designed for trust · Built for discovery · Synthetic demonstration</span></footer></main></div>
-<script src="src/sky.js"></script><script src="src/team.js"></script><script src="src/fleet.js"></script><script src="src/app.js"></script></body></html>
+<script src="src/sky.js"></script><script src="src/team.js"></script><script src="src/fleet.js"></script><script src="src/workforce.js"></script><script src="src/app.js"></script></body></html>
