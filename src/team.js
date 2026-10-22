@@ -66,6 +66,7 @@ function render(){
  }
  $('criticalSkill').innerHTML=ctx.skills.map(sk=>`<option value="${esc(sk.id)}">${esc(sk.name)}</option>`).join('');
  $('teamCritical').innerHTML=(team.priorities||[]).map(sid=>`<span class="focus-pill">${esc(ctx.skills.find(s=>s.id===sid)?.name||sid)} ${allowed?`· ${skillCounts[sid]||0} declared`:''} <button aria-label="Remove priority" data-criticalremove="${esc(sid)}">×</button></span>`).join('')||'<p class="muted">No priority skills selected.</p>';
+ global.SynapseFleet?.render();
 }
 function init(options){
  ctx=options;ensure();
