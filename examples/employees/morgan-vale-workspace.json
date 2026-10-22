@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "profile": {
+    "confirmed": [
+      "qualification-planning",
+      "work-package-readiness",
+      "fleet-sustainment",
+      "shipyard-process-mapping",
+      "maintenance-coordination",
+      "technical-work-instructions",
+      "risk-register",
+      "safety-process-awareness",
+      "configuration-management",
+      "knowledge-transfer",
+      "technical-writing"
+    ],
+    "surveys": {
+      "qualification-planning": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "work-package-readiness": {
+        "confidence": 3,
+        "performed": "before",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "fleet-sustainment": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "shipyard-process-mapping": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "maintenance-coordination": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "technical-work-instructions": {
+        "confidence": 4,
+        "performed": "before",
+        "method": "ai",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "risk-register": {
+        "confidence": 2,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "safety-process-awareness": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "configuration-management": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "knowledge-transfer": {
+        "confidence": 2,
+        "performed": "before",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      }
+    },
+    "credentials": [
+      {
+        "id": "demo-credential-morgan-vale-1",
+        "name": "Synthetic Maintenance Planner Familiarization",
+        "authority": "Synthetic training program",
+        "expiry": "2027-09-30",
+        "created": "2026-10-22"
+      }
+    ],
+    "consent": false,
+    "candidates": [
+      "systems-integration",
+      "process-improvement"
+    ],
+    "displayName": "Morgan Vale",
+    "demoPersona": "morgan-vale"
+  },
+  "roi": {},
+  "workforce": {}
+}
