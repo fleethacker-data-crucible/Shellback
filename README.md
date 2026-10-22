@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.6 — attested-capability spider web, confidence shine, focused galaxy and fictional employee lab**
+**Feature proposal — credential review and contextual confidence pulse**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -19,9 +19,9 @@ Synapse is an employee-centered capability discovery and development prototype. 
 - **Profile-focused galaxy:** 13 domains and 104 skills are available before onboarding or in Explore-all mode; after attestation, unrelated clusters are hidden by default. Hover only displays labels; click-hold-drag moves nodes and connected neighbors.
 - Radar with domain drill-down and unknown/missing-confidence behavior
 - 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
-- Plain-text résumé upload is scanned automatically. Amber candidates update the radar and galaxy immediately; employee confirmation turns them mint. Confidence remains separately self-reported.
-- **Attested-only confidence pulse:** employees can choose only confirmed skills to rate; earlier responses to withdrawn attestations remain local but are hidden from web and confidence counts. Independent, guided and approved-AI-assisted execution stay distinct.
-- Editable, unverified credential inventory with date horizon
+- Plain-text résumé upload is scanned automatically. Amber skill candidates update the spider web and galaxy immediately; **common named credentials are also recognized as review-required suggestions**, not automatically added to employee inventory.
+- **Attested-only contextual confidence pulse:** the form now sits beside the spider web, opens directly from each confirmed skill, and can advance to another unrated skill. Prior responses to withdrawn attestations remain local but are hidden; independent, guided and approved-AI-assisted execution stay distinct.
+- Self-reported credential desk with conservative résumé keyword suggestions, matched-phrase review, employee correction, intentional approval/dismissal, duplicate prevention, and optional renewal dates (never automatically invented)
 - Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
 - **Four fictional employee workspaces and peer cards** in [`examples/employees/`](examples/employees/README.md), plus a one-click persona selector to compare full local spider webs and galactic clusters
 - A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
@@ -54,6 +54,16 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `surveys[skillId]`: `{confidence:0..4, performed:'never|before|recent', method:'none|independent|guided|ai', note, updated}`
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
+
+## Credential detection and the new reflection flow
+
+**Credential desk:** the same plain-text résumé analysis now checks common cloud/IT/project certifications and a limited set of named Navy warfare qualifications. The extractor uses explicit names and codes; it is intentionally conservative but not a verification service. Every match appears in a **pending review** list with only the matched phrase and canonical reference. The user must choose **Review & edit**, correct the name/authority and optional renewal date, then deliberately save to their unverified inventory. **Dismiss** retains a local suppression for future scans; identical credentials are not added twice. Résumé sentences indicating a qualification is being pursued or studied are heuristically filtered; false positives and omissions are still possible.
+
+**Privacy:** neither the full résumé text nor surrounding personal details are retained in the workspace export by the new credential extractor. Only a short matched term, candidate identity and review/dismissal state persist. The existing résumé uploader remains **.txt only**; PDF/DOCX ingestion is a P1 roadmap item and is not advertised as implemented.
+
+**Confidence pulse:** the optional task reflection is now integrated into the **Skills spider web** sidebar. Each confirmed skill card includes a direct **Rate confidence / Update pulse** action; the spider-web detail and galaxy reflection shortcuts open the same panel. The panel has a progress count and **Next unrated skill** action. It remains disabled for skills the employee has not attested to.
+
+Read the detailed [2026-10-22 product audit](docs/PRODUCT_AUDIT_2026-10-22.md) for prioritized issues and development phases.
 
 ## Spider web, confidence, and two galaxy views
 
@@ -131,7 +141,7 @@ Prior proposal audit: 55 minutes × 100 people × 46 weeks × $75/hour × 70% = 
 
 ## Development / testing
 
-Tests in `tests/smoke_test.py` exercise navigation, résumé intake/confirmation, survey persistence, attested spider web / profile-focused galaxy, galaxy focus and drag-only navigation, employee-persona loading, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
+Tests in `tests/smoke_test.py` exercise navigation, résumé skill/credential detection, approval/dismissal, duplicate prevention, contextual confidence pulses, survey persistence, attested spider web / profile-focused galaxy, galaxy focus and drag-only navigation, employee-persona loading, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
 
 ```shell
 python -m pytest tests/smoke_test.py -v
