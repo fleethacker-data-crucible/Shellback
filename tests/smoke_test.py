@@ -91,6 +91,16 @@ def test_synapse_employee_flow():
         assert 'Review owner' in page.locator('#wfStudyArea').inner_text()
         page.locator('#wfPractice').click()
         assert 'Needs practice' in page.locator('#wfStudyHistory').inner_text()
+        # Transform an approved synthetic outline to drafts with no invented answer key.
+        page.locator('#wfOutlineSkill').select_option('qualification-planning')
+        page.locator('#wfOutlineText').fill('1.1 Explain the turnover process\\n1.2 Describe escalation requirements')
+        page.locator('#wfOutlineImport').click()
+        assert 'REVIEW REQUIRED' in page.locator('#wfStudyArea').inner_text()
+        assert page.locator('#wfReviewed').is_disabled()
+        page.locator('#wfDraftReference').fill('Check status, owner and unresolved actions in approved source.')
+        page.locator('#wfDraftSave').click()
+        assert page.locator('#wfReviewed').is_enabled()
+
         page.locator('[data-workforce-tab="skillfleet"]').click()
         assert 'Shared capability coverage' in page.locator('[data-workforce-pane="skillfleet"]').inner_text()
         page.locator('#wfGoalSkill').select_option('sql-pipelines')
@@ -124,7 +134,8 @@ def test_synapse_employee_flow():
         page.locator('#wfApprovedOnly').check()
         assert 'OWNER-MARKED APPROVED' in page.locator('#wfKnowledgeRecords').inner_text()
         backup=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
-        assert len(backup['workforce']['modules'])==1
+        assert len(backup['workforce']['modules'])==3
+        assert len([x for x in backup['workforce']['modules'] if not x['answer']])==1
         assert len(backup['workforce']['mission']['requirements'])==1
         assert len(backup['workforce']['knowledge'])==1
         assert backup['workforce']['mentorship']['enabled'] is True
