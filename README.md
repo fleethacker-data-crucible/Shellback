@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.3 — galaxy-style capability intelligence and FLEETHACKER planning lab**
+**Version 0.4 — five integrated FLEETHACKER workforce workflows**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -8,7 +8,7 @@ Synapse is an employee-centered capability discovery and development prototype. 
 
 1. **Fastest:** download and double-click `Synapse-Standalone.html` (one file, all code embedded).
 2. **Development edition:** download/extract the repository or `Synapse-MVP.zip`, keeping `index.html` beside `src`. Open `index.html` in a recent Edge, Firefox, or Chrome browser.
-3. On **My capability profile**, select **Use synthetic example** to test résumé matching, explicitly confirm suggestions, and save a confidence pulse. Try the graph, radar, credential planner, team overview, and ROI lab.
+3. On **My capability profile**, use the synthetic example, explicitly confirm suggested skills and save an optional confidence pulse. Open **FLEETHACKER workforce** to explore the complete five-module toolkit.
 
 **No installation, package manager, internet, PowerShell, server, account, or admin privileges required.** All JavaScript and CSS are local. `index.html` should remain beside the `src` directory. If your browser policy blocks local scripts or localStorage from `file:` pages, serve the directory using an **approved** local hosting mechanism; do not bypass workstation restrictions.
 
@@ -25,6 +25,7 @@ Synapse is an employee-centered capability discovery and development prototype. 
 - Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
 - A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
 - **FLEETHACKER lab:** TEAMFORGE-inspired mission team composer, MENTORLINK opt-in mentor discovery, and KNOWLEDGE RELAY single-contributor knowledge watchlist
+- **FLEETHACKER workforce:** five modules with local training guides, study history, capability heatmaps, mission requirements, voluntary mentoring and owner-reviewed knowledge records
 - ROI scenario calculator with transparent formulas and separation of avoided spend versus recovered non-cash capacity
 - Local state persistence, JSON export/import/validation, delete/reset controls, no network calls
 
@@ -70,6 +71,26 @@ The Team Intelligence screen now includes three offline, synthetic-first plannin
 3. **Knowledge relay:** review unrepresented and one-person-held priority skills as potential documentation, pairing and cross-training opportunities. No predictions about retirement, attrition, performance, or readiness.
 
 The existing credential desk is an initial QUALFORGE foundation and the team aggregate covers SKILLFLEET's high-level capability mapping. Verified qualifications, mentoring opt-in workflows, real-time team synchronization, and operational staffing eligibility require an approved authenticated enterprise deployment.
+
+## FLEETHACKER workforce suite (all five concepts)
+
+The **FLEETHACKER workforce** navigation section connects the five projects from the original FLEETHACKER 2026 ideas discussion into one local-first workspace:
+
+| Concept | Implemented offline workflow | Data boundaries |
+| --- | --- | --- |
+| **QUALFORGE** | Employee-authored, source-referenced study guides, knowledge checks with a revealable reference, applied scenario prompts, practice/review history and revisit counts | Does **not** parse classified PQS files, validate practical demonstrations, create qualification sign-offs or use an AI endpoint. Guides must use explicitly authorized, nonsensitive material. |
+| **SKILLFLEET** | Aggregate 13-domain capability coverage, single-contributor indicators, voluntary growth goals, credential renewal horizon | Opt-in experience mentions are not verified skills; credential entries are self-declared. Aggregate coverage requires a minimum of three consenting profiles. |
+| **TEAMFORGE** | Requirements editor with minimum skill contributors and optional qualification text; mission roster checkboxes; compare coverage, disclosed availability and optional unverified credential claims | No assignment decisions or validated credential matching. Unknown availability remains unknown. A peer must expressly include qualification fields in their exported card. |
+| **MENTORLINK** | Mentor opt-in, topics, availability and introduction; searchable willing-mentor directory; contextual outreach draft | A shared skill is **not** mentoring consent. Mentoring fields require additional deliberate peer-card disclosure. |
+| **KNOWLEDGE RELAY** | Structured interview/capture (context, practice steps, next handoff and source), searchable drafts, owner-marked review status, knowledge-concentration watchlist and export of reviewed-only records | Owner-marked reviewed is **not** authoritative publication approval or document validation. No hidden scraping, AI interview or unrestricted collection. |
+
+Previous lightweight team-intelligence prototypes remain under **Team intelligence** for comparing candidate rosters, viewing potential mentors, and spotting single-contributor knowledge. The expanded workforce section provides persistence, editable training content, mission constraints, voluntary mentoring disclosures, and controlled transfer records.
+
+### Sharing across machines
+
+No server is needed: coworkers individually opt in, export Synapse peer JSON cards and hand them over through an approved medium. Every card shares only employee-reviewed skill mentions by default. Separate **unchecked** checkboxes allow additional disclosure of task confidence, mentoring offer/topics/availability, and self-entered credential names. These claims are clearly unverified; imports sanitize known fields and the sender cannot revoke already distributed copies.
+
+The workspace JSON backup also preserves guides, study history, mission needs, voluntary mentoring plans, growth goals, draft/owner-reviewed knowledge records, and the imported peer details with field-specific disclosure.
 
 ## Create and exchange team profiles
 
