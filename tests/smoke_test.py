@@ -93,7 +93,7 @@ def test_synapse_employee_flow():
         assert 'Needs practice' in page.locator('#wfStudyHistory').inner_text()
         # Transform an approved synthetic outline to drafts with no invented answer key.
         page.locator('#wfOutlineSkill').select_option('qualification-planning')
-        page.locator('#wfOutlineText').fill('1.1 Explain the turnover process\\n1.2 Describe escalation requirements')
+        page.locator('#wfOutlineText').fill('1.1 Explain the turnover process\n1.2 Describe escalation requirements')
         page.locator('#wfOutlineImport').click()
         assert 'REVIEW REQUIRED' in page.locator('#wfStudyArea').inner_text()
         assert page.locator('#wfReviewed').is_disabled()
