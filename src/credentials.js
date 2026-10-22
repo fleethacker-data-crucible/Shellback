@@ -46,7 +46,7 @@ function extract(raw){
   for(const item of patterns){item.re.lastIndex=0;const m=item.re.exec(clause);if(!m)continue;
    const before=clause.slice(Math.max(0,m.index-65),m.index).toLowerCase();
    const after=clause.slice(m.index+m[0].length,m.index+m[0].length+40).toLowerCase();
-   const future=/(?:pursu(?:ing|e)|studying|prepar(?:ing|e)|working\s+toward|planning\s+to|aspiring|seeking|hoping|not\s+(?:yet\s+)?certified|without|failed)\s*(?:for|a|the|to|in|an)?\s*$/i.test(before)
+   const future=/(?:pursu(?:ing|e)|studying|prepar(?:ing|e|ed)|working\s+toward|planning\s+to|aspiring|seeking|hoping|not\s+(?:yet\s+)?certified|without|failed)\s*(?:for|a|the|to|in|an)?\s*$/i.test(before)
      ||/^\s*(?:exam\s+prep|study\s+guide|in\s+progress|candidate|planned)\b/i.test(after);
    if(!future&&!results.has(item.key))results.set(item.key,{key:item.key,name:item.name,authority:item.authority,matched:(m[2]||'').trim().slice(0,100)});
   }
