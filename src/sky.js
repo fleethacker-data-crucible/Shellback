@@ -143,7 +143,7 @@ function render(o){
   drag={id,pointerId:e.pointerId,start:pos,prev:pos,started:false};dragMoved=false;hover=id;showTip(id);draw();
   try{surface.setPointerCapture(e.pointerId)}catch{}
  };
- function release(e){if(!drag||e.pointerId!==drag.pointerId)return;drag=null;draw();try{surface.releasePointerCapture(e.pointerId)}catch{}}
+ function release(e){if(!drag||e.pointerId!==drag.pointerId)return;const id=drag.id,wasMoved=drag.started;drag=null;draw();try{surface.releasePointerCapture(e.pointerId)}catch{}if(!wasMoved){dragMoved=true;onSelect?.(id)}}
  surface.onpointerup=release;surface.onpointercancel=release;
  surface.onpointerleave=()=>{if(!drag){hover=null;if(!keyboard)hideTip();draw()}};
  draw();
