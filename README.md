@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.5 — evidence-responsive galaxy, premium radar, drag-only interaction and transparent ROI**
+**Version 0.6 — attested-capability spider web, confidence shine, focused galaxy and fictional employee lab**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -15,14 +15,15 @@ Synapse is an employee-centered capability discovery and development prototype. 
 ## Features
 
 - 13 capability domains and 104 task-oriented skills
-- Premium capability radar with confidence rings, mint employee-confirmed experience and amber pending résumé suggestions, without inventing confidence for unrated skills
-- Evidence-responsive galaxy with 13 discipline clusters and 104 skills. Hover labels nodes without movement; only click-hold-drag moves nodes and connected neighbors.
+- **Attested-capability spider web:** confirming a capability adds a visible web spoke; attested breadth controls its extent, while an optional confidence pulse (0–4) increases glow and node prominence. Unanswered attested skills remain visibly unrated.
+- **Profile-focused galaxy:** 13 domains and 104 skills are available before onboarding or in Explore-all mode; after attestation, unrelated clusters are hidden by default. Hover only displays labels; click-hold-drag moves nodes and connected neighbors.
 - Radar with domain drill-down and unknown/missing-confidence behavior
 - 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
 - Plain-text résumé upload is scanned automatically. Amber candidates update the radar and galaxy immediately; employee confirmation turns them mint. Confidence remains separately self-reported.
-- Task-level survey capturing confidence, prior execution, voluntary activity recency, and independent vs approved-AI-assisted vs guided execution
+- **Attested-only confidence pulse:** employees can choose only confirmed skills to rate; earlier responses to withdrawn attestations remain local but are hidden from web and confidence counts. Independent, guided and approved-AI-assisted execution stay distinct.
 - Editable, unverified credential inventory with date horizon
 - Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
+- **Four fictional employee workspaces and peer cards** in [`examples/employees/`](examples/employees/README.md), plus a one-click persona selector to compare full local spider webs and galactic clusters
 - A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
 - **FLEETHACKER lab:** TEAMFORGE-inspired mission team composer, MENTORLINK opt-in mentor discovery, and KNOWLEDGE RELAY single-contributor knowledge watchlist
 - **FLEETHACKER workforce:** five modules with local training guides, study history, capability heatmaps, mission requirements, voluntary mentoring and owner-reviewed knowledge records
@@ -54,11 +55,17 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
 
-## Radar and galaxy after résumé intake
+## Spider web, confidence, and galaxy — accepted behavior
 
-The latest radar and galaxy use three distinct forms of information. **Amber** shows unreviewed local résumé keyword suggestions; **mint** shows employee-confirmed experience; **confidence (0–4)** is a separate, optional task-specific survey. Missing task confidence remains unknown, not zero. Uploading a plain-text résumé immediately updates the amber evidence overlays and the relative prominence of relevant discipline clusters. Confirmation turns those suggestions mint without fabricating proficiency.
+**Confirmation puts a skill on the spider web.** The web is a connected radial profile of **employee-attested capabilities**, not a confidence-only radar plot. Its spoke extent reflects how many relevant skills have been confirmed in that domain; confirmed skills that have not been rated still have a visible, neutral node. **Confidence makes a skill shine:** separately self-reported 0–4 task confidence increases a node's brightness, glow, stroke and modest radial prominence. Zero confidence stays visible but subdued, and missing confidence is unknown—not low proficiency.
 
-The galaxy preserves the original taxonomy branches and curated cross-domain skill bridges. **Hover never moves a node**: it only shows a skill tooltip and highlights connected branches. **Click** pins a skill and its related signals. **Click, hold and drag** temporarily moves that node and gently shifts its connected neighbors. After release, there is no attraction or repulsion. Reset galaxy restores the computed layout.
+**Only attested skills may be rated.** Before confirming any capability, the confidence task selector and save button are disabled. The dropdown subsequently contains *only* skills in the employee's confirmed list. Removing a skill removes it from the spider web and hides its prior confidence from visualization, without silently deleting the locally retained response.
+
+**Résumé upload updates the visuals immediately.** Amber outlined suggestions show unreviewed keyword matches outside the attested web. Confirming a suggestion changes it to mint and updates spider shape automatically, as does manually adding a skill. The **Refresh spider web** button is a manual redraw for reassurance; no navigation or reload is required.
+
+**The galaxy focuses after onboarding.** Before a profile has experience signals, all 13 domain clusters are available for exploration. With résumé suggestions but no confirmed skills, it initially displays suggested domains. Once the employee has confirmed one or more skills, **only those attested domains are visible by default**, with other skills in those domains retained as exploration opportunities. Use **Visible universe → All 13 domains** to reveal the full taxonomy again. Hover never moves nodes. Only click-hold-and-drag creates mild movement along connected branches.
+
+**Compare fictional employees.** Under **My capability profile**, select Morgan Vale (shipyard planning), Riley Chen (cybersecurity), Jordan Brooks (data/cloud engineering), or Casey Rivera (training/knowledge transfer). They are synthetic, not real accounts. The repository ships full workspace and peer-card JSON for each, with a detailed [import/export guide](examples/employees/README.md). The preexisting generic synthetic profile remains available separately.
 
 ## Login and local workspace boundaries
 
@@ -118,7 +125,7 @@ Prior proposal audit: 55 minutes × 100 people × 46 weeks × $75/hour × 70% = 
 
 ## Development / testing
 
-Tests in `tests/smoke_test.py` exercise navigation, résumé intake/confirmation, survey persistence, advanced radar/graph, constellation switching, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
+Tests in `tests/smoke_test.py` exercise navigation, résumé intake/confirmation, survey persistence, attested spider web / profile-focused galaxy, galaxy focus and drag-only navigation, employee-persona loading, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
 
 ```shell
 python -m pytest tests/smoke_test.py -v
