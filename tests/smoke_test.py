@@ -29,7 +29,6 @@ def test_synapse_employee_flow():
         page.locator('#loadResumeSample').click()
         assert page.locator('[data-confirm]').count()>3
         page.locator('[data-confirm]').first.click()
-        print('PROFILE_DIAGNOSTIC', {'count':page.locator('#profileCount').inner_text(), 'errors':errors, 'flash':page.locator('#flash').inner_text(), 'candidate_count':page.locator('[data-confirm]').count()})
         assert page.locator('#profileCount').inner_text()=='1'
         page.locator('#confidence').select_option('3')
         page.locator('#performed').select_option('recent')
@@ -203,8 +202,9 @@ def test_standalone_distribution():
         assert page.locator('[data-workforce-tab]').count()==5
         page.locator('[data-workforce-tab="teamforge"]').click()
         assert page.locator('#wfMissionRequirements').count()==1
+        page.locator('button[data-view="team"]').first.click()
         page.locator('#fleetTabMentors').click()
-        assert page.locator('#fleetMentorMatches').count()==1
+        assert page.locator('#fleetMentorMatches').is_visible()
         page.locator('button[data-view="graph"]').first.click()
         skill=page.locator('#graphSvg .sky-skill-node').first
         name=skill.get_attribute('aria-label')
