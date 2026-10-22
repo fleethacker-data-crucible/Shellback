@@ -246,6 +246,37 @@
 @media(max-width:800px){.graph-panel{padding:15px}.galaxy-surface,.galaxy-surface svg{min-height:300px}.radar-premium .radar-premium-label{font-size:10px}.roi-sensitivity{grid-template-columns:1fr}}
 @media(max-width:530px){.roi-submetrics{grid-template-columns:1fr}.viz-statline span{padding:6px 10px}.viz-hero{gap:7px}.galaxy-surface{border-radius:10px}}
 
+
+/* v0.6 confirmed skills spider-web semantics */
+.radar-spider .radar-spider-web{
+ stroke:#70bfc7;stroke-width:2.65;fill-opacity:.78;
+ filter:drop-shadow(0 0 12px rgba(74,209,209,.18));
+ transition:opacity .16s ease;
+}
+.radar-spider .radar-spider-branch{
+ stroke:#a8eadb;stroke-linecap:round;
+ filter:drop-shadow(0 0 6px rgba(87,235,208,.18));
+ pointer-events:none;
+}
+.radar-spider .radar-spider-branch.is-unrated{stroke:#92b3c7;stroke-dasharray:3 4}
+.radar-spider .radar-spider-node{cursor:pointer;transition:stroke-width .1s}
+.radar-spider .radar-spider-node.is-rated{filter:drop-shadow(0 0 9px rgba(113,253,221,.72))}
+.radar-spider .radar-spider-node.is-unrated{filter:drop-shadow(0 0 3px rgba(167,198,220,.2))}
+.radar-spider .radar-spider-node:hover{stroke-width:3.4}
+.spider-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding-bottom:12px}
+.spider-toolbar .breadcrumbs{margin:0}
+.spider-toolbar button#refreshRadar{white-space:nowrap;border-color:#4d857d;color:#b8fbe8;background:linear-gradient(115deg,#183d47,#122f41)}
+.spider-toolbar button#refreshRadar:hover{border-color:#80f9de;background:linear-gradient(115deg,#20535a,#173a4b)}
+.persona-loader{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:13px 0}
+.persona-loader label{width:100%;font-size:11px;color:#b6c9d4;font-weight:750}
+.persona-loader select{flex:1;max-width:390px;min-width:200px;padding:10px 11px;border:1px solid #3e6874;border-radius:9px;background:#132e42;color:#e6faf8}
+.persona-loader button{white-space:nowrap}
+#demoPersonaState{margin-top:6px;padding:8px 12px;background:#10273799;border-radius:8px;border:1px solid #28495c}
+#surveyAttestationHint{margin:0 0 10px}
+#surveySkill:disabled,#surveyForm button:disabled,#surveyForm select:disabled{opacity:.5;cursor:not-allowed}
+.graph-toolbar #graphScope{min-width:175px}
+@media(max-width:570px){.spider-toolbar button#refreshRadar{width:100%}.persona-loader select,.persona-loader button{width:100%;max-width:unset}}
+
 </style></head>
 <body>
 <div class="shell">
@@ -253,7 +284,7 @@
     <div class="workspace-label">WORKSPACE <span class="demo-pill">SYNTHETIC PILOT</span></div>
     <nav id="nav" aria-label="Application sections">
       <button data-view="overview" class="active"><span class="navicon">▦</span> Overview</button>
-      <button data-view="radar"><span class="navicon">◈</span> Capability radar</button>
+      <button data-view="radar"><span class="navicon">◈</span> Skills spider web</button>
       <button data-view="graph"><span class="navicon">⌘</span> Skills galaxy</button>
       <button data-view="profile"><span class="navicon">◉</span> My capability profile</button>
       <button data-view="credentials"><span class="navicon">▤</span> Credential desk</button>
@@ -270,11 +301,11 @@
     <div class="stats-grid"><article class="stat"><span>CAPABILITY DOMAINS</span><strong id="metricDomains">13</strong><small>Explore a connected skill taxonomy</small></article><article class="stat"><span>SKILLS IN TAXONOMY</span><strong id="metricSkills">104</strong><small>Task-oriented, not job-title limited</small></article><article class="stat"><span>YOUR CONFIRMED SKILLS</span><strong id="metricMine">0</strong><small>Explicitly employee-reviewed</small></article><article class="stat"><span>SURVEY RESPONSES</span><strong id="metricSurveys">0</strong><small>Self-report stays distinct from evidence</small></article></div>
     <div class="two-col"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">01 / A CAPABILITY MAP</div><h3>Explore your domain landscape</h3><p>After résumé intake, this chart highlights <b>pending candidates</b> and <b>confirmed experience</b> separately from optional confidence ratings.</p></div><button class="text-button" data-view="radar">Open radar ↗</button></div><div id="overviewRadar" class="chart-preview"></div></section><section class="panel"><div class="panel-heading"><div><div class="eyebrow">02 / BUILD A PROFILE</div><h3>From experiences to evidence</h3><p>Everything begins with informed employee control.</p></div></div><div class="steps"><div><b>01</b><span><strong>Suggest</strong><small>Paste a résumé or enter experiences. Identify candidate skills only.</small></span></div><div><b>02</b><span><strong>Confirm</strong><small>Review every candidate; missing ones can be added manually.</small></span></div><div><b>03</b><span><strong>Reflect</strong><small>Answer concrete task-confidence questions, separately recording execution mode.</small></span></div><div><b>04</b><span><strong>Develop</strong><small>Maintain credential plans and opt in to anonymous coverage sharing.</small></span></div></div></section></div>
   </section>
-  <section id="radar" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / RADAR</div><h2>Capability, not a scorecard.</h2><p>Choose a domain to drill into its skills. Two distinct evidence layers: the outer markers show skills mentioned in a résumé (amber) or employee-confirmed experience (mint); the inner shape represents only voluntary task-confidence responses (0–4). Resume keywords are not proficiency scores.</p></div><div class="panel radar-stage"><div class="viz-hero"><span class="viz-kicker">CAPABILITY ATLAS</span><span class="viz-note">Explore · drill down · compare evidence types</span></div><div id="radarStatus" class="viz-statline" aria-live="polite"></div><div id="radarBreadcrumb" class="breadcrumbs"></div><div class="radar-layout"><div class="radar-figure" id="radarCanvas"></div><div><div id="radarSkillList"></div><div id="radarInfo" class="detail-card"></div></div></div></div></section>
-  <section id="graph" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / CAPABILITY GALAXY</div><h2>Your connected skills galaxy.</h2><p>Explore organically clustered capabilities, visible learning bridges between domains, and a precisely navigable skill universe. Hover reveals labels without movement; click selects a skill; click-and-hold to drag a node and its connected branches. The galaxy rebalances to reflect résumé candidates and confirmed experience without assigning proficiency.</p></div><div class="panel graph-panel"><div class="viz-hero"><span class="viz-kicker">YOUR SKILL UNIVERSE</span><span class="viz-note">13 clusters · 104 skills · connected learning pathways</span></div><div id="galaxyStatus" class="viz-statline" aria-live="polite"></div><div class="graph-toolbar"><label>Domain <select id="graphFilter"><option value="all">All domains</option></select></label><label>Find a skill <input id="graphSearch" placeholder="e.g. SQL, AWS, training..." type="search"></label><button id="graphReset" class="secondary">Reset galaxy</button><span class="hint">Hover = inspect · Click = select · Hold + drag = rearrange · No hover physics</span></div><div class="graph-layout"><div class="graph-surface galaxy-surface" id="graphSurface"><svg id="graphSvg" role="img" aria-label="Interactive galaxy of 104 connected skill nodes grouped into 13 capability clusters" viewBox="0 0 950 550" preserveAspectRatio="xMidYMid meet"></svg><div id="graphHoverTip" class="sky-hover-tip" role="tooltip" hidden></div></div><div id="graphDetail" class="graph-detail"></div></div><div id="graphLegend" class="graph-legend"></div><div id="skyExplanation" class="sky-explanation" aria-live="polite"></div></div></section>
-  <section id="profile" class="view"><div class="section-intro"><div class="eyebrow">YOUR WORKSPACE / EMPLOYEE OWNED</div><h2>My capability profile.</h2><p>Draft a profile from relevant experience, confirm suggestions, and submit optional confidence surveys. Nothing is silently inferred as demonstrated proficiency.</p></div><div class="demo-profile-action"><button class="secondary" id="loadDemoProfile">✦ Populate synthetic example profile</button><small>Fictional survey data only. Replaces the current local profile after confirmation.</small></div><div class="three-stats"><div><span>Confirmed skills</span><strong id="profileCount">0</strong></div><div><span>Task pulse responses</span><strong id="surveyCount">0</strong></div><div><span>Sharing</span><strong id="sharingState">OFF</strong></div></div>
+  <section id="radar" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / RADAR</div><h2>Your skills spider web.</h2><p>Attest to a skill to put it on the web. The more skills you confirm in a domain, the more that branch extends. A confidence pulse gives its node more brightness, glow, and prominence—without being required to create the web. Résumé keyword suggestions remain outside the web until you confirm them.</p></div><div class="panel radar-stage"><div class="viz-hero"><span class="viz-kicker">ATTESTED CAPABILITY WEB</span><span class="viz-note">Shape = confirmed skills · shine = self-reported confidence</span></div><div id="radarStatus" class="viz-statline" aria-live="polite"></div><div class="spider-toolbar"><div id="radarBreadcrumb" class="breadcrumbs"></div><button id="refreshRadar" class="secondary" type="button" title="Rebuild the spider web from confirmed skills and confidence ratings">↻ Refresh spider web</button></div><div class="radar-layout"><div class="radar-figure" id="radarCanvas"></div><div><div id="radarSkillList"></div><div id="radarInfo" class="detail-card"></div></div></div></div></section>
+  <section id="graph" class="view"><div class="section-intro"><div class="eyebrow">EXPLORE / CAPABILITY GALAXY</div><h2>Your connected skills galaxy.</h2><p>Before you begin, explore the full taxonomy. Once you confirm your skills, the galaxy focuses on those domains and hides unrelated clusters by default. Hover is stationary; click a star to inspect it; click-and-hold to rearrange connected nodes.</p></div><div class="panel graph-panel"><div class="viz-hero"><span class="viz-kicker">YOUR SKILL UNIVERSE</span><span class="viz-note">Focused on your attested disciplines · switch to explore all</span></div><div id="galaxyStatus" class="viz-statline" aria-live="polite"></div><div class="graph-toolbar"><label>Visible universe <select id="graphScope"><option value="focus">My relevant domains</option><option value="all">All 13 domains (explore)</option></select></label><label>Domain <select id="graphFilter"><option value="all">All visible domains</option></select></label><label>Find a skill <input id="graphSearch" placeholder="e.g. SQL, AWS, training..." type="search"></label><button id="graphReset" class="secondary">Reset galaxy</button><span class="hint">Hover = inspect · Click = select · Hold + drag = rearrange · No hover physics</span></div><div class="graph-layout"><div class="graph-surface galaxy-surface" id="graphSurface"><svg id="graphSvg" role="img" aria-label="Interactive galaxy of 104 connected skill nodes grouped into 13 capability clusters" viewBox="0 0 950 550" preserveAspectRatio="xMidYMid meet"></svg><div id="graphHoverTip" class="sky-hover-tip" role="tooltip" hidden></div></div><div id="graphDetail" class="graph-detail"></div></div><div id="graphLegend" class="graph-legend"></div><div id="skyExplanation" class="sky-explanation" aria-live="polite"></div></div></section>
+  <section id="profile" class="view"><div class="section-intro"><div class="eyebrow">YOUR WORKSPACE / EMPLOYEE OWNED</div><h2>My capability profile.</h2><p>Draft a profile from relevant experience, confirm suggestions, and submit optional confidence surveys. Nothing is silently inferred as demonstrated proficiency.</p></div><div class="demo-profile-action"><button class="secondary" id="loadDemoProfile">✦ Populate synthetic example profile</button><small>Fictional survey data only. Replaces the current local profile after confirmation.</small><div class="persona-loader"><label for="demoPersona">Try a different fictional employee</label><select id="demoPersona"><option value="">Choose an employee</option></select><button class="secondary" id="loadPersona">Load fictional profile</button></div><p id="demoPersonaState" class="muted" aria-live="polite">No fictional persona selected. Your local data is never an authenticated account.</p></div><div class="three-stats"><div><span>Confirmed skills</span><strong id="profileCount">0</strong></div><div><span>Task pulse responses</span><strong id="surveyCount">0</strong></div><div><span>Sharing</span><strong id="sharingState">OFF</strong></div></div>
     <div class="two-col profile-grid"><section class="panel"><div class="panel-heading"><div><div class="eyebrow">A / EXPERIENCE INTAKE</div><h3>Résumé-assisted onboarding</h3><p>Upload a résumé to immediately preview amber skill candidates in your radar and galaxy. Confirm each candidate to turn its marker mint. Neither status changes your confidence rating.</p></div></div><div class="inline-form"><label for="resumeFile">Upload a plain-text résumé (.txt; processed immediately)</label><input id="resumeFile" type="file" accept=".txt,text/plain"><label for="resumeText">Or paste selected experience</label><textarea id="resumeText" rows="6" placeholder="Designed AWS infrastructure, wrote SQL pipelines, used Power BI ..."></textarea><div class="button-row"><button class="primary" id="scanResume">Find candidate skills</button><button class="secondary" id="loadResumeSample">Use synthetic example</button></div></div><div class="profile-flow-note">Résumé upload → <b>amber suggestions</b> → your confirmation → <b>mint markers</b>. Optional confidence pulses add a separate shape to the radar. All processing is local.</div><div id="candidateBox" class="candidates"></div></section>
-      <section class="panel"><div class="panel-heading"><div><div class="eyebrow">B / SELF-REPORT</div><h3>Confidence pulse</h3><p>Answer for a specific task—not your general worth or performance. You can update previous answers.</p></div></div><div id="surveyForm" class="inline-form"><label for="surveySkill">Choose a task</label><select id="surveySkill"></select><div id="surveyQuestion" class="survey-question"></div><label for="confidence">How confident are you that you could do this task today?</label><select id="confidence"><option value="">Choose a response</option><option value="0">0 — Not yet confident</option><option value="1">1 — With substantial support</option><option value="2">2 — With some support</option><option value="3">3 — Confident with references</option><option value="4">4 — Confident independently</option></select><label for="performed">Have you performed this task?</label><select id="performed"><option value="">Choose experience</option><option value="never">Not yet</option><option value="before">Previously</option><option value="recent">Within last 90 days (self-declared)</option></select><label for="method">How was it performed?</label><select id="method"><option value="">Choose execution mode</option><option value="none">Not yet performed</option><option value="independent">Independently</option><option value="ai">With approved AI assistance</option><option value="guided">With guidance / collaboration</option></select><label for="surveyNote">Optional context (local only)</label><textarea id="surveyNote" rows="2" placeholder="What did you work on? Avoid sensitive details."></textarea><button class="primary" id="saveSurvey">Save task reflection</button><small class="muted">This does not validate qualifications, credential status, or access permissions.</small></div></section></div>
+      <section class="panel"><div class="panel-heading"><div><div class="eyebrow">B / SELF-REPORT</div><h3>Confidence pulse</h3><p>Only capabilities you have explicitly attested to are eligible for a confidence pulse. Confirm a skill first to add it to your web; then rate your confidence to make it shine.</p></div></div><div id="surveyForm" class="inline-form"><p class="profile-flow-note" id="surveyAttestationHint" aria-live="polite">Confirm a capability to unlock its confidence pulse.</p><label for="surveySkill">Choose one of my confirmed skills</label><select id="surveySkill"></select><div id="surveyQuestion" class="survey-question"></div><label for="confidence">How confident are you that you could do this task today?</label><select id="confidence"><option value="">Choose a response</option><option value="0">0 — Not yet confident</option><option value="1">1 — With substantial support</option><option value="2">2 — With some support</option><option value="3">3 — Confident with references</option><option value="4">4 — Confident independently</option></select><label for="performed">Have you performed this task?</label><select id="performed"><option value="">Choose experience</option><option value="never">Not yet</option><option value="before">Previously</option><option value="recent">Within last 90 days (self-declared)</option></select><label for="method">How was it performed?</label><select id="method"><option value="">Choose execution mode</option><option value="none">Not yet performed</option><option value="independent">Independently</option><option value="ai">With approved AI assistance</option><option value="guided">With guidance / collaboration</option></select><label for="surveyNote">Optional context (local only)</label><textarea id="surveyNote" rows="2" placeholder="What did you work on? Avoid sensitive details."></textarea><button class="primary" id="saveSurvey">Save task reflection</button><small class="muted">This does not validate qualifications, credential status, or access permissions.</small></div></section></div>
     <section class="panel"><div class="panel-heading"><div><div class="eyebrow">C / CONTROL & CORRECTION</div><h3>My confirmed capabilities</h3><p>Mark skills you want represented. Resumé suggestions stay pending until individually confirmed.</p></div><button class="secondary" id="clearMyData">Clear my profile</button></div><div class="manual-add"><label for="manualSkill">Add any skill manually</label><select id="manualSkill"></select><button id="manualAdd" class="secondary">Add skill</button></div><div id="mySkills" class="my-skills"></div><div class="consent"><div><h4>Contribute to team coverage aggregates</h4><p>Optional. Only confirmed skill coverage is shared in the team demo, and only in groups of 3 or more. No individual confidence, surveys, notes, or résumé text appear in team views.</p></div><label class="toggle"><input id="shareToggle" type="checkbox"><span class="switch"></span><b id="shareText">Off</b></label></div></section>
   </section>
   <section id="credentials" class="view"><div class="section-intro"><div class="eyebrow">PLAN / CREDENTIAL READINESS</div><h2>Credential desk.</h2><p>A voluntary inventory and renewal planner. Every item is employee-entered and unverified; it cannot substitute for authoritative Navy qualification systems.</p></div><div class="two-col"><section class="panel"><div class="panel-heading"><h3>Add a credential or qualification</h3></div><div class="inline-form"><label for="credName">Credential name</label><input id="credName" placeholder="e.g. AWS Solutions Architect – Professional"><label for="credAuthority">Issuing authority</label><input id="credAuthority" placeholder="e.g. AWS, internal authority"><label for="credExpiry">Expiration or renewal date (optional)</label><input id="credExpiry" type="date"><button class="primary" id="addCredential">Add to my inventory</button><p class="note">Do not enter credential numbers, personal IDs, classified work details, or restricted records.</p></div></section><section class="panel"><div class="panel-heading"><h3>My renewal horizon</h3></div><div id="credentialList" class="credential-list"></div></section></div></section>
@@ -455,9 +486,14 @@ function layout(skills,profile,pending=[]){
 }
 function render(o){
  stop();
- const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],onSelect,onReflect,modeLabel}=o;
+ const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],scope='focus',onSelect,onReflect,modeLabel}=o;
  const all=layout(skills,profile,pending),byId=new Map(all.map(p=>[p.s.id,p])),pendingSet=new Set(pending);
- const displayed=new Set(skills.filter(s=>(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
+ // Before onboarding, exploration displays the full taxonomy. Once the
+ // employee attests to skills, only domains with confirmed capabilities are
+ // shown by default. A résumé-only draft focuses on pending candidate domains.
+ const attested=new Set(profile.confirmed||[]),profileStarted=attested.size>0||pendingSet.size>0;
+ const activeDomains=new Set(skills.filter(s=>scope==='all'||!profileStarted||((attested.size?attested:pendingSet).has(s.id))).map(s=>s.di));
+ const displayed=new Set(skills.filter(s=>activeDomains.has(s.di)&&(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
  const adj=new Map,edges=[],seen=new Set;
  function link(a,b,type='local'){
   if(!byId.has(a)||!byId.has(b)||a===b)return;
@@ -481,6 +517,7 @@ function render(o){
   ns('circle',{cx:(475+Math.cos(theta)*r*1.58).toFixed(1),cy:(275+Math.sin(theta)*r*.96).toFixed(1),r:i%17===0?1.2:.55,fill:i%9===0?'#aeafe9':'#a9e5f3',opacity:i%9===0?.27:.11},sky)}
  const countByDomain=Array.from({length:13},(_,di)=>({confirmed:all.filter(p=>p.s.di===di&&p.confirmed).length,pending:all.filter(p=>p.s.di===di&&p.pending).length}));
  for(let di=0;di<13;di++){
+  if(!activeDomains.has(di))continue;
   const angle=di*GOLDEN-.45,rad=64+Math.sqrt((di+.7)/13)*190,stats=countByDomain[di],boost=stats.confirmed*4+stats.pending*2;
   const x=475+Math.cos(angle)*(rad*1.37+boost),y=275+Math.sin(angle)*(rad*.88+boost*.38),g=ns('g',{class:'galaxy-domain-hub','data-domain':di},hubLayer);
   ns('circle',{cx:x,cy:y,r:66+stats.confirmed*2+stats.pending,fill:colors[di],opacity:.016+stats.confirmed*.011+stats.pending*.004},g);
@@ -556,9 +593,9 @@ function render(o){
  surface.onpointerup=release;surface.onpointercancel=release;
  surface.onpointerleave=()=>{if(!drag){hover=null;if(!keyboard)hideTip();draw()}};
  draw();
- const chosen=byId.get(selected)?.s,answer=chosen&&profile.surveys?.[chosen.id];
+ const chosen=displayed.has(selected)?byId.get(selected)?.s:null,answer=chosen&&profile.surveys?.[chosen.id];
  detail.innerHTML=chosen?`<div class="eyebrow">CAPABILITY DETAIL</div><h3>${esc(chosen.name)}</h3><p>${esc(chosen.task)}</p><dl><dt>Discipline</dt><dd>${esc(chosen.domain)}</dd><dt>Profile signal</dt><dd>${profile.confirmed?.includes(chosen.id)?'Employee confirmed':pendingSet.has(chosen.id)?'Unreviewed résumé candidate':'Not provided'}</dd><dt>Self-reported confidence</dt><dd>${answer?esc(answer.confidence)+'/4':'Not answered'}</dd><dt>Execution mode</dt><dd>${answer?esc(modeLabel(answer.method)):'Not reported'}</dd><dt>Verification</dt><dd>Not established</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:
- `<div class="eyebrow">YOUR CAPABILITY UNIVERSE</div><h3>Read the galaxy at a glance</h3><p>Every cluster is a discipline. Brighter, larger clusters contain more résumé signals or employee-confirmed experience.</p><p><b>Mint ring</b> = you confirmed experience. <b>Amber dotted ring</b> = awaiting review after résumé intake. Brightness inside a star = voluntary confidence reflection.</p><p><b>Hover</b> to identify a skill without moving anything. <b>Click</b> to pin its relationships. <b>Click, hold and drag</b> a star to rearrange its network.</p><p class="muted">No inferred proficiency, qualification or personnel fitness score.</p>`;
+ `<div class="eyebrow">YOUR CAPABILITY UNIVERSE</div><h3>Read the galaxy at a glance</h3><p>Each visible cluster is a relevant discipline. Only disciplines with attested skills appear once you have a confirmed profile. Use “Show all domains” to explore the full taxonomy.</p><p><b>Mint ring</b> = you confirmed experience. <b>Amber dotted ring</b> = awaiting review after résumé intake. Brightness inside a star = voluntary confidence reflection.</p><p><b>Hover</b> to identify a skill without moving anything. <b>Click</b> to pin its relationships. <b>Click, hold and drag</b> a star to rearrange its network.</p><p class="muted">No inferred proficiency, qualification or personnel fitness score.</p>`;
  if(chosen){
   const next=[...(adj.get(chosen.id)||[])].filter(x=>displayed.has(x)).slice(0,12);
   if(next.length){const section=document.createElement('section');section.className='sky-relationships';section.innerHTML='<h4>Linked capabilities</h4><p>Conceptual learning pathways, not observed coworker interactions.</p>'+next.map(k=>`<button class="sky-related" data-related-skill="${esc(k)}">${esc(byId.get(k).s.name)}</button>`).join('');detail.appendChild(section);section.onclick=e=>{const b=e.target.closest('[data-related-skill]');if(b)onSelect?.(b.dataset.relatedSkill)}}
@@ -566,7 +603,7 @@ function render(o){
  }
  const c=all.filter(p=>p.confirmed).length,a=all.filter(p=>p.pending).length;
  legend.innerHTML=`<span class="legend-item"><i style="background:#5de7d2"></i>${c} confirmed experience</span><span class="legend-item"><i style="background:#f3bd76"></i>${a} résumé candidates</span><span class="legend-item"><i style="background:#98aec6"></i>Grey = no response</span><span class="legend-item"><i style="background:#e0ad79"></i>Cross-domain links</span>`;
- return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).length,clusters:13,relations:edges.length,confirmed:c,pending:a};
+ return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).filter(id=>attested.has(id)).length,clusters:activeDomains.size,relations:edges.length,confirmed:c,pending:a,visible:displayed.size,focused:scope!=='all'&&profileStarted};
 }
 global.SynapseSky={render,stop,layout,strength,bridges};
 })(window);
@@ -884,6 +921,461 @@ global.SynapseWorkforce={init,render,normalize,fresh,open:pane};
 })(window);
 
 </script><script>
+(function(global){'use strict';global.SynapseDemoProfiles=[
+  {
+    "id": "morgan-vale",
+    "name": "Morgan Vale",
+    "role": "Shipyard Maintenance Planner",
+    "overview": "Maintenance work packages, fleet sustainment, qualification planning, and practical operations handoffs.",
+    "workspace": {
+      "version": 1,
+      "profile": {
+        "confirmed": [
+          "qualification-planning",
+          "work-package-readiness",
+          "fleet-sustainment",
+          "shipyard-process-mapping",
+          "maintenance-coordination",
+          "technical-work-instructions",
+          "risk-register",
+          "safety-process-awareness",
+          "configuration-management",
+          "knowledge-transfer",
+          "technical-writing"
+        ],
+        "surveys": {
+          "qualification-planning": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "work-package-readiness": {
+            "confidence": 3,
+            "performed": "before",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "fleet-sustainment": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "shipyard-process-mapping": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "maintenance-coordination": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "technical-work-instructions": {
+            "confidence": 4,
+            "performed": "before",
+            "method": "ai",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "risk-register": {
+            "confidence": 2,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "safety-process-awareness": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "configuration-management": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "knowledge-transfer": {
+            "confidence": 2,
+            "performed": "before",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          }
+        },
+        "credentials": [
+          {
+            "id": "demo-credential-morgan-vale-1",
+            "name": "Synthetic Maintenance Planner Familiarization",
+            "authority": "Synthetic training program",
+            "expiry": "2027-09-30",
+            "created": "2026-10-22"
+          }
+        ],
+        "consent": false,
+        "candidates": [
+          "systems-integration",
+          "process-improvement"
+        ],
+        "displayName": "Morgan Vale",
+        "demoPersona": "morgan-vale"
+      },
+      "roi": {},
+      "workforce": {}
+    }
+  },
+  {
+    "id": "riley-chen",
+    "name": "Riley Chen",
+    "role": "Cybersecurity & Compliance Analyst",
+    "overview": "Access review processes, defensive cyber architecture, security documentation, and risk analysis.",
+    "workspace": {
+      "version": 1,
+      "profile": {
+        "confirmed": [
+          "threat-modeling",
+          "security-controls",
+          "vulnerability-triage",
+          "identity-access",
+          "zero-trust-design",
+          "incident-readiness",
+          "access-reviews",
+          "security-documentation",
+          "risk-assessment",
+          "cloud-observability",
+          "audit-evidence"
+        ],
+        "surveys": {
+          "threat-modeling": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "security-controls": {
+            "confidence": 3,
+            "performed": "before",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "vulnerability-triage": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "identity-access": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "zero-trust-design": {
+            "confidence": 2,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "incident-readiness": {
+            "confidence": 4,
+            "performed": "before",
+            "method": "ai",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "access-reviews": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "security-documentation": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "risk-assessment": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          }
+        },
+        "credentials": [
+          {
+            "id": "demo-credential-riley-chen-1",
+            "name": "Synthetic Security Foundations Badge",
+            "authority": "Synthetic training program",
+            "expiry": "2027-04-12",
+            "created": "2026-10-22"
+          }
+        ],
+        "consent": false,
+        "candidates": [
+          "resilience-recovery",
+          "aws-architecture"
+        ],
+        "displayName": "Riley Chen",
+        "demoPersona": "riley-chen"
+      },
+      "roi": {},
+      "workforce": {}
+    }
+  },
+  {
+    "id": "jordan-brooks",
+    "name": "Jordan Brooks",
+    "role": "Data & Cloud Engineer",
+    "overview": "Data pipelines, dashboards, cloud architecture, automation, and AI-assisted prototyping.",
+    "workspace": {
+      "version": 1,
+      "profile": {
+        "confirmed": [
+          "sql-pipelines",
+          "data-quality",
+          "data-modeling",
+          "power-bi",
+          "dashboard-design",
+          "aws-architecture",
+          "infrastructure-as-code",
+          "python-development",
+          "ci-cd-pipelines",
+          "ai-orchestration",
+          "data-governance",
+          "metrics-definition"
+        ],
+        "surveys": {
+          "sql-pipelines": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "data-quality": {
+            "confidence": 3,
+            "performed": "before",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "data-modeling": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "power-bi": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "dashboard-design": {
+            "confidence": 2,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "aws-architecture": {
+            "confidence": 4,
+            "performed": "before",
+            "method": "ai",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "infrastructure-as-code": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "python-development": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "ci-cd-pipelines": {
+            "confidence": 2,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "ai-orchestration": {
+            "confidence": 3,
+            "performed": "before",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          }
+        },
+        "credentials": [
+          {
+            "id": "demo-credential-jordan-brooks-1",
+            "name": "Synthetic Cloud Architecture Workshop",
+            "authority": "Synthetic course provider",
+            "expiry": "2027-07-15",
+            "created": "2026-10-22"
+          }
+        ],
+        "consent": false,
+        "candidates": [
+          "workflow-automation",
+          "ai-outcome-validation"
+        ],
+        "displayName": "Jordan Brooks",
+        "demoPersona": "jordan-brooks"
+      },
+      "roi": {},
+      "workforce": {}
+    }
+  },
+  {
+    "id": "casey-rivera",
+    "name": "Casey Rivera",
+    "role": "Training & Knowledge Transfer Lead",
+    "overview": "Curriculum, mentoring, structured handoffs, onboarding, and qualification learning pathways.",
+    "workspace": {
+      "version": 1,
+      "profile": {
+        "confirmed": [
+          "curriculum-design",
+          "training-facilitation",
+          "mentoring",
+          "knowledge-transfer",
+          "onboarding-plans",
+          "documentation-stewardship",
+          "technical-writing",
+          "qualification-planning",
+          "technical-communication",
+          "cross-team-facilitation",
+          "requirements-analysis",
+          "safety-process-awareness"
+        ],
+        "surveys": {
+          "curriculum-design": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "training-facilitation": {
+            "confidence": 4,
+            "performed": "before",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "mentoring": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "knowledge-transfer": {
+            "confidence": 4,
+            "performed": "recent",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "onboarding-plans": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "documentation-stewardship": {
+            "confidence": 4,
+            "performed": "before",
+            "method": "ai",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "technical-writing": {
+            "confidence": 2,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "qualification-planning": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "technical-communication": {
+            "confidence": 3,
+            "performed": "recent",
+            "method": "independent",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          },
+          "cross-team-facilitation": {
+            "confidence": 3,
+            "performed": "before",
+            "method": "guided",
+            "note": "Fictional training scenario only.",
+            "updated": "2026-10-22"
+          }
+        },
+        "credentials": [
+          {
+            "id": "demo-credential-casey-rivera-1",
+            "name": "Synthetic Facilitator Workshop",
+            "authority": "Synthetic course provider",
+            "expiry": "2027-12-31",
+            "created": "2026-10-22"
+          }
+        ],
+        "consent": false,
+        "candidates": [
+          "peer-coaching",
+          "change-management"
+        ],
+        "displayName": "Casey Rivera",
+        "demoPersona": "casey-rivera"
+      },
+      "roi": {},
+      "workforce": {}
+    }
+  }
+];})(window);
+
+</script><script>
 /* Synapse MVP — no packages, trackers, remote calls, or hidden HR scoring. */
 (() => {
 'use strict';
@@ -926,10 +1418,10 @@ const SKILLS=domainDefs.flatMap(([domain,labels],di)=>labels.map((name,si)=>({id
 const skillById=Object.fromEntries(SKILLS.map(s=>[s.id,s]));
 const roiDefaults={employees:100,trainingCost:2000,trainingAvoidance:15,trainingHours:8,hourlyRate:75,externalSpend:100000,externalAvoidance:10,minutesSaved:55,weeks:46,realization:70,adoption:75,overlap:25,annualCost:60000};
 const STORAGE_KEY='synapse-mvp-v1';
-const newState=()=>({version:1,profile:{confirmed:[],surveys:{},credentials:[],consent:false,candidates:[]},roi:{...roiDefaults},fleetPlans:{},workforce:{}});
+const newState=()=>({version:1,profile:{confirmed:[],surveys:{},credentials:[],consent:false,candidates:[],displayName:'',demoPersona:''},roi:{...roiDefaults},fleetPlans:{},workforce:{}});
 let state;
 try{const loaded=JSON.parse(localStorage.getItem(STORAGE_KEY));state=validateState(loaded)?loaded:newState()}catch{state=newState()}
-let candidateIds=Array.isArray(state.profile.candidates)?state.profile.candidates.filter(id=>!!skillById[id]&&!state.profile.confirmed.includes(id)):[];let radarDomain=null;let graphSelected=null;let graphFilter='all';let graphSearch='';let noticeTimer;
+let candidateIds=Array.isArray(state.profile.candidates)?state.profile.candidates.filter(id=>!!skillById[id]&&!state.profile.confirmed.includes(id)):[];let radarDomain=null;let graphSelected=null;let graphFilter='all';let graphScope='focus';let graphSearch='';let noticeTimer;
 const synthetics=[
  {name:'Demo participant A',skills:['sql-pipelines','data-modeling','aws-architecture','data-quality','power-bi','api-design','knowledge-transfer','problem-framing','ai-orchestration']},
  {name:'Demo participant B',skills:['aws-architecture','cloud-networking','security-controls','incident-readiness','ci-cd-pipelines','git-workflows','agile-facilitation','qualification-planning','technical-writing']},
@@ -943,61 +1435,109 @@ const keywordAliases={
  'sql-pipelines':['sql','postgresql','t-sql','sql server'],'data-modeling':['data model','schema design'],'etl-elt':['etl','elt','extract transform'],'aws-architecture':['aws','amazon web services'],'infrastructure-as-code':['terraform','cloudformation','iac'],'cloud-networking':['vpc','route53'],'identity-access':['iam','sso'], 'javascript-development':['javascript','typescript','js'],'powershell-automation':['powershell','ps1'],'python-development':['python'],'api-design':['rest api','restful','api development'], 'power-bi':['power bi','powerbi'],'ci-cd-pipelines':['ci/cd','github actions','azure pipelines'],'git-workflows':['git','github','gitlab'],'agile-facilitation':['agile','scrum','sprint'],'ai-orchestration':['llm','ai agent','agentic','prompt engineering'],'ai-outcome-validation':['ai validation','ai evaluation'],'responsible-ai-use':['responsible ai','ai governance'],'rapid-prototyping':['prototyp','proof of concept'],'knowledge-transfer':['knowledge transfer','cross-training'],'systems-thinking':['systems thinking']
 };
 function validateState(x){return !!(x&&x.version===1&&x.profile&&Array.isArray(x.profile.confirmed)&&x.profile.surveys&&typeof x.profile.surveys==='object'&&Array.isArray(x.profile.credentials)&&typeof x.profile.consent==='boolean'&&x.roi&&typeof x.roi==='object')}
-function safeStateImport(x){if(!validateState(x))throw Error('This is not a valid Synapse v1 export.');const confirmed=[...new Set(x.profile.confirmed.filter(v=>typeof v==='string'&&skillById[v]))];const surveys={};for(const [id,v] of Object.entries(x.profile.surveys)){if(!skillById[id]||!v||!Number.isInteger(Number(v.confidence))||Number(v.confidence)<0||Number(v.confidence)>4)continue;surveys[id]={confidence:Number(v.confidence),performed:['never','before','recent'].includes(v.performed)?v.performed:'never',method:['none','independent','guided','ai'].includes(v.method)?v.method:'none',note:String(v.note??'').slice(0,1000),updated:String(v.updated??dateToday()).slice(0,10)}}const credentials=x.profile.credentials.slice(0,100).map(c=>({id:String(c.id??cryptoRandom()).slice(0,50),name:String(c.name??'').slice(0,160),authority:String(c.authority??'').slice(0,160),expiry:/^\d{4}-\d{2}-\d{2}$/.test(c.expiry||'')?c.expiry:'',created:String(c.created??dateToday()).slice(0,10)})).filter(c=>c.name);const roi={...roiDefaults};for(const k of Object.keys(roi)){let n=Number(x.roi[k]);if(Number.isFinite(n)&&n>=0&&n<=100000000)roi[k]=n}const teams=(x.teams&&Array.isArray(x.teams.items))?{active:String(x.teams.active||'').slice(0,80),items:x.teams.items.slice(0,25).map(t=>({id:String(t.id||'').slice(0,80),name:String(t.name||'Imported team').slice(0,80),priorities:Array.isArray(t.priorities)?t.priorities.filter(id=>skillById[id]).slice(0,104):[],members:Array.isArray(t.members)?t.members.slice(0,100).map(m=>({id:String(m.id||'').slice(0,70),name:String(m.name||'Peer').slice(0,70),synthetic:m.synthetic===true,issued:String(m.issued||'').slice(0,10),skills:Array.isArray(m.skills)?m.skills.filter(id=>skillById[id]).slice(0,104):[],surveys:Object.fromEntries(Object.entries(m.surveys||{}).filter(([id,r])=>skillById[id]&&r&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4&&['none','guided','independent','ai'].includes(r.method)).slice(0,104).map(([id,r])=>[id,{confidence:Number(r.confidence),method:r.method}])),mentorOptIn:m.mentorOptIn===true,mentorTopics:Array.isArray(m.mentorTopics)?m.mentorTopics.filter(id=>skillById[id]).slice(0,30):[],availability:['unknown','available','limited','unavailable'].includes(m.availability)?m.availability:'unknown',mentorIntro:String(m.mentorIntro||'').slice(0,500),qualificationClaims:Array.isArray(m.qualificationClaims)?m.qualificationClaims.slice(0,100).filter(x=>typeof x==='string').map(x=>x.slice(0,160)):[]})):[]})).filter(t=>t.id&&t.name)}:undefined;return {version:1,profile:{confirmed,surveys,credentials,candidates:Array.isArray(x.profile.candidates)?x.profile.candidates.filter(id=>!!skillById[id]&&!confirmed.includes(id)).slice(0,104):[],consent:x.profile.consent===true,shareId:typeof x.profile.shareId==='string'?x.profile.shareId.slice(0,70):undefined},roi,teams,workforce:window.SynapseWorkforce.normalize(x.workforce,id=>!!skillById[id]),fleetPlans:Object.fromEntries(Object.entries(x.fleetPlans&&typeof x.fleetPlans==='object'&&!Array.isArray(x.fleetPlans)?x.fleetPlans:{}).slice(0,25).filter(([id,p])=>id.length<=90&&p&&typeof p==='object').map(([id,p])=>[id,{mission:Array.isArray(p.mission)?p.mission.filter(k=>skillById[k]).slice(0,25):[],selected:Array.isArray(p.selected)?p.selected.filter(k=>typeof k==='string'&&k.length<=70).slice(0,100):[]}]))}}
+function safeStateImport(x){if(!validateState(x))throw Error('This is not a valid Synapse v1 export.');const confirmed=[...new Set(x.profile.confirmed.filter(v=>typeof v==='string'&&skillById[v]))];const surveys={};for(const [id,v] of Object.entries(x.profile.surveys)){if(!skillById[id]||!v||!Number.isInteger(Number(v.confidence))||Number(v.confidence)<0||Number(v.confidence)>4)continue;surveys[id]={confidence:Number(v.confidence),performed:['never','before','recent'].includes(v.performed)?v.performed:'never',method:['none','independent','guided','ai'].includes(v.method)?v.method:'none',note:String(v.note??'').slice(0,1000),updated:String(v.updated??dateToday()).slice(0,10)}}const credentials=x.profile.credentials.slice(0,100).map(c=>({id:String(c.id??cryptoRandom()).slice(0,50),name:String(c.name??'').slice(0,160),authority:String(c.authority??'').slice(0,160),expiry:/^\d{4}-\d{2}-\d{2}$/.test(c.expiry||'')?c.expiry:'',created:String(c.created??dateToday()).slice(0,10)})).filter(c=>c.name);const roi={...roiDefaults};for(const k of Object.keys(roi)){let n=Number(x.roi[k]);if(Number.isFinite(n)&&n>=0&&n<=100000000)roi[k]=n}const teams=(x.teams&&Array.isArray(x.teams.items))?{active:String(x.teams.active||'').slice(0,80),items:x.teams.items.slice(0,25).map(t=>({id:String(t.id||'').slice(0,80),name:String(t.name||'Imported team').slice(0,80),priorities:Array.isArray(t.priorities)?t.priorities.filter(id=>skillById[id]).slice(0,104):[],members:Array.isArray(t.members)?t.members.slice(0,100).map(m=>({id:String(m.id||'').slice(0,70),name:String(m.name||'Peer').slice(0,70),synthetic:m.synthetic===true,issued:String(m.issued||'').slice(0,10),skills:Array.isArray(m.skills)?m.skills.filter(id=>skillById[id]).slice(0,104):[],surveys:Object.fromEntries(Object.entries(m.surveys||{}).filter(([id,r])=>skillById[id]&&r&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4&&['none','guided','independent','ai'].includes(r.method)).slice(0,104).map(([id,r])=>[id,{confidence:Number(r.confidence),method:r.method}])),mentorOptIn:m.mentorOptIn===true,mentorTopics:Array.isArray(m.mentorTopics)?m.mentorTopics.filter(id=>skillById[id]).slice(0,30):[],availability:['unknown','available','limited','unavailable'].includes(m.availability)?m.availability:'unknown',mentorIntro:String(m.mentorIntro||'').slice(0,500),qualificationClaims:Array.isArray(m.qualificationClaims)?m.qualificationClaims.slice(0,100).filter(x=>typeof x==='string').map(x=>x.slice(0,160)):[]})):[]})).filter(t=>t.id&&t.name)}:undefined;return {version:1,profile:{confirmed,surveys,credentials,candidates:Array.isArray(x.profile.candidates)?x.profile.candidates.filter(id=>!!skillById[id]&&!confirmed.includes(id)).slice(0,104):[],consent:x.profile.consent===true,displayName:typeof x.profile.displayName==='string'?x.profile.displayName.slice(0,90):'',demoPersona:typeof x.profile.demoPersona==='string'?x.profile.demoPersona.slice(0,60):'',shareId:typeof x.profile.shareId==='string'?x.profile.shareId.slice(0,70):undefined},roi,teams,workforce:window.SynapseWorkforce.normalize(x.workforce,id=>!!skillById[id]),fleetPlans:Object.fromEntries(Object.entries(x.fleetPlans&&typeof x.fleetPlans==='object'&&!Array.isArray(x.fleetPlans)?x.fleetPlans:{}).slice(0,25).filter(([id,p])=>id.length<=90&&p&&typeof p==='object').map(([id,p])=>[id,{mission:Array.isArray(p.mission)?p.mission.filter(k=>skillById[k]).slice(0,25):[],selected:Array.isArray(p.selected)?p.selected.filter(k=>typeof k==='string'&&k.length<=70).slice(0,100):[]}]))}}
 function cryptoRandom(){return 'cred-'+Math.random().toString(36).slice(2,11)}
 function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch{flash('Browser storage is unavailable. Export to keep your changes.')}}
 function flash(message){const el=$('flash');el.textContent=message;el.classList.add('show');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>el.classList.remove('show'),4200)}
-function navigate(view){if(!$(view))return;if(view!=='graph')window.SynapseSky?.stop();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const titles={overview:'Mission capability, made visible.',radar:'Capability radar',graph:'Skills galaxy',profile:'My capability profile',credentials:'Credential desk',team:'Team intelligence',workforce:'FLEETHACKER workforce',roi:'ROI laboratory',trust:'Trust & governance'};$('pageTitle').textContent=titles[view];if(view==='radar')renderRadar();if(view==='graph')renderGraph();if(view==='team')renderTeam();if(view==='workforce')window.SynapseWorkforce?.render();if(view==='roi')renderRoi();window.scrollTo(0,0)}
-function init(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));$('exportBtn').onclick=exportJson;$('downloadJson').onclick=exportJson;$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=importJson;$('loadDemoProfile').onclick=loadDemoProfile;$('scanResume').onclick=scanResume;$('loadResumeSample').onclick=()=>{$('resumeText').value=sampleResume;scanResume()};$('resumeFile').onchange=readResumeFile;$('surveySkill').onchange=()=>{renderSurveyQuestion();loadPreviousSurvey()};$('saveSurvey').onclick=saveSurvey;$('manualAdd').onclick=addManualSkill;$('shareToggle').onchange=e=>{state.profile.consent=e.target.checked;persist();renderAll();flash(state.profile.consent?'Aggregate contribution enabled.':'Aggregate contribution withdrawn.')};$('clearMyData').onclick=()=>{if(!confirm('Clear your confirmed skills, surveys, and credentials? This cannot be undone without a backup.'))return;state.profile={confirmed:[],surveys:{},credentials:[],consent:false};persist();candidateIds=[];renderAll();flash('Your local profile was cleared.')};$('addCredential').onclick=addCredential;$('resetRoi').onclick=()=>{state.roi={...roiDefaults};persist();renderRoi();flash('Scenario restored to illustrative defaults.')};$('resetDemo').onclick=()=>{if(!confirm('Reset the local Synapse workspace? Export first if you need a backup.'))return;state=newState();persist();candidateIds=[];renderAll();navigate('overview');flash('Reset complete.')};$('graphFilter').onchange=e=>{graphFilter=e.target.value;graphSelected=null;renderGraph()};$('graphSearch').oninput=e=>{graphSearch=e.target.value.trim().toLowerCase();renderGraph()};$('graphReset').onclick=()=>{graphFilter='all';graphSearch='';graphSelected=null;$('graphFilter').value='all';$('graphSearch').value='';renderGraph()};domainDefs.forEach(([n],di)=>{const opt=document.createElement('option');opt.value=String(di);opt.textContent=n;$('graphFilter').appendChild(opt)});window.SynapseTeam.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs,synthetics});window.SynapseFleet.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs});window.SynapseWorkforce.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs});
+function navigate(view){if(!$(view))return;if(view!=='graph')window.SynapseSky?.stop();document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const titles={overview:'Mission capability, made visible.',radar:'Skills spider web',graph:'Skills galaxy',profile:'My capability profile',credentials:'Credential desk',team:'Team intelligence',workforce:'FLEETHACKER workforce',roi:'ROI laboratory',trust:'Trust & governance'};$('pageTitle').textContent=titles[view];if(view==='radar')renderRadar();if(view==='graph')renderGraph();if(view==='team')renderTeam();if(view==='workforce')window.SynapseWorkforce?.render();if(view==='roi')renderRoi();window.scrollTo(0,0)}
+function init(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.view)));$('exportBtn').onclick=exportJson;$('downloadJson').onclick=exportJson;$('importBtn').onclick=()=>$('importFile').click();$('importFile').onchange=importJson;$('loadDemoProfile').onclick=loadDemoProfile;$('scanResume').onclick=scanResume;$('loadResumeSample').onclick=()=>{$('resumeText').value=sampleResume;scanResume()};$('resumeFile').onchange=readResumeFile;$('surveySkill').onchange=()=>{renderSurveyQuestion();loadPreviousSurvey()};$('saveSurvey').onclick=saveSurvey;$('manualAdd').onclick=addManualSkill;$('refreshRadar').onclick=()=>{renderRadar();renderOverviewRadar();flash('Spider web refreshed from attested capabilities and optional confidence pulses.')};$('shareToggle').onchange=e=>{state.profile.consent=e.target.checked;persist();renderAll();flash(state.profile.consent?'Aggregate contribution enabled.':'Aggregate contribution withdrawn.')};$('clearMyData').onclick=()=>{if(!confirm('Clear your confirmed skills, surveys, and credentials? This cannot be undone without a backup.'))return;state.profile={confirmed:[],surveys:{},credentials:[],consent:false};persist();candidateIds=[];renderAll();flash('Your local profile was cleared.')};$('addCredential').onclick=addCredential;$('resetRoi').onclick=()=>{state.roi={...roiDefaults};persist();renderRoi();flash('Scenario restored to illustrative defaults.')};$('resetDemo').onclick=()=>{if(!confirm('Reset the local Synapse workspace? Export first if you need a backup.'))return;state=newState();persist();candidateIds=[];renderAll();navigate('overview');flash('Reset complete.')};$('graphScope').onchange=e=>{graphScope=e.target.value==='all'?'all':'focus';graphSelected=null;renderGraph()};$('graphFilter').onchange=e=>{graphFilter=e.target.value;graphSelected=null;renderGraph()};$('graphSearch').oninput=e=>{graphSearch=e.target.value.trim().toLowerCase();renderGraph()};$('graphReset').onclick=()=>{graphFilter='all';graphSearch='';graphSelected=null;graphScope='focus';$('graphScope').value='focus';$('graphFilter').value='all';$('graphSearch').value='';renderGraph()};domainDefs.forEach(([n],di)=>{const opt=document.createElement('option');opt.value=String(di);opt.textContent=n;$('graphFilter').appendChild(opt)});window.SynapseTeam.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs,synthetics});window.SynapseFleet.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs});window.SynapseWorkforce.init({get:()=>state,persist,flash,skills:SKILLS,domains:domainDefs});
  document.querySelectorAll('[data-workforce-open]').forEach(b=>b.addEventListener('click',()=>{navigate('workforce');window.SynapseWorkforce.open(b.dataset.workforceOpen)}));
+ const samples=window.SynapseDemoProfiles||[];
+ $('demoPersona').innerHTML='<option value="">Choose a fictional employee</option>'+samples.map(p=>`<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)} · ${escapeHTML(p.role)}</option>`).join('');
+ $('loadPersona').onclick=()=>{
+  const id=$('demoPersona').value,p=samples.find(x=>x.id===id);
+  if(!p)return flash('Choose a fictional employee.');
+  if(!confirm('Replace the current local workspace with '+p.name+' (fictional)? Export your current profile first if you need it.'))return;
+  state=safeStateImport(p.workspace);candidateIds=[...state.profile.candidates];radarDomain=null;graphSelected=null;graphFilter='all';graphScope='focus';graphSearch='';$('graphFilter').value='all';$('graphScope').value='focus';$('graphSearch').value='';
+  persist();renderAll();renderCandidates();$('shareName').value=p.name;navigate('radar');
+  flash('Loaded fictional '+p.role+' profile. The spider web now shows this employee\'s attested skills.');
+ };
  renderAll();renderCandidates();navigate('overview')}
 function renderAll(){window.SynapseWorkforce?.render();renderMetrics();renderSurveyOptions();renderConfirmed();renderCredentials();renderTeam();renderRoi();renderRadar();renderOverviewRadar();renderGraph()}
-function renderMetrics(){const c=state.profile.confirmed.length;const s=Object.keys(state.profile.surveys).length;$('metricDomains').textContent=domainDefs.length;$('metricSkills').textContent=SKILLS.length;$('metricMine').textContent=c;$('metricSurveys').textContent=s;$('profileCount').textContent=c;$('surveyCount').textContent=s;$('sharingState').textContent=state.profile.consent?'ON':'OFF';$('shareToggle').checked=state.profile.consent;$('shareText').textContent=state.profile.consent?'On':'Off';$('storageStatus').textContent='Storage: local browser only (localStorage). No remote scripts, telemetry, or API calls.'}
-function score(id){const v=state.profile.surveys[id];return v?Number(v.confidence):null}
+function renderMetrics(){
+ const who=String(state.profile.displayName||'').trim();
+ const demoId=state.profile.demoPersona||'';
+ $('demoPersonaState').textContent=demoId&&who?`Viewing fictional profile: ${who}. This is a local demo, not a signed-in user.`:'Viewing this browser\'s local profile. No authenticated account is active.';
+ $('demoPersona').value=demoId&&window.SynapseDemoProfiles?.some(p=>p.id===demoId)?demoId:'';
+ const c=state.profile.confirmed.length;const s=Object.keys(state.profile.surveys).filter(id=>state.profile.confirmed.includes(id)).length;$('metricDomains').textContent=domainDefs.length;$('metricSkills').textContent=SKILLS.length;$('metricMine').textContent=c;$('metricSurveys').textContent=s;$('profileCount').textContent=c;$('surveyCount').textContent=s;$('sharingState').textContent=state.profile.consent?'ON':'OFF';$('shareToggle').checked=state.profile.consent;$('shareText').textContent=state.profile.consent?'On':'Off';$('storageStatus').textContent='Storage: local browser only (localStorage). No remote scripts, telemetry, or API calls.'}
+function score(id){if(!state.profile.confirmed.includes(id))return null;const v=state.profile.surveys[id];return v?Number(v.confidence):null}
 function domainStats(di){const arr=SKILLS.filter(s=>s.di===di).map(s=>score(s.id)).filter(v=>v!==null);return {answered:arr.length,mean:arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null}}
 function svgRadar(items,{small=false}={}){
- const w=700,h=small?345:515,cx=350,cy=small?159:241,r=small?108:176,n=items.length,uid=small?'preview':'focus';
+ const w=700,h=small?346:515,cx=350,cy=small?158:242,r=small?109:175,n=items.length,uid=small?'preview':'focus';
  const pt=(i,f)=>{const angle=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(angle)*r*f,cy+Math.sin(angle)*r*f,angle]};
- const known=items.map((item,i)=>({item,i})).filter(o=>o.item.value!==null&&o.item.value!==undefined);
- const knownN=known.length,confCount=items.reduce((a,x)=>a+(x.claimed||0),0),candidateN=items.reduce((a,x)=>a+(x.pending||0),0);
- let svg=`<svg class="radar-svg advanced-radar radar-premium" viewBox="0 0 ${w} ${h}" role="img" aria-label="Capability radar showing independently separated task confidence, confirmed experience and resume suggestions.">
- <defs><radialGradient id="radar-deep-${uid}"><stop stop-color="#133c55" stop-opacity=".62"/><stop offset=".7" stop-color="#0c233c" stop-opacity=".25"/><stop offset="1" stop-color="#051120" stop-opacity="0"/></radialGradient>
- <linearGradient id="radar-fill-${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop stop-color="#67f8d9" stop-opacity=".38"/><stop offset="1" stop-color="#71a4fc" stop-opacity=".13"/></linearGradient>
- <filter id="radar-haze-${uid}" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter></defs>
- <circle cx="${cx}" cy="${cy}" r="${r+35}" fill="url(#radar-deep-${uid})"/>`;
- for(let t=4;t>=1;t--){let points=items.map((_,i)=>{const [x,y]=pt(i,t/4);return `${x.toFixed(2)},${y.toFixed(2)}`}).join(' ');
-  svg+=`<polygon class="radar-premium-ring radar-premium-ring-${t}" points="${points}" fill="none" stroke-width="${t===4?1.8:.85}"/>`;
+ const active=items.filter(x=>(x.claimed||0)>0).length;
+ const total=items.reduce((sum,item)=>sum+(item.claimed||0),0);
+ const pending=items.reduce((sum,item)=>sum+(item.pending||0),0);
+ const ratingCount=items.filter(x=>x.value!==null&&x.value!==undefined&&(x.claimed||0)>0).length;
+ const radii=items.map(item=>{
+  if(!(item.claimed>0))return 0;
+  const breadth=item.capacity?Math.min(1,item.claimed/item.capacity):1;
+  const confidence=item.value==null?null:Math.min(4,Math.max(0,Number(item.value)))/4;
+  return Math.min(.99,.23+.57*breadth+(confidence===null?0:.17*confidence));
+ });
+ const webPoints=radii.map((v,i)=>pt(i,v).slice(0,2).map(x=>x.toFixed(2)).join(',')).join(' ');
+ let out=`<svg class="radar-svg advanced-radar radar-premium radar-spider" viewBox="0 0 ${w} ${h}" role="img" aria-label="Spider web built from confirmed capabilities. Confidence only adjusts glow and node prominence.">
+ <defs>
+ <radialGradient id="radar-deep-${uid}"><stop stop-color="#143a57" stop-opacity=".68"/><stop offset=".7" stop-color="#0a263e" stop-opacity=".2"/><stop offset="1" stop-color="#071324" stop-opacity="0"/></radialGradient>
+ <linearGradient id="radar-spider-fill-${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop stop-color="#6bf3dd" stop-opacity=".45"/><stop offset=".6" stop-color="#4b9dd0" stop-opacity=".27"/><stop offset="1" stop-color="#4b82bc" stop-opacity=".12"/></linearGradient>
+ <filter id="radar-spider-glow-${uid}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4.5"/></filter>
+ </defs><circle cx="${cx}" cy="${cy}" r="${r+33}" fill="url(#radar-deep-${uid})"/>`;
+ for(let ring=4;ring>=1;ring--){
+  const points=items.map((_,i)=>pt(i,ring/4).slice(0,2).map(x=>x.toFixed(2)).join(',')).join(' ');
+  out+=`<polygon class="radar-premium-ring radar-premium-ring-${ring}" points="${points}" fill="none" stroke-width="${ring===4?1.8:.9}"/>`
  }
- for(let i=0;i<n;i++){const o=items[i],name=o.name,val=o.value,[x,y,a]=pt(i,1),[lx,ly]=pt(i,1+(small?.27:.28)),anchor=Math.cos(a)>.2?'start':Math.cos(a)<-.2?'end':'middle';
-  svg+=`<line class="radar-premium-axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;
-  const c=o.claimed||0,p=o.pending||0;
-  if(c||p){const [rx,ry]=pt(i,1.08);svg+=`<circle class="radar-evidence-halo ${c?'is-confirmed':'is-pending'}" cx="${rx}" cy="${ry}" r="${Math.min(11,4+(c+p)*1.55)}" fill="none" stroke="${c?'#56f4d5':'#facb8c'}" stroke-width="${c?2.7:2}" ${!c?'stroke-dasharray="2 3"':''}><title>${c} confirmed; ${p} pending résumé suggestions</title></circle>`;}
-  const label=(o.short||o.name).slice(0,small?16:23);
-  svg+=`<text class="radar-premium-label" tabindex="0" data-radar-index="${i}" text-anchor="${anchor}" dominant-baseline="middle" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}"><title>${escapeHTML(name)} — ${val===null?'Unrated':Number(val).toFixed(1)+'/4 confidence'}; ${c} confirmed, ${p} candidates</title>${escapeHTML(label)}</text>`;
+ for(let i=0;i<n;i++){
+  const item=items[i],claimed=item.claimed||0,suggested=item.pending||0,confidence=item.value;
+  const [x,y,a]=pt(i,1),[tx,ty]=pt(i,1+(small?.27:.28));
+  const anchor=Math.cos(a)>.2?'start':Math.cos(a)<-.2?'end':'middle';
+  const label=(item.short||item.name).slice(0,small?16:23);
+  out+=`<line class="radar-premium-axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;
+  if(claimed||suggested){const [hx,hy]=pt(i,1.08);
+   out+=`<circle class="radar-evidence-halo ${claimed?'is-confirmed':'is-pending'}" cx="${hx}" cy="${hy}" r="${Math.min(11,4+(claimed+suggested)*1.55)}" fill="none" stroke="${claimed?'#66f0d5':'#fac58e'}" stroke-width="${claimed?2.5:2}" ${!claimed?'stroke-dasharray="2 3"':''}><title>${claimed} confirmed capability mentions; ${suggested} awaiting review</title></circle>`;
+  }
+  out+=`<text class="radar-premium-label" tabindex="0" data-radar-index="${i}" text-anchor="${anchor}" dominant-baseline="middle" x="${tx.toFixed(2)}" y="${ty.toFixed(2)}"><title>${escapeHTML(item.name)} · ${claimed} confirmed · ${suggested} suggested · ${confidence==null?'Confidence not rated':'Self-reported confidence '+Number(confidence).toFixed(1)+'/4'}</title>${escapeHTML(label)}</text>`;
  }
- if(knownN===n){const points=known.map(({i,item})=>pt(i,item.value/4).slice(0,2).join(',')).join(' ');
-  svg+=`<polygon class="radar-premium-shape" points="${points}" fill="url(#radar-fill-${uid})"/><polygon points="${points}" fill="none" stroke="#62efd4" stroke-width="6" opacity=".3" filter="url(#radar-haze-${uid})"/>`;
+ if(active){
+  out+=`<polygon class="radar-spider-web" data-web-active="${active}" points="${webPoints}" fill="url(#radar-spider-fill-${uid})" stroke="#68c6c5" stroke-width="2.5" stroke-linejoin="round"/>`;
+  for(let i=0;i<n;i++){
+   const item=items[i];if(!(item.claimed>0))continue;
+   const [x,y]=pt(i,radii[i]),conf=item.value==null?null:Math.max(0,Math.min(4,Number(item.value))),rated=conf!==null;
+   const bright=rated?.12+conf*.20:.22;
+   const rr=rated?4+conf*2.1:5.1;
+   out+=`<line class="radar-spider-branch ${rated?'is-rated':'is-unrated'}" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke-opacity="${rated?(.3+conf*.145).toFixed(2):'.36'}" stroke-width="${rated?(2+conf*.65).toFixed(1):'2'}"/>`;
+   out+=`<circle class="radar-spider-aura" cx="${x}" cy="${y}" r="${rr*2.7}" fill="${rated?'#6af4d8':'#79a6bc'}" opacity="${Math.min(.48,bright*.4).toFixed(2)}" filter="url(#radar-spider-glow-${uid})"/>`;
+   out+=`<circle class="radar-spider-node ${rated?'is-rated':'is-unrated'}" cx="${x}" cy="${y}" r="${rr}" fill="${rated?'#bcffef':'#8fb3c4'}" stroke="${rated?'#61f2da':'#50778e'}" stroke-width="2" data-radar-index="${i}"><title>${escapeHTML(item.name)} — ${item.claimed} confirmed · ${rated?conf+'/4 self-rated confidence':'confidence unrated'}</title></circle>`;
+  }
  }else{
-  for(let i=0;i<n;i++){const o=items[i],next=items[(i+1)%n];if(o.value===null||next.value===null)continue;const [x,y]=pt(i,o.value/4),[u,v]=pt((i+1)%n,next.value/4);svg+=`<line class="radar-premium-segment" x1="${x}" y1="${y}" x2="${u}" y2="${v}"/>`;}
+  out+=`<text class="radar-premium-center" x="${cx}" y="${cy-9}" text-anchor="middle">No skills attested</text><text class="radar-premium-subtitle" x="${cx}" y="${cy+14}" text-anchor="middle">${pending?pending+' pending résumé suggestions':'Confirm capabilities to build the web'}</text>`;
  }
- for(const {i,item} of known){const [x,y]=pt(i,item.value/4);svg+=`<circle class="radar-premium-point" cx="${x}" cy="${y}" r="${small?4.5:6}" data-radar-index="${i}"><title>${escapeHTML(item.name)}: ${Number(item.value).toFixed(1)} / 4</title></circle>`;}
- svg+=`<circle cx="${cx}" cy="${cy}" r="2.5" fill="#a4e7e8" opacity=".8"/>`;
- if(!knownN){svg+=`<text class="radar-premium-center" x="${cx}" y="${cy-9}" text-anchor="middle">Confidence not rated</text><text class="radar-premium-subtitle" x="${cx}" y="${cy+14}" text-anchor="middle">${confCount} confirmed · ${candidateN} suggested</text>`}
- svg+=`<text class="radar-premium-footnote" x="${cx}" y="${h-10}" text-anchor="middle">OUTER MARKERS: EXPERIENCE · INNER SHAPE: OPTIONAL CONFIDENCE (0–4)</text></svg>`;
- return svg;
+ out+=`<text class="radar-premium-footnote" x="${cx}" y="${h-10}" text-anchor="middle">WEB = ATTESTED SKILLS · SHINE = VOLUNTARY CONFIDENCE (0–4)</text></svg>`;
+ return out;
 }
-function evidence(di){const group=SKILLS.filter(s=>s.di===di);return {claimed:group.filter(s=>state.profile.confirmed.includes(s.id)).length,pending:group.filter(s=>candidateIds.includes(s.id)).length}}
+function evidence(di){const group=SKILLS.filter(s=>s.di===di);return {claimed:group.filter(s=>state.profile.confirmed.includes(s.id)).length,pending:group.filter(s=>candidateIds.includes(s.id)).length,capacity:group.length}}
 function renderOverviewRadar(){const data=domainDefs.map(([n],di)=>({name:n,short:n.split(' & ')[0].split(',')[0],value:domainStats(di).mean,...evidence(di)}));$('overviewRadar').innerHTML=svgRadar(data,{small:true});$('overviewRadar').querySelectorAll('[data-radar-index]').forEach(e=>e.addEventListener('click',()=>{radarDomain=Number(e.dataset.radarIndex);navigate('radar')}))}
 function renderRadar(){
- const stats={confirmed:state.profile.confirmed.length,pending:candidateIds.length,confidence:Object.keys(state.profile.surveys).length};
+ const stats={confirmed:state.profile.confirmed.length,pending:candidateIds.length,confidence:Object.keys(state.profile.surveys).filter(id=>state.profile.confirmed.includes(id)).length};
  $('radarStatus').innerHTML=`<span><b>${stats.confirmed}</b> confirmed experience</span><span class="viz-amber"><b>${stats.pending}</b> résumé candidates</span><span><b>${stats.confidence}</b> optional confidence ratings</span>`;
-const items=radarDomain===null?domainDefs.map(([n],di)=>({name:n,short:n.replace(' & ',' / ').split(',')[0],value:domainStats(di).mean,...evidence(di)})):SKILLS.filter(s=>s.di===radarDomain).map(s=>({name:s.name,id:s.id,value:score(s.id),claimed:Number(state.profile.confirmed.includes(s.id)),pending:Number(candidateIds.includes(s.id))}));$('radarBreadcrumb').innerHTML=`<button id="radarHome">All domains</button>${radarDomain===null?'':`<button disabled>${escapeHTML(domainDefs[radarDomain][0])}</button>`}`;$('radarHome').onclick=()=>{radarDomain=null;renderRadar()};$('radarCanvas').innerHTML=svgRadar(items);$('radarCanvas').querySelectorAll('[data-radar-index]').forEach(el=>el.addEventListener('click',()=>selectRadarItem(Number(el.dataset.radarIndex),items)));$('radarSkillList').innerHTML='<div class="skill-list">'+items.map((it,i)=>`<button class="skill-item" data-radar-item="${i}"><b>${escapeHTML(it.name)}</b><small>${it.value===null?'Confidence unrated':it.value.toFixed(1)+' / 4'}${it.claimed?' · '+it.claimed+' confirmed':''}${it.pending?' · '+it.pending+' suggested':''}</small></button>`).join('')+'</div>';$('radarSkillList').querySelectorAll('[data-radar-item]').forEach(el=>el.onclick=()=>selectRadarItem(Number(el.dataset.radarItem),items));$('radarInfo').innerHTML=radarDomain===null?'<b>Choose a domain</b><p>See eight constituent capabilities. Mint rings represent confirmed résumé mentions; amber rings are unconfirmed candidates. Confidence remains unrated until a voluntary task pulse.</p>':'<b>Select a task</b><p>Use any axis or label to inspect its skill, confirmed experience and optional self-reported execution mode.</p>'}
-function selectRadarItem(i,items){if(radarDomain===null){radarDomain=i;renderRadar();return}const item=items[i],s=skillById[item.id],resp=state.profile.surveys[item.id];$('radarInfo').innerHTML=`<b>${escapeHTML(s.name)}</b><p>${escapeHTML(s.task)}</p><p>${resp?`Confidence: ${resp.confidence}/4 · Execution: ${escapeHTML(modeLabel(resp.method))} · Experience: ${escapeHTML(resp.performed)} · Updated: ${escapeHTML(resp.updated)}`:'No response has been recorded.'}</p><button class="secondary" id="radarAnswer">${resp?'Update':'Answer'} task reflection ↗</button>`;$('radarAnswer').onclick=()=>{navigate('profile');$('surveySkill').value=s.id;renderSurveyQuestion();loadPreviousSurvey()}}
+const items=radarDomain===null?domainDefs.map(([n],di)=>({name:n,short:n.replace(' & ',' / ').split(',')[0],value:domainStats(di).mean,...evidence(di)})):SKILLS.filter(s=>s.di===radarDomain).map(s=>({name:s.name,id:s.id,value:score(s.id),claimed:Number(state.profile.confirmed.includes(s.id)),pending:Number(candidateIds.includes(s.id)),capacity:1}));$('radarBreadcrumb').innerHTML=`<button id="radarHome">All domains</button>${radarDomain===null?'':`<button disabled>${escapeHTML(domainDefs[radarDomain][0])}</button>`}`;$('radarHome').onclick=()=>{radarDomain=null;renderRadar()};$('radarCanvas').innerHTML=svgRadar(items);$('radarCanvas').querySelectorAll('[data-radar-index]').forEach(el=>el.addEventListener('click',()=>selectRadarItem(Number(el.dataset.radarIndex),items)));$('radarSkillList').innerHTML='<div class="skill-list">'+items.map((it,i)=>`<button class="skill-item" data-radar-item="${i}"><b>${escapeHTML(it.name)}</b><small>${it.value===null?'Confidence unrated':it.value.toFixed(1)+' / 4'}${it.claimed?' · '+it.claimed+' confirmed':''}${it.pending?' · '+it.pending+' suggested':''}</small></button>`).join('')+'</div>';$('radarSkillList').querySelectorAll('[data-radar-item]').forEach(el=>el.onclick=()=>selectRadarItem(Number(el.dataset.radarItem),items));$('radarInfo').innerHTML=radarDomain===null?'<b>Your attested spider web</b><p>Each mint branch shows capabilities you have confirmed. Web breadth reflects how many skills you attested in that discipline. A confidence pulse makes its node bigger and brighter; unrated confirmed skills stay visible. Amber rings mark suggestions awaiting confirmation.</p>':'<b>Inspect a capability</b><p>Only confirmed capabilities enter your web. Optional task confidence increases node prominence. Suggestions remain outside the web until you attest to them.</p>'}
+function selectRadarItem(i,items){if(radarDomain===null){radarDomain=i;renderRadar();return}const item=items[i],s=skillById[item.id],attested=state.profile.confirmed.includes(item.id),resp=attested?state.profile.surveys[item.id]:null;
+ $('radarInfo').innerHTML=`<b>${escapeHTML(s.name)}</b><p>${escapeHTML(s.task)}</p><p>${attested?(resp?`Self-rated confidence: ${resp.confidence}/4 · Execution: ${escapeHTML(modeLabel(resp.method))} · Updated: ${escapeHTML(resp.updated)}`:'Skill attested. Confidence not yet rated.'):'Not attested. Confirm this skill before recording confidence.'}</p><button class="secondary" id="radarAnswer">${attested?(resp?'Update confidence':'Rate confidence'):'Confirm capability first'} ↗</button>`;
+ $('radarAnswer').onclick=()=>{navigate('profile');if(attested){$('surveySkill').value=s.id;renderSurveyQuestion();loadPreviousSurvey()}else{$('manualSkill').value=s.id;$('manualSkill').focus();$('manualSkill').scrollIntoView({block:'center',behavior:'smooth'})}}}
 function modeLabel(v){return {independent:'Independent',ai:'Approved AI-assisted',guided:'Guided / collaborative',none:'Not yet performed'}[v]||'Unknown'}
-function renderSurveyOptions(){const cur=$('surveySkill').value;const order=[...SKILLS].sort((a,b)=>Number(state.profile.confirmed.includes(b.id))-Number(state.profile.confirmed.includes(a.id))||a.name.localeCompare(b.name));$('surveySkill').innerHTML='<option value="">Select a task</option>'+order.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('');$('surveySkill').value=skillById[cur]?cur:(state.profile.confirmed[0]||'sql-pipelines');renderSurveyQuestion();loadPreviousSurvey();$('manualSkill').innerHTML='<option value="">Select a skill</option>'+SKILLS.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('')}
-function renderSurveyQuestion(){const s=skillById[$('surveySkill').value];$('surveyQuestion').textContent=s?`How confident are you that you could: ${s.task}`:'Choose a task to see its specific prompt.'}
+function renderSurveyOptions(){
+ const cur=$('surveySkill').value,confirmed=SKILLS.filter(s=>state.profile.confirmed.includes(s.id)).sort((a,b)=>a.name.localeCompare(b.name));
+ $('surveySkill').innerHTML='<option value="">'+(confirmed.length?'Select a confirmed skill':'Confirm a capability first')+'</option>'+confirmed.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('');
+ $('surveySkill').value=confirmed.some(s=>s.id===cur)?cur:(confirmed[0]?.id||'');
+ const enabled=confirmed.length>0;
+ $('surveySkill').disabled=!enabled;$('saveSurvey').disabled=!enabled;
+ for(const id of ['confidence','performed','method','surveyNote'])$(id).disabled=!enabled;
+ $('surveyAttestationHint').textContent=enabled?`${confirmed.length} employee-confirmed skill${confirmed.length===1?'':'s'} eligible for a confidence pulse. Other taxonomy skills cannot be surveyed until you attest to them.`:'Confirm a skill from your résumé suggestions or add one manually to unlock its confidence pulse.';
+ renderSurveyQuestion();loadPreviousSurvey();
+ $('manualSkill').innerHTML='<option value="">Select a skill</option>'+SKILLS.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('');
+}
+function renderSurveyQuestion(){const id=$('surveySkill').value,s=skillById[id];$('surveyQuestion').textContent=s&&state.profile.confirmed.includes(id)?`How confident are you that you could: ${s.task}`:'Attest to a skill first. You can only rate tasks tied to confirmed capabilities.'}
 function loadPreviousSurvey(){const v=state.profile.surveys[$('surveySkill').value];$('confidence').value=v?String(v.confidence):'';$('performed').value=v?.performed||'';$('method').value=v?.method||'';$('surveyNote').value=v?.note||''}
-function saveSurvey(){const id=$('surveySkill').value,confidence=$('confidence').value,performed=$('performed').value,method=$('method').value;if(!skillById[id]||confidence===''||!performed||!method){flash('Choose a task, confidence, experience, and execution mode.');return}if((performed==='never')!==(method==='none')){flash('If never performed, choose “Not yet performed” as the execution mode.');return}state.profile.surveys[id]={confidence:Number(confidence),performed,method,note:$('surveyNote').value.trim().slice(0,1000),updated:dateToday()};persist();renderAll();$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey();flash('Task reflection saved locally, separately from validated evidence.')}
+function saveSurvey(){const id=$('surveySkill').value,confidence=$('confidence').value,performed=$('performed').value,method=$('method').value;if(!skillById[id]||!state.profile.confirmed.includes(id)){flash('Attest to this capability before recording a confidence pulse.');return}if(confidence===''||!performed||!method){flash('Choose a task, confidence, experience, and execution mode.');return}if((performed==='never')!==(method==='none')){flash('If never performed, choose “Not yet performed” as the execution mode.');return}state.profile.surveys[id]={confidence:Number(confidence),performed,method,note:$('surveyNote').value.trim().slice(0,1000),updated:dateToday()};persist();renderAll();$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey();flash('Task reflection saved locally, separately from validated evidence.')}
 function loadDemoProfile(){
  const hasData=state.profile.confirmed.length||Object.keys(state.profile.surveys).length||state.profile.credentials.length;
  if(hasData&&!confirm('Replace the local profile with fully fictional demonstration data? Export first if needed.'))return;
@@ -1009,7 +1549,7 @@ function readResumeFile(e){const f=e.target.files[0];if(!f)return;if(f.size>5120
 function scanResume(){const text=$('resumeText').value.slice(0,100000).toLowerCase();if(!text.trim()){flash('Paste selected experience or load the synthetic example first.');return}candidateIds=SKILLS.filter(s=>{const terms=[s.name.toLowerCase(),...(keywordAliases[s.id]||[])];return terms.some(term=>{const safe=term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return new RegExp('(^|[^a-z0-9])'+safe+'(?=$|[^a-z0-9])','i').test(text)})}).filter(s=>!state.profile.confirmed.includes(s.id)).map(s=>s.id);state.profile.candidates=[...candidateIds];persist();renderCandidates();renderOverviewRadar();renderRadar();renderGraph();flash(`${candidateIds.length} résumé candidates projected onto radar and galaxy for your review. No skills auto-confirmed.`)}
 function renderCandidates(){const box=$('candidateBox');if(!candidateIds.length){box.innerHTML='<div class="empty">No unconfirmed matches. Add skills manually, or expand the experience text.</div>';return}box.innerHTML=`<h4>${candidateIds.length} candidate skill${candidateIds.length===1?'':'s'} · awaiting your confirmation</h4>`+candidateIds.map(id=>{const s=skillById[id];return `<div class="candidate-row"><span><strong>${escapeHTML(s.name)}</strong><small>${escapeHTML(s.domain)} · Résumé keyword match, not proficiency evidence</small></span><button data-confirm="${id}">Confirm</button></div>`}).join('');box.querySelectorAll('[data-confirm]').forEach(b=>b.onclick=()=>{const id=b.dataset.confirm;state.profile.confirmed.push(id);candidateIds=candidateIds.filter(x=>x!==id);state.profile.candidates=[...candidateIds];persist();renderAll();renderCandidates();flash('Skill confirmed. No confidence value was assigned.')})}
 function addManualSkill(){const id=$('manualSkill').value;if(!id||!skillById[id])return flash('Choose a skill to add.');if(state.profile.confirmed.includes(id))return flash('You have already confirmed this skill.');state.profile.confirmed.push(id);persist();renderAll();flash('Skill added to your profile without inferring proficiency.')}
-function renderConfirmed(){const box=$('mySkills');box.innerHTML=state.profile.confirmed.length?state.profile.confirmed.map(id=>{const s=skillById[id];if(!s)return '';const v=state.profile.surveys[id];return `<div class="my-skill"><div><strong>${escapeHTML(s.name)}</strong><small>${escapeHTML(s.domain)}</small><em>${v?`Self-report ${v.confidence}/4 · ${escapeHTML(modeLabel(v.method))}`:'No confidence recorded'}</em></div><button data-remove="${id}" aria-label="Remove ${escapeHTML(s.name)}">✕</button></div>`}).join(''):'<div class="empty">No skills confirmed yet. Start with a résumé or add one manually.</div>';box.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const id=b.dataset.remove;state.profile.confirmed=state.profile.confirmed.filter(x=>x!==id);persist();renderAll();flash('Skill removed from confirmed list. Prior survey response remains editable in your private workspace.')})}
+function renderConfirmed(){const box=$('mySkills');box.innerHTML=state.profile.confirmed.length?state.profile.confirmed.map(id=>{const s=skillById[id];if(!s)return '';const v=state.profile.surveys[id];return `<div class="my-skill"><div><strong>${escapeHTML(s.name)}</strong><small>${escapeHTML(s.domain)}</small><em>${v?`Self-report ${v.confidence}/4 · ${escapeHTML(modeLabel(v.method))}`:'No confidence recorded'}</em></div><button data-remove="${id}" aria-label="Remove ${escapeHTML(s.name)}">✕</button></div>`}).join(''):'<div class="empty">No skills confirmed yet. Start with a résumé or add one manually.</div>';box.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{const id=b.dataset.remove;state.profile.confirmed=state.profile.confirmed.filter(x=>x!==id);persist();renderAll();flash('Capability removed from your web. Any prior private survey is hidden until you re-confirm it.')})}
 function addCredential(){const name=$('credName').value.trim().slice(0,160),authority=$('credAuthority').value.trim().slice(0,160),expiry=$('credExpiry').value;if(!name)return flash('Enter a credential or qualification name.');if(expiry&&!/^\d{4}-\d{2}-\d{2}$/.test(expiry))return flash('Choose a valid expiration date.');state.profile.credentials.push({id:cryptoRandom(),name,authority,expiry,created:dateToday()});persist();$('credName').value='';$('credAuthority').value='';$('credExpiry').value='';renderCredentials();flash('Self-entered credential added. Not verified against an authority.')}
 function renderCredentials(){const box=$('credentialList');if(!state.profile.credentials.length){box.innerHTML='<div class="empty">No credentials recorded. Add one to plan renewal reminders manually.</div>';return}box.innerHTML=[...state.profile.credentials].sort((a,b)=>(a.expiry||'9999').localeCompare(b.expiry||'9999')).map(c=>{const days=c.expiry?Math.ceil((new Date(c.expiry+'T12:00:00')-new Date())/86400000):null;const timing=days===null?'No expiry entered':days<0?'Expired (self-entered)':days<=90?`${days} days to renewal`:`Renewal in ${days} days`;return `<div class="cred-card"><div><b>${escapeHTML(c.name)}</b><small>${escapeHTML(c.authority||'Authority unspecified')} · ${escapeHTML(c.expiry||'No date')}</small><span class="cred-status">${escapeHTML(timing)} · Unverified</span></div><button data-delete-cred="${escapeHTML(c.id)}" aria-label="Delete credential">✕</button></div>`}).join('');box.querySelectorAll('[data-delete-cred]').forEach(el=>el.onclick=()=>{state.profile.credentials=state.profile.credentials.filter(c=>c.id!==el.dataset.deleteCred);persist();renderCredentials();flash('Credential removed.')})}
 function aggregateCohort(){const people=[...synthetics.map(p=>({skills:p.skills})),...(state.profile.consent?[{skills:state.profile.confirmed}]:[])];const total=people.length;return {people,total,counts:domainDefs.map((_,di)=>people.filter(p=>p.skills.some(id=>skillById[id]?.di===di)).length)}}
@@ -1045,9 +1585,9 @@ function updateRoiOutputs(){
 }
 function renderGraph(){
  if(!window.SynapseSky)return;
- const report=window.SynapseSky.render({pending:candidateIds,svg:$('graphSvg'),surface:$('graphSurface'),detail:$('graphDetail'),legend:$('graphLegend'),skills:SKILLS,domains:domainDefs,colors,profile:state.profile,filter:graphFilter,query:graphSearch,selected:graphSelected,modeLabel,onSelect:id=>{graphSelected=id;renderGraph()},onReflect:id=>{navigate('profile');$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey()}});
- $('skyExplanation').textContent=`${report.clusters} connected domains · ${report.relations} skill relationships. A résumé makes pending skills amber, confirming them makes rings mint, and confidence ratings are always separate.`;
- $('galaxyStatus').innerHTML=`<span><b>${report.confirmed}</b> confirmed</span><span class="viz-amber"><b>${report.pending}</b> candidates</span><span><b>${report.known}</b> confidence ratings</span><span>Hover: inspect · Hold: drag</span>`;
+ const report=window.SynapseSky.render({pending:candidateIds,scope:graphScope,svg:$('graphSvg'),surface:$('graphSurface'),detail:$('graphDetail'),legend:$('graphLegend'),skills:SKILLS,domains:domainDefs,colors,profile:state.profile,filter:graphFilter,query:graphSearch,selected:graphSelected,modeLabel,onSelect:id=>{graphSelected=id;renderGraph()},onReflect:id=>{navigate('profile');$('surveySkill').value=id;renderSurveyQuestion();loadPreviousSurvey()}});
+ $('skyExplanation').textContent=`${report.clusters} displayed disciplines · ${report.visible} visible skills · ${report.relations} conceptual relationships. My relevant domains hides unrelated clusters after attestation; use All domains to explore everything.`;
+ $('galaxyStatus').innerHTML=`<span><b>${report.clusters}</b> displayed clusters</span><span><b>${report.confirmed}</b> confirmed</span><span class="viz-amber"><b>${report.pending}</b> candidates</span><span><b>${report.known}</b> confidence ratings</span><span>Hover: inspect · Hold: drag</span>`;
 }
 function exportJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`synapse-workspace-${dateToday()}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);flash('Local JSON export created. Protect this file like other personal records.')}
 async function importJson(e){const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>2000000)return flash('JSON backup exceeds the 2 MB import limit.');try{const data=JSON.parse(await f.text());if(!confirm('Replace your current local workspace with this imported data?'))return;state=safeStateImport(data);persist();candidateIds=[...(state.profile.candidates||[])];renderAll();renderCandidates();flash('Local workspace imported and validated.')}catch(err){flash(`Import failed: ${err.message}`)}}
