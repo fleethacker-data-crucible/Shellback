@@ -46,14 +46,15 @@ function layout(skills,profile,pending=[]){
 }
 function render(o){
  stop();
- const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],scope='focus',onSelect,onReflect,modeLabel}=o;
+ const {svg,surface,detail,legend,skills,domains,colors,profile,filter='all',query='',selected=null,pending=[],scope='confirmed',onSelect,onReflect,onShowPathways,onOpenProfile,modeLabel}=o;
  const all=layout(skills,profile,pending),byId=new Map(all.map(p=>[p.s.id,p])),pendingSet=new Set(pending);
- // Before onboarding, exploration displays the full taxonomy. Once the
- // employee attests to skills, only domains with confirmed capabilities are
- // shown by default. A résumé-only draft focuses on pending candidate domains.
- const attested=new Set(profile.confirmed||[]),profileStarted=attested.size>0||pendingSet.size>0;
- const activeDomains=new Set(skills.filter(s=>scope==='all'||!profileStarted||((attested.size?attested:pendingSet).has(s.id))).map(s=>s.di));
- const displayed=new Set(skills.filter(s=>activeDomains.has(s.di)&&(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
+ // Two explicit states: confirmed is an exact projection of personal attestations;
+ // pathways is the complete taxonomy, never an implied employee capability.
+ const attested=new Set((profile.confirmed||[]).filter(id=>byId.has(id)));
+ const pathways=scope==='pathways';
+ const eligible=skills.filter(s=>pathways||attested.has(s.id));
+ const activeDomains=new Set(eligible.map(s=>s.di));
+ const displayed=new Set(eligible.filter(s=>(filter==='all'||s.di===Number(filter))&&(!query||`${s.name} ${s.domain}`.toLowerCase().includes(query.toLowerCase()))).map(s=>s.id));
  const adj=new Map,edges=[],seen=new Set;
  function link(a,b,type='local'){
   if(!byId.has(a)||!byId.has(b)||a===b)return;
@@ -63,6 +64,12 @@ function render(o){
  }
  for(let di=0;di<13;di++){const arr=skills.filter(s=>s.di===di).sort((a,b)=>a.si-b.si);for(let i=0;i<arr.length-1;i++)link(arr[i].id,arr[i+1].id);for(const idx of [2,4,6,7])link(arr[0]?.id,arr[idx]?.id,'branch')}
  for(const [a,b] of bridges)link(a,b,'semantic');
+ // In the confirmed projection, two attested capabilities remain connected
+ // inside a discipline even when unconfirmed intermediary taxonomy nodes are hidden.
+ if(!pathways)for(let di=0;di<domains.length;di++){
+  const members=skills.filter(x=>x.di===di&&attested.has(x.id)).sort((a,b)=>a.si-b.si);
+  for(let i=1;i<members.length;i++)link(members[i-1].id,members[i].id,'confirmed');
+ }
  const ns=(tag,attrs={},parent=svg)=>{const el=document.createElementNS(svgNS,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));parent.appendChild(el);return el};
  svg.replaceChildren();svg.setAttribute('viewBox','0 0 950 550');
  const defs=ns('defs'),nebula=ns('radialGradient',{id:'galaxy-nebula',cx:'50%',cy:'50%',r:'50%'},defs);
@@ -73,7 +80,7 @@ function render(o){
  ns('feGaussianBlur',{stdDeviation:'5',result:'b'},glow);const merge=ns('feMerge',{},glow);ns('feMergeNode',{in:'b'},merge);ns('feMergeNode',{in:'SourceGraphic'},merge);
  const sky=ns('g',{'aria-hidden':'true'}),hubLayer=ns('g',{'aria-hidden':'true'}),edgeLayer=ns('g',{'aria-hidden':'true'}),starLayer=ns('g');
  ns('ellipse',{cx:475,cy:275,rx:470,ry:277,fill:'url(#galaxy-nebula)'},sky);
- for(let i=0;i<260;i++){let theta=i*GOLDEN,r=10+Math.sqrt(i/260)*273;
+ for(let i=0;i<(pathways?260:36);i++){let theta=i*GOLDEN,r=10+Math.sqrt(i/260)*273;
   ns('circle',{cx:(475+Math.cos(theta)*r*1.58).toFixed(1),cy:(275+Math.sin(theta)*r*.96).toFixed(1),r:i%17===0?1.2:.55,fill:i%9===0?'#aeafe9':'#a9e5f3',opacity:i%9===0?.27:.11},sky)}
  const countByDomain=Array.from({length:13},(_,di)=>({confirmed:all.filter(p=>p.s.di===di&&p.confirmed).length,pending:all.filter(p=>p.s.di===di&&p.pending).length}));
  for(let di=0;di<13;di++){
@@ -87,7 +94,7 @@ function render(o){
   label.textContent=domains[di][0];
   if(stats.confirmed||stats.pending){const text=ns('text',{class:'galaxy-domain-count',x:x+12,y:y-5},g);text.textContent=[stats.confirmed?stats.confirmed+' confirmed':'',stats.pending?stats.pending+' suggested':''].filter(Boolean).join(' · ')}
  }
- const paths=edges.map(e=>({...e,el:ns('path',{class:`sky-link sky-${e.type}`,'data-relation-type':e.type,'data-relation-a':e.a,'data-relation-b':e.b,fill:'none'},edgeLayer)}));
+ const paths=edges.filter(e=>displayed.has(e.a)&&displayed.has(e.b)).map(e=>({...e,el:ns('path',{class:`sky-link sky-${e.type}`,'data-relation-type':e.type,'data-relation-a':e.a,'data-relation-b':e.b,fill:'none'},edgeLayer)}));
  const drawn=new Map();
  for(const p of all){if(!displayed.has(p.s.id))continue;
   const g=ns('g',{class:'sky-skill-node'+(p.confirmed?' is-confirmed':'')+(p.pending?' is-pending':''),'data-skill':p.s.id,tabindex:0,role:'button','aria-label':p.s.name},starLayer);
@@ -154,16 +161,23 @@ function render(o){
  surface.onpointerleave=()=>{if(!drag){hover=null;if(!keyboard)hideTip();draw()}};
  draw();
  const chosen=displayed.has(selected)?byId.get(selected)?.s:null,answer=chosen&&profile.surveys?.[chosen.id];
- detail.innerHTML=chosen?`<div class="eyebrow">CAPABILITY DETAIL</div><h3>${esc(chosen.name)}</h3><p>${esc(chosen.task)}</p><dl><dt>Discipline</dt><dd>${esc(chosen.domain)}</dd><dt>Profile signal</dt><dd>${profile.confirmed?.includes(chosen.id)?'Employee confirmed':pendingSet.has(chosen.id)?'Unreviewed résumé candidate':'Not provided'}</dd><dt>Self-reported confidence</dt><dd>${answer?esc(answer.confidence)+'/4':'Not answered'}</dd><dt>Execution mode</dt><dd>${answer?esc(modeLabel(answer.method)):'Not reported'}</dd><dt>Verification</dt><dd>Not established</dd></dl><button class="secondary" id="graphAction">Reflect on this task ↗</button>`:
- `<div class="eyebrow">YOUR CAPABILITY UNIVERSE</div><h3>Read the galaxy at a glance</h3><p>Each visible cluster is a relevant discipline. Only disciplines with attested skills appear once you have a confirmed profile. Use “Show all domains” to explore the full taxonomy.</p><p><b>Mint ring</b> = you confirmed experience. <b>Amber dotted ring</b> = awaiting review after résumé intake. Brightness inside a star = voluntary confidence reflection.</p><p><b>Hover</b> to identify a skill without moving anything. <b>Click</b> to pin its relationships. <b>Click, hold and drag</b> a star to rearrange its network.</p><p class="muted">No inferred proficiency, qualification or personnel fitness score.</p>`;
+ detail.innerHTML=chosen?`<div class="eyebrow">${pathways?'POSSIBLE CAPABILITY':'CONFIRMED CAPABILITY'}</div><h3>${esc(chosen.name)}</h3><p>${esc(chosen.task)}</p><dl><dt>Discipline</dt><dd>${esc(chosen.domain)}</dd><dt>Profile signal</dt><dd>${profile.confirmed?.includes(chosen.id)?'Employee-attested':pendingSet.has(chosen.id)?'Unreviewed résumé suggestion':'Not attested · possible pathway'}</dd><dt>Self-reported confidence</dt><dd>${p.confirmed?.includes(chosen.id)&&answer?esc(answer.confidence)+'/4':'Not answered'}</dd><dt>Execution mode</dt><dd>${p.confirmed?.includes(chosen.id)&&answer?esc(modeLabel(answer.method)):'Not reported'}</dd><dt>Verification</dt><dd>Not independently verified</dd></dl>${p.confirmed?.includes(chosen.id)?'<button class="secondary" id="graphAction">Reflect on this task ↗</button>':'<button class="secondary" id="graphAction">Review in my profile ↗</button>'}`:
+ (!pathways?
+ (attested.size? `<div class="eyebrow">MY CONFIRMED SKILLS</div><h3>Only your attested capabilities</h3><p>This view shows exactly the skills you confirmed—never adjacent, suggested, or unrelated skill nodes.</p><p><strong>${displayed.size} displayed</strong> of ${attested.size} attested capabilities${query||filter!=='all'?' after filters':''}.</p><p>Explore broader learning connections by switching to <strong>Pathways</strong>.</p><button class="secondary" id="graphPathwayAction">Explore all pathways ↗</button>`:
+ `<div class="eyebrow">BUILD YOUR GALAXY</div><h3>No confirmed capabilities yet</h3><p>Attest to a skill in your profile to add its first star. Unreviewed résumé suggestions are not shown as confirmed skills.</p><div class="galaxy-empty-actions"><button class="primary" id="graphProfileAction">Confirm skills in my profile ↗</button><button class="secondary" id="graphPathwayAction">Explore possible pathways ↗</button></div>`)
+ :`<div class="eyebrow">PATHWAYS · EXPLORE</div><h3>Discover connected capabilities</h3><p>All ${skills.length} skills and their conceptual relationships are available here, including skills you have not attested to.</p><p><b>Mint rings</b> indicate your attestations. <b>Amber rings</b> mark résumé suggestions awaiting review. Unrated nodes are potential learning pathways, <strong>not claimed proficiency</strong>.</p><p>Switch back to <strong>Confirmed Skills</strong> to see only your personal galaxy.</p>`);
+ detail.querySelector('#graphPathwayAction')?.addEventListener('click',()=>onShowPathways?.());
+ detail.querySelector('#graphProfileAction')?.addEventListener('click',()=>onOpenProfile?.());
  if(chosen){
   const next=[...(adj.get(chosen.id)||[])].filter(x=>displayed.has(x)).slice(0,12);
   if(next.length){const section=document.createElement('section');section.className='sky-relationships';section.innerHTML='<h4>Linked capabilities</h4><p>Conceptual learning pathways, not observed coworker interactions.</p>'+next.map(k=>`<button class="sky-related" data-related-skill="${esc(k)}">${esc(byId.get(k).s.name)}</button>`).join('');detail.appendChild(section);section.onclick=e=>{const b=e.target.closest('[data-related-skill]');if(b)onSelect?.(b.dataset.relatedSkill)}}
   detail.querySelector('#graphAction').onclick=()=>onReflect?.(chosen.id);
  }
  const c=all.filter(p=>p.confirmed).length,a=all.filter(p=>p.pending).length;
- legend.innerHTML=`<span class="legend-item"><i style="background:#5de7d2"></i>${c} confirmed experience</span><span class="legend-item"><i style="background:#f3bd76"></i>${a} résumé candidates</span><span class="legend-item"><i style="background:#98aec6"></i>Grey = no response</span><span class="legend-item"><i style="background:#e0ad79"></i>Cross-domain links</span>`;
- return {name:'Capability galaxy',known:Object.keys(profile.surveys||{}).filter(id=>attested.has(id)).length,clusters:activeDomains.size,relations:edges.length,confirmed:c,pending:a,visible:displayed.size,focused:scope!=='all'&&profileStarted};
+ legend.innerHTML=pathways?
+ `<span class="legend-item"><i style="background:#5de7d2"></i>${c} confirmed of ${skills.length} possible skills</span><span class="legend-item"><i style="background:#f3bd76"></i>${a} unreviewed suggestions</span><span class="legend-item"><i style="background:#98aec6"></i>Grey = possible pathway, not attested</span><span class="legend-item"><i style="background:#e0ad79"></i>Cross-domain links</span>`:
+ `<span class="legend-item"><i style="background:#5de7d2"></i>${c} attested skills in your profile</span><span class="legend-item"><i style="background:#8bd0be"></i>Branches connect attested capabilities only</span><span class="legend-item"><i style="background:#98aec6"></i>Confidence controls brightness, not presence</span>`;
+ return {name:'Capability galaxy',mode:pathways?'pathways':'confirmed',known:Object.keys(profile.surveys||{}).filter(id=>attested.has(id)).length,clusters:activeDomains.size,relations:paths.length,confirmed:c,pending:a,visible:displayed.size,total:skills.length};
 }
 global.SynapseSky={render,stop,layout,strength,bridges};
 })(window);
