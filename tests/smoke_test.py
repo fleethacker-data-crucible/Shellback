@@ -13,14 +13,14 @@ def test_synapse_employee_flow():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('zodiac-lines.js', 'sky.js', 'team.js', 'app.js'):
+        for script in ('sky.js', 'team.js', 'fleet.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
         page.add_style_tag(content=(ROOT/'src/style.css').read_text())
-        page.add_script_tag(content=(ROOT/'src/zodiac-lines.js').read_text())
         page.add_script_tag(content=(ROOT/'src/sky.js').read_text())
         page.add_script_tag(content=(ROOT/'src/team.js').read_text())
+        page.add_script_tag(content=(ROOT/'src/fleet.js').read_text())
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert page.locator('#metricDomains').inner_text()=='13'
@@ -61,19 +61,33 @@ def test_synapse_employee_flow():
         assert 'AWS Architecture' in page.locator('#teamCritical').inner_text()
         page.locator('#teamMemberList [data-peerview]').first.click()
         assert 'Synthetic peer' in page.locator('#teamPeerDetail').inner_text()
+        # FLEETHACKER concepts: TEAMFORGE + MENTORLINK + KNOWLEDGE RELAY.
+        assert page.locator('#fleetLab').count()==1
+        assert 'Proposed team coverage' in page.locator('#fleetCompositionResult').inner_text() or 'No mission needs' in page.locator('#fleetCompositionResult').inner_text()
+        page.locator('#fleetAddSkill').select_option('aws-architecture')
+        page.locator('#fleetAddSkillBtn').click()
+        assert 'AWS Architecture' in page.locator('#fleetMissionSkills').inner_text()
+        page.locator('#fleetTabMentors').click()
+        page.locator('#fleetMentorSkill').select_option('aws-architecture')
+        assert 'Synthetic peer' in page.locator('#fleetMentorMatches').inner_text()
+        page.locator('#fleetTabRelay').click()
+        assert 'Knowledge transfer watchlist' in page.locator('#fleetRelay').inner_text()
+        page.locator('#fleetTabCompose').click()
+        assert page.locator('#fleetRoster [data-fleetperson]').count()>=3
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-svg').count()>0
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         page.locator('#graphSearch').fill('SQL')
         assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
-        page.locator('#constellationMode').select_option('Scorpius')
-        assert 'Scorpius' in page.locator('#skyExplanation').inner_text()
-        assert page.locator('#graphSvg .sky-skeleton').count()>0
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
+        assert page.locator('#graphSvg .galaxy-domain-label').count()==13
+        assert 'capability clusters' in page.locator('#skyExplanation').inner_text()
+        assert page.locator('#constellationMode').count()==0
         page.locator('#graphReset').click()
-        assert page.locator('#constellationMode').input_value()=='auto'
+        assert page.locator('#graphSearch').input_value()==''
         # Branch topology must remain visible: same-domain offshoots and
-        # the earlier meaningful cross-domain links, not just the zodiac outline.
+        # the earlier meaningful cross-domain links, not just the decorative nebula.
         assert page.locator('#graphSvg path.sky-branch').count() >= 35
         assert page.locator('#graphSvg path.sky-semantic').count() >= 12
         assert page.locator('#graphSvg [data-relation-type="semantic"]').count() >= 12
@@ -125,8 +139,14 @@ def test_standalone_distribution():
         assert page.locator('#metricSkills').inner_text()=='104'
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
+        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .sky-branch').count()>=35
         assert page.locator('#graphSvg .sky-semantic').count()>=12
+        page.locator('button[data-view="team"]').first.click()
+        assert page.locator('#fleetLab').count()==1
+        page.locator('#fleetTabMentors').click()
+        assert page.locator('#fleetMentorMatches').count()==1
+        page.locator('button[data-view="graph"]').first.click()
         skill=page.locator('#graphSvg .sky-skill-node').first
         name=skill.get_attribute('aria-label')
         skill.hover(force=True)
