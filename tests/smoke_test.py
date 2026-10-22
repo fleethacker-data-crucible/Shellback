@@ -72,8 +72,22 @@ def test_synapse_employee_flow():
         assert page.locator('#graphSvg .sky-skeleton').count()>0
         page.locator('#graphReset').click()
         assert page.locator('#constellationMode').input_value()=='auto'
-        page.locator('#graphSvg .sky-skill-node').first.click()
+        # Branch topology must remain visible: same-domain offshoots and
+        # the earlier meaningful cross-domain links, not just the zodiac outline.
+        assert page.locator('#graphSvg path.sky-branch').count() >= 35
+        assert page.locator('#graphSvg path.sky-semantic').count() >= 12
+        assert page.locator('#graphSvg [data-relation-type="semantic"]').count() >= 12
+        # Approaching a node catches it, displaying an immediately useful label.
+        node = page.locator('#graphSvg .sky-skill-node').first
+        skill_name = node.get_attribute('aria-label')
+        node.hover(force=True)
+        page.wait_for_function('() => {const tip=document.querySelector("#graphHoverTip");return tip && !tip.hidden && tip.textContent.trim().length>0}')
+        assert skill_name in page.locator('#graphHoverTip').inner_text()
+        assert 'confidence' in page.locator('#graphHoverTip').inner_text().lower() or 'unrated' in page.locator('#graphHoverTip').inner_text().lower()
+        node.click(force=True)
         assert 'SKILL SIGNAL' in page.locator('#graphDetail').inner_text()
+        assert 'Connected capabilities' in page.locator('#graphDetail').inner_text()
+        assert page.locator('#graphDetail [data-related-skill]').count()>0
         page.locator('button[data-view="credentials"]').first.click()
         page.locator('#credName').fill('AWS demonstration credential')
         page.locator('#credAuthority').fill('Synthetic issuer')
