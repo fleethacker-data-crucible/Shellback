@@ -67,45 +67,66 @@ function init(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventLi
  renderAll();renderCandidates();navigate('overview')}
 function renderAll(){window.SynapseWorkforce?.render();renderMetrics();renderSurveyOptions();renderConfirmed();renderCredentials();renderTeam();renderRoi();renderRadar();renderOverviewRadar();renderGraph()}
 function renderMetrics(){const c=state.profile.confirmed.length;const s=Object.keys(state.profile.surveys).length;$('metricDomains').textContent=domainDefs.length;$('metricSkills').textContent=SKILLS.length;$('metricMine').textContent=c;$('metricSurveys').textContent=s;$('profileCount').textContent=c;$('surveyCount').textContent=s;$('sharingState').textContent=state.profile.consent?'ON':'OFF';$('shareToggle').checked=state.profile.consent;$('shareText').textContent=state.profile.consent?'On':'Off';$('storageStatus').textContent='Storage: local browser only (localStorage). No remote scripts, telemetry, or API calls.'}
-function score(id){const v=state.profile.surveys[id];return v?Number(v.confidence):null}
+function score(id){if(!state.profile.confirmed.includes(id))return null;const v=state.profile.surveys[id];return v?Number(v.confidence):null}
 function domainStats(di){const arr=SKILLS.filter(s=>s.di===di).map(s=>score(s.id)).filter(v=>v!==null);return {answered:arr.length,mean:arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null}}
 function svgRadar(items,{small=false}={}){
- const w=700,h=small?345:515,cx=350,cy=small?159:241,r=small?108:176,n=items.length,uid=small?'preview':'focus';
+ const w=700,h=small?346:515,cx=350,cy=small?158:242,r=small?109:175,n=items.length,uid=small?'preview':'focus';
  const pt=(i,f)=>{const angle=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(angle)*r*f,cy+Math.sin(angle)*r*f,angle]};
- const known=items.map((item,i)=>({item,i})).filter(o=>o.item.value!==null&&o.item.value!==undefined);
- const knownN=known.length,confCount=items.reduce((a,x)=>a+(x.claimed||0),0),candidateN=items.reduce((a,x)=>a+(x.pending||0),0);
- let svg=`<svg class="radar-svg advanced-radar radar-premium" viewBox="0 0 ${w} ${h}" role="img" aria-label="Capability radar showing independently separated task confidence, confirmed experience and resume suggestions.">
- <defs><radialGradient id="radar-deep-${uid}"><stop stop-color="#133c55" stop-opacity=".62"/><stop offset=".7" stop-color="#0c233c" stop-opacity=".25"/><stop offset="1" stop-color="#051120" stop-opacity="0"/></radialGradient>
- <linearGradient id="radar-fill-${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop stop-color="#67f8d9" stop-opacity=".38"/><stop offset="1" stop-color="#71a4fc" stop-opacity=".13"/></linearGradient>
- <filter id="radar-haze-${uid}" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="4"/></filter></defs>
- <circle cx="${cx}" cy="${cy}" r="${r+35}" fill="url(#radar-deep-${uid})"/>`;
- for(let t=4;t>=1;t--){let points=items.map((_,i)=>{const [x,y]=pt(i,t/4);return `${x.toFixed(2)},${y.toFixed(2)}`}).join(' ');
-  svg+=`<polygon class="radar-premium-ring radar-premium-ring-${t}" points="${points}" fill="none" stroke-width="${t===4?1.8:.85}"/>`;
+ const active=items.filter(x=>(x.claimed||0)>0).length;
+ const total=items.reduce((sum,item)=>sum+(item.claimed||0),0);
+ const pending=items.reduce((sum,item)=>sum+(item.pending||0),0);
+ const ratingCount=items.filter(x=>x.value!==null&&x.value!==undefined&&(x.claimed||0)>0).length;
+ const radii=items.map(item=>{
+  if(!(item.claimed>0))return 0;
+  const breadth=item.capacity?Math.min(1,item.claimed/item.capacity):1;
+  const confidence=item.value==null?null:Math.min(4,Math.max(0,Number(item.value)))/4;
+  return Math.min(.99,.23+.57*breadth+(confidence===null?0:.17*confidence));
+ });
+ const webPoints=radii.map((v,i)=>pt(i,v).slice(0,2).map(x=>x.toFixed(2)).join(',')).join(' ');
+ let out=`<svg class="radar-svg advanced-radar radar-premium radar-spider" viewBox="0 0 ${w} ${h}" role="img" aria-label="Spider web built from confirmed capabilities. Confidence only adjusts glow and node prominence.">
+ <defs>
+ <radialGradient id="radar-deep-${uid}"><stop stop-color="#143a57" stop-opacity=".68"/><stop offset=".7" stop-color="#0a263e" stop-opacity=".2"/><stop offset="1" stop-color="#071324" stop-opacity="0"/></radialGradient>
+ <linearGradient id="radar-spider-fill-${uid}" x1="0%" y1="0%" x2="100%" y2="100%"><stop stop-color="#6bf3dd" stop-opacity=".45"/><stop offset=".6" stop-color="#4b9dd0" stop-opacity=".27"/><stop offset="1" stop-color="#4b82bc" stop-opacity=".12"/></linearGradient>
+ <filter id="radar-spider-glow-${uid}" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4.5"/></filter>
+ </defs><circle cx="${cx}" cy="${cy}" r="${r+33}" fill="url(#radar-deep-${uid})"/>`;
+ for(let ring=4;ring>=1;ring--){
+  const points=items.map((_,i)=>pt(i,ring/4).slice(0,2).map(x=>x.toFixed(2)).join(',')).join(' ');
+  out+=`<polygon class="radar-premium-ring radar-premium-ring-${ring}" points="${points}" fill="none" stroke-width="${ring===4?1.8:.9}"/>`
  }
- for(let i=0;i<n;i++){const o=items[i],name=o.name,val=o.value,[x,y,a]=pt(i,1),[lx,ly]=pt(i,1+(small?.27:.28)),anchor=Math.cos(a)>.2?'start':Math.cos(a)<-.2?'end':'middle';
-  svg+=`<line class="radar-premium-axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;
-  const c=o.claimed||0,p=o.pending||0;
-  if(c||p){const [rx,ry]=pt(i,1.08);svg+=`<circle class="radar-evidence-halo ${c?'is-confirmed':'is-pending'}" cx="${rx}" cy="${ry}" r="${Math.min(11,4+(c+p)*1.55)}" fill="none" stroke="${c?'#56f4d5':'#facb8c'}" stroke-width="${c?2.7:2}" ${!c?'stroke-dasharray="2 3"':''}><title>${c} confirmed; ${p} pending résumé suggestions</title></circle>`;}
-  const label=(o.short||o.name).slice(0,small?16:23);
-  svg+=`<text class="radar-premium-label" tabindex="0" data-radar-index="${i}" text-anchor="${anchor}" dominant-baseline="middle" x="${lx.toFixed(2)}" y="${ly.toFixed(2)}"><title>${escapeHTML(name)} — ${val===null?'Unrated':Number(val).toFixed(1)+'/4 confidence'}; ${c} confirmed, ${p} candidates</title>${escapeHTML(label)}</text>`;
+ for(let i=0;i<n;i++){
+  const item=items[i],claimed=item.claimed||0,suggested=item.pending||0,confidence=item.value;
+  const [x,y,a]=pt(i,1),[tx,ty]=pt(i,1+(small?.27:.28));
+  const anchor=Math.cos(a)>.2?'start':Math.cos(a)<-.2?'end':'middle';
+  const label=(item.short||item.name).slice(0,small?16:23);
+  out+=`<line class="radar-premium-axis" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/>`;
+  if(claimed||suggested){const [hx,hy]=pt(i,1.08);
+   out+=`<circle class="radar-evidence-halo ${claimed?'is-confirmed':'is-pending'}" cx="${hx}" cy="${hy}" r="${Math.min(11,4+(claimed+suggested)*1.55)}" fill="none" stroke="${claimed?'#66f0d5':'#fac58e'}" stroke-width="${claimed?2.5:2}" ${!claimed?'stroke-dasharray="2 3"':''}><title>${claimed} confirmed capability mentions; ${suggested} awaiting review</title></circle>`;
+  }
+  out+=`<text class="radar-premium-label" tabindex="0" data-radar-index="${i}" text-anchor="${anchor}" dominant-baseline="middle" x="${tx.toFixed(2)}" y="${ty.toFixed(2)}"><title>${escapeHTML(item.name)} · ${claimed} confirmed · ${suggested} suggested · ${confidence==null?'Confidence not rated':'Self-reported confidence '+Number(confidence).toFixed(1)+'/4'}</title>${escapeHTML(label)}</text>`;
  }
- if(knownN===n){const points=known.map(({i,item})=>pt(i,item.value/4).slice(0,2).join(',')).join(' ');
-  svg+=`<polygon class="radar-premium-shape" points="${points}" fill="url(#radar-fill-${uid})"/><polygon points="${points}" fill="none" stroke="#62efd4" stroke-width="6" opacity=".3" filter="url(#radar-haze-${uid})"/>`;
+ if(active){
+  out+=`<polygon class="radar-spider-web" data-web-active="${active}" points="${webPoints}" fill="url(#radar-spider-fill-${uid})" stroke="#68c6c5" stroke-width="2.5" stroke-linejoin="round"/>`;
+  for(let i=0;i<n;i++){
+   const item=items[i];if(!(item.claimed>0))continue;
+   const [x,y]=pt(i,radii[i]),conf=item.value==null?null:Math.max(0,Math.min(4,Number(item.value))),rated=conf!==null;
+   const bright=rated?.12+conf*.20:.22;
+   const rr=rated?4+conf*2.1:5.1;
+   out+=`<line class="radar-spider-branch ${rated?'is-rated':'is-unrated'}" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke-opacity="${rated?(.3+conf*.145).toFixed(2):'.36'}" stroke-width="${rated?(2+conf*.65).toFixed(1):'2'}"/>`;
+   out+=`<circle class="radar-spider-aura" cx="${x}" cy="${y}" r="${rr*2.7}" fill="${rated?'#6af4d8':'#79a6bc'}" opacity="${Math.min(.48,bright*.4).toFixed(2)}" filter="url(#radar-spider-glow-${uid})"/>`;
+   out+=`<circle class="radar-spider-node ${rated?'is-rated':'is-unrated'}" cx="${x}" cy="${y}" r="${rr}" fill="${rated?'#bcffef':'#8fb3c4'}" stroke="${rated?'#61f2da':'#50778e'}" stroke-width="2" data-radar-index="${i}"><title>${escapeHTML(item.name)} — ${item.claimed} confirmed · ${rated?conf+'/4 self-rated confidence':'confidence unrated'}</title></circle>`;
+  }
  }else{
-  for(let i=0;i<n;i++){const o=items[i],next=items[(i+1)%n];if(o.value===null||next.value===null)continue;const [x,y]=pt(i,o.value/4),[u,v]=pt((i+1)%n,next.value/4);svg+=`<line class="radar-premium-segment" x1="${x}" y1="${y}" x2="${u}" y2="${v}"/>`;}
+  out+=`<text class="radar-premium-center" x="${cx}" y="${cy-9}" text-anchor="middle">No skills attested</text><text class="radar-premium-subtitle" x="${cx}" y="${cy+14}" text-anchor="middle">${pending?pending+' pending résumé suggestions':'Confirm capabilities to build the web'}</text>`;
  }
- for(const {i,item} of known){const [x,y]=pt(i,item.value/4);svg+=`<circle class="radar-premium-point" cx="${x}" cy="${y}" r="${small?4.5:6}" data-radar-index="${i}"><title>${escapeHTML(item.name)}: ${Number(item.value).toFixed(1)} / 4</title></circle>`;}
- svg+=`<circle cx="${cx}" cy="${cy}" r="2.5" fill="#a4e7e8" opacity=".8"/>`;
- if(!knownN){svg+=`<text class="radar-premium-center" x="${cx}" y="${cy-9}" text-anchor="middle">Confidence not rated</text><text class="radar-premium-subtitle" x="${cx}" y="${cy+14}" text-anchor="middle">${confCount} confirmed · ${candidateN} suggested</text>`}
- svg+=`<text class="radar-premium-footnote" x="${cx}" y="${h-10}" text-anchor="middle">OUTER MARKERS: EXPERIENCE · INNER SHAPE: OPTIONAL CONFIDENCE (0–4)</text></svg>`;
- return svg;
+ out+=`<text class="radar-premium-footnote" x="${cx}" y="${h-10}" text-anchor="middle">WEB = ATTESTED SKILLS · SHINE = VOLUNTARY CONFIDENCE (0–4)</text></svg>`;
+ return out;
 }
-function evidence(di){const group=SKILLS.filter(s=>s.di===di);return {claimed:group.filter(s=>state.profile.confirmed.includes(s.id)).length,pending:group.filter(s=>candidateIds.includes(s.id)).length}}
+function evidence(di){const group=SKILLS.filter(s=>s.di===di);return {claimed:group.filter(s=>state.profile.confirmed.includes(s.id)).length,pending:group.filter(s=>candidateIds.includes(s.id)).length,capacity:group.length}}
 function renderOverviewRadar(){const data=domainDefs.map(([n],di)=>({name:n,short:n.split(' & ')[0].split(',')[0],value:domainStats(di).mean,...evidence(di)}));$('overviewRadar').innerHTML=svgRadar(data,{small:true});$('overviewRadar').querySelectorAll('[data-radar-index]').forEach(e=>e.addEventListener('click',()=>{radarDomain=Number(e.dataset.radarIndex);navigate('radar')}))}
 function renderRadar(){
  const stats={confirmed:state.profile.confirmed.length,pending:candidateIds.length,confidence:Object.keys(state.profile.surveys).length};
  $('radarStatus').innerHTML=`<span><b>${stats.confirmed}</b> confirmed experience</span><span class="viz-amber"><b>${stats.pending}</b> résumé candidates</span><span><b>${stats.confidence}</b> optional confidence ratings</span>`;
-const items=radarDomain===null?domainDefs.map(([n],di)=>({name:n,short:n.replace(' & ',' / ').split(',')[0],value:domainStats(di).mean,...evidence(di)})):SKILLS.filter(s=>s.di===radarDomain).map(s=>({name:s.name,id:s.id,value:score(s.id),claimed:Number(state.profile.confirmed.includes(s.id)),pending:Number(candidateIds.includes(s.id))}));$('radarBreadcrumb').innerHTML=`<button id="radarHome">All domains</button>${radarDomain===null?'':`<button disabled>${escapeHTML(domainDefs[radarDomain][0])}</button>`}`;$('radarHome').onclick=()=>{radarDomain=null;renderRadar()};$('radarCanvas').innerHTML=svgRadar(items);$('radarCanvas').querySelectorAll('[data-radar-index]').forEach(el=>el.addEventListener('click',()=>selectRadarItem(Number(el.dataset.radarIndex),items)));$('radarSkillList').innerHTML='<div class="skill-list">'+items.map((it,i)=>`<button class="skill-item" data-radar-item="${i}"><b>${escapeHTML(it.name)}</b><small>${it.value===null?'Confidence unrated':it.value.toFixed(1)+' / 4'}${it.claimed?' · '+it.claimed+' confirmed':''}${it.pending?' · '+it.pending+' suggested':''}</small></button>`).join('')+'</div>';$('radarSkillList').querySelectorAll('[data-radar-item]').forEach(el=>el.onclick=()=>selectRadarItem(Number(el.dataset.radarItem),items));$('radarInfo').innerHTML=radarDomain===null?'<b>Choose a domain</b><p>See eight constituent capabilities. Mint rings represent confirmed résumé mentions; amber rings are unconfirmed candidates. Confidence remains unrated until a voluntary task pulse.</p>':'<b>Select a task</b><p>Use any axis or label to inspect its skill, confirmed experience and optional self-reported execution mode.</p>'}
+const items=radarDomain===null?domainDefs.map(([n],di)=>({name:n,short:n.replace(' & ',' / ').split(',')[0],value:domainStats(di).mean,...evidence(di)})):SKILLS.filter(s=>s.di===radarDomain).map(s=>({name:s.name,id:s.id,value:score(s.id),claimed:Number(state.profile.confirmed.includes(s.id)),pending:Number(candidateIds.includes(s.id)),capacity:1}));$('radarBreadcrumb').innerHTML=`<button id="radarHome">All domains</button>${radarDomain===null?'':`<button disabled>${escapeHTML(domainDefs[radarDomain][0])}</button>`}`;$('radarHome').onclick=()=>{radarDomain=null;renderRadar()};$('radarCanvas').innerHTML=svgRadar(items);$('radarCanvas').querySelectorAll('[data-radar-index]').forEach(el=>el.addEventListener('click',()=>selectRadarItem(Number(el.dataset.radarIndex),items)));$('radarSkillList').innerHTML='<div class="skill-list">'+items.map((it,i)=>`<button class="skill-item" data-radar-item="${i}"><b>${escapeHTML(it.name)}</b><small>${it.value===null?'Confidence unrated':it.value.toFixed(1)+' / 4'}${it.claimed?' · '+it.claimed+' confirmed':''}${it.pending?' · '+it.pending+' suggested':''}</small></button>`).join('')+'</div>';$('radarSkillList').querySelectorAll('[data-radar-item]').forEach(el=>el.onclick=()=>selectRadarItem(Number(el.dataset.radarItem),items));$('radarInfo').innerHTML=radarDomain===null?'<b>Your attested spider web</b><p>Each mint branch shows capabilities you have confirmed. Web breadth reflects how many skills you attested in that discipline. A confidence pulse makes its node bigger and brighter; unrated confirmed skills stay visible. Amber rings mark suggestions awaiting confirmation.</p>':'<b>Inspect a capability</b><p>Only confirmed capabilities enter your web. Optional task confidence increases node prominence. Suggestions remain outside the web until you attest to them.</p>'}
 function selectRadarItem(i,items){if(radarDomain===null){radarDomain=i;renderRadar();return}const item=items[i],s=skillById[item.id],resp=state.profile.surveys[item.id];$('radarInfo').innerHTML=`<b>${escapeHTML(s.name)}</b><p>${escapeHTML(s.task)}</p><p>${resp?`Confidence: ${resp.confidence}/4 · Execution: ${escapeHTML(modeLabel(resp.method))} · Experience: ${escapeHTML(resp.performed)} · Updated: ${escapeHTML(resp.updated)}`:'No response has been recorded.'}</p><button class="secondary" id="radarAnswer">${resp?'Update':'Answer'} task reflection ↗</button>`;$('radarAnswer').onclick=()=>{navigate('profile');$('surveySkill').value=s.id;renderSurveyQuestion();loadPreviousSurvey()}}
 function modeLabel(v){return {independent:'Independent',ai:'Approved AI-assisted',guided:'Guided / collaborative',none:'Not yet performed'}[v]||'Unknown'}
 function renderSurveyOptions(){const cur=$('surveySkill').value;const order=[...SKILLS].sort((a,b)=>Number(state.profile.confirmed.includes(b.id))-Number(state.profile.confirmed.includes(a.id))||a.name.localeCompare(b.name));$('surveySkill').innerHTML='<option value="">Select a task</option>'+order.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('');$('surveySkill').value=skillById[cur]?cur:(state.profile.confirmed[0]||'sql-pipelines');renderSurveyQuestion();loadPreviousSurvey();$('manualSkill').innerHTML='<option value="">Select a skill</option>'+SKILLS.map(s=>`<option value="${s.id}">${escapeHTML(s.name)} · ${escapeHTML(s.domain)}</option>`).join('')}
