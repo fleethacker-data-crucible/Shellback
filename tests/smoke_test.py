@@ -49,7 +49,10 @@ def test_synapse_employee_flow():
             card={'format':'synapse-peer-card','version':1,'id':f'peer-example-{n:02}',
                   'name':f'Synthetic peer {n}', 'consent':True, 'issued':'2026-10-21',
                   'skills':['aws-architecture','sql-pipelines'],
-                  'surveys':{'aws-architecture':{'confidence':4,'method':'independent'}}}
+                  'surveys':{'aws-architecture':{'confidence':4,'method':'independent'}},
+                  'mentorOptIn':n==0,'mentorTopics':['aws-architecture'] if n==0 else [],
+                  'availability':'available' if n==0 else 'unknown',
+                  'qualificationClaims':['Synthetic AWS credential'] if n==0 else []}
             page.locator('#importPeerFile').set_input_files({
                 'name':f'peer-{n}.json','mimeType':'application/json',
                 'buffer':json.dumps(card).encode('utf-8')
@@ -114,6 +117,7 @@ def test_synapse_employee_flow():
         page.locator('#wfMissionAdd').click()
         assert 'AWS Architecture' in page.locator('#wfMissionResults').inner_text()
         assert 'unverified' in page.locator('#wfMissionResults').inner_text().lower()
+        assert '1 self-declared qualification match' in page.locator('#wfMissionResults').inner_text()
         page.locator('[data-workforce-tab="mentorlink"]').click()
         page.locator('#wfMentorEnabled').check()
         page.locator('#wfMentorAvailability').select_option('available')
@@ -122,6 +126,7 @@ def test_synapse_employee_flow():
         assert 'AWS Architecture' in page.locator('#wfMentorTopics').inner_text()
         page.locator('#wfMentorSearch').select_option('aws-architecture')
         assert 'My local profile' in page.locator('#wfMentorMatches').inner_text()
+        assert 'Synthetic peer 0' in page.locator('#wfMentorMatches').inner_text()
         page.locator('[data-workforce-tab="relay"]').click()
         page.locator('#wfKnowledgeTopic').fill('Synthetic shipyard handoff lesson')
         page.locator('#wfKnowledgeSkill').select_option('qualification-planning')
