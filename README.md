@@ -1,6 +1,6 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Version 0.2 — local-first MVP with reactive constellations and voluntary peer-team building**
+**Version 0.3 — galaxy-style capability intelligence and FLEETHACKER planning lab**
 
 Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
 
@@ -16,7 +16,7 @@ Synapse is an employee-centered capability discovery and development prototype. 
 
 - 13 capability domains and 104 task-oriented skills
 - Higher-fidelity radar with clear rings, light trails and truthful gaps for unanswered self-reports
-- Astronomically sourced zodiac constellation figures with a deterministic visual template matcher, manual choice, cursor repulsion and reduced-motion support
+- Organic galaxy of 13 capability-domain clusters, with 104 reactive stars, persistent taxonomy branches, explicit cross-domain learning bridges, magnetic hover and reduced-motion support
 - Radar with domain drill-down and unknown/missing-confidence behavior
 - 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
 - Plain-text (`.txt`) résumé / experience keyword matching to **unverified suggestions**; manual confirmation and removal
@@ -24,6 +24,7 @@ Synapse is an employee-centered capability discovery and development prototype. 
 - Editable, unverified credential inventory with date horizon
 - Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
 - A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
+- **FLEETHACKER lab:** TEAMFORGE-inspired mission team composer, MENTORLINK opt-in mentor discovery, and KNOWLEDGE RELAY single-contributor knowledge watchlist
 - ROI scenario calculator with transparent formulas and separation of avoided spend versus recovered non-cash capacity
 - Local state persistence, JSON export/import/validation, delete/reset controls, no network calls
 
@@ -52,17 +53,23 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
 
-## Dynamic constellation visual
+## Skills galaxy: no astrology
 
-Synapse renders all twelve Western zodiac constellation figures (Aries through Pisces) from the J2000 constellation-line data in the BSD-3-Clause licensed [d3-celestial](https://github.com/ofrohn/d3-celestial) catalog. The figures are projected and normalized for the illustration; they are not a full navigational sky chart. See [third-party notices](THIRD_PARTY_NOTICES.md). Auto selection compares the 13-domain vector of voluntary self-reported confidence (with weaker indicators for employee-confirmed experience) to resampled shape signatures. This is geometric pattern matching, **not astrology, personality inference, proficiency grading or job-role prediction**. Changing a profile can change its best-fitting template; the sky menu can also override it.
+The galaxy groups the 104 capability nodes into **13 persistent capability-domain clusters** in a deterministic golden-angle spiral. The backdrop is decorative; it does not imply ability, employee type, role compatibility or proficiency. Clusters, lines and node positions derive from the explicit skill taxonomy and a curated list of conceptual learning relationships. There is no zodiac matching, horoscope, celestial-data dependency or constellation selector.
 
-Nodes respond to pointer movement using an offline spring-and-repulsion animation, with a short cursor trail. Browsers honoring reduced-motion preferences suppress the animated motion. Higher confidence means brighter stars. Unanswered tasks are shown neutrally, not as deficient capability. The radar likewise does not plot unanswered spokes as zero proficiency.
+Every domain has an identifiable center and connected skills. Mint branches within domains and amber bridges across domains restore the first prototype's relationship network. Pointer movement is gently magnetic near a node, reveals skill/domain/self-reported confidence and nearby relationships, and temporarily expands its connected branches. A node can be clicked or keyboard-selected to reveal detailed self-reported signals and clickable connections. Unanswered skills remain visible and neutral. A browser reduced-motion preference disables particle movement.
 
-## Magnetic constellation navigation (v0.2 refinement)
+## FLEETHACKER workforce intelligence lab
 
-The constellation view now uses a **proximity capture zone**: moving the pointer within roughly 28 SVG units of a skill star catches it with a gentle spring rather than pushing it away. Captured nodes track the cursor locally and release when the pointer moves away. A hover tooltip immediately names the skill, its capability domain, its separate self-reported confidence state, and examples of related skills. Keyboard-focusable stars expose the same information; reduced-motion preferences are respected.
+The earlier **FLEETHACKER 2026** project conversation surfaced several workforce ideas: SKILLFLEET, TEAMFORGE, MENTORLINK, KNOWLEDGE RELAY, and QUALFORGE. Synapse is the common capability-intelligence layer for those ideas, not five separate apps.
 
-The graph retains its astronomical constellation backdrop while overlaying a distinct **capability relationship network**: same-domain chains, hub-to-skill branches, and curated cross-domain connections (for example SQL Pipelines to Power BI; PowerShell Automation to Workflow Automation; AI Orchestration to AI Outcome Validation). Hovering gently fans related nodes outward and highlights their connected lines. Selecting a node pins its evidence details and provides clickable links to neighboring skills. These are illustrative taxonomy / learning relationships, **not observed coworker interactions, prerequisites, or verified qualifications**.
+The Team Intelligence screen now includes three offline, synthetic-first planning modules:
+
+1. **Team composer (TEAMFORGE):** choose a potential team from voluntarily imported peer cards; set mission-relevant capability needs and see declared coverage, single-source concentrations, and separately disclosed independent task reflections. No hidden individual fitness score.
+2. **Mentor discovery (MENTORLINK):** find peers who explicitly shared a relevant skill; show whether they *also* volunteered task-level confidence and execution mode. A match is only a lead for a voluntary mentoring conversation, not an assignment.
+3. **Knowledge relay:** review unrepresented and one-person-held priority skills as potential documentation, pairing and cross-training opportunities. No predictions about retirement, attrition, performance, or readiness.
+
+The existing credential desk is an initial QUALFORGE foundation and the team aggregate covers SKILLFLEET's high-level capability mapping. Verified qualifications, mentoring opt-in workflows, real-time team synchronization, and operational staffing eligibility require an approved authenticated enterprise deployment.
 
 ## Create and exchange team profiles
 
