@@ -249,6 +249,7 @@ function addCredential(){
 function renderCredentialCandidates(){
  const records=(state.profile.credentialCandidates||[]).filter(c=>!state.profile.credentials.some(held=>credentialId(held.name)===c.key));
  $('credentialSuggestionCount').textContent=String(records.length);
+ $('credentialNavBadge').textContent=String(records.length);$('credentialNavBadge').hidden=!records.length;
  const box=$('credentialCandidateList');
  box.innerHTML=records.length?records.map(c=>`<article class="credential-suggestion">
   <div><strong>${escapeHTML(c.name)}</strong><small>${escapeHTML(c.authority)} · Matched "${escapeHTML(c.matched)}"</small><span class="tiny-pill">UNREVIEWED / UNVERIFIED</span></div>
