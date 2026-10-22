@@ -55,7 +55,7 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 - `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
 - `consent`: whether the person's affirmed skills contribute to an aggregate demo
 
-## Spider web, confidence, and galaxy — accepted behavior
+## Spider web, confidence, and two galaxy views
 
 **Confirmation puts a skill on the spider web.** The web is a connected radial profile of **employee-attested capabilities**, not a confidence-only radar plot. Its spoke extent reflects how many relevant skills have been confirmed in that domain; confirmed skills that have not been rated still have a visible, neutral node. **Confidence makes a skill shine:** separately self-reported 0–4 task confidence increases a node's brightness, glow, stroke and modest radial prominence. Zero confidence stays visible but subdued, and missing confidence is unknown—not low proficiency.
 
@@ -63,7 +63,13 @@ For production: seek sponsor and employee/labor/privacy consultation; define pur
 
 **Résumé upload updates the visuals immediately.** Amber outlined suggestions show unreviewed keyword matches outside the attested web. Confirming a suggestion changes it to mint and updates spider shape automatically, as does manually adding a skill. The **Refresh spider web** button is a manual redraw for reassurance; no navigation or reload is required.
 
-**The galaxy focuses after onboarding.** Before a profile has experience signals, all 13 domain clusters are available for exploration. With résumé suggestions but no confirmed skills, it initially displays suggested domains. Once the employee has confirmed one or more skills, **only those attested domains are visible by default**, with other skills in those domains retained as exploration opportunities. Use **Visible universe → All 13 domains** to reveal the full taxonomy again. Hover never moves nodes. Only click-hold-and-drag creates mild movement along connected branches.
+**Two distinct galaxy views (explicitly chosen):**
+
+- **Confirmed Skills (default):** draws only the exact set of skills the employee personally attested to. Three confirmed Data Engineering capabilities produce **three nodes**, not all eight skills in that domain. Only clusters with confirmed capabilities appear, and relationship branches exist only between displayed, confirmed skills. A new profile shows an informative empty state with shortcuts to add skills or explore pathways. Résumé suggestions never silently become confirmed nodes.
+- **Pathways:** shows the entire 104-skill taxonomy across 13 domains, with original within-domain and curated cross-domain learning connections. Potential skills are shown neutrally; attested skills have mint rings and unreviewed résumé suggestions have amber rings. Viewing or clicking a potential pathway does not confer an attestation. It offers a way back to the employee profile for explicit confirmation.
+
+The mode selector is prominent above the galaxy. Domain and search filters operate within the selected view. Reset returns to Confirmed Skills; profile changes automatically update visible nodes. Both editions preserve stationary hover, click-to-inspect, and click-hold-drag only.
+
 
 **Compare fictional employees.** Under **My capability profile**, select Morgan Vale (shipyard planning), Riley Chen (cybersecurity), Jordan Brooks (data/cloud engineering), or Casey Rivera (training/knowledge transfer). They are synthetic, not real accounts. The repository ships full workspace and peer-card JSON for each, with a detailed [import/export guide](examples/employees/README.md). The preexisting generic synthetic profile remains available separately.
 
