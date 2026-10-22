@@ -13,7 +13,7 @@ def test_synapse_employee_flow():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('sky.js', 'team.js', 'fleet.js', 'workforce.js', 'demo-profiles.js', 'app.js'):
+        for script in ('sky.js', 'team.js', 'fleet.js', 'workforce.js', 'credentials.js', 'demo-profiles.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
@@ -22,6 +22,7 @@ def test_synapse_employee_flow():
         page.add_script_tag(content=(ROOT/'src/team.js').read_text())
         page.add_script_tag(content=(ROOT/'src/fleet.js').read_text())
         page.add_script_tag(content=(ROOT/'src/workforce.js').read_text())
+        page.add_script_tag(content=(ROOT/'src/credentials.js').read_text())
         page.add_script_tag(content=(ROOT/'src/demo-profiles.js').read_text())
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
         assert page.locator('#metricSkills').inner_text()=='104'
@@ -34,6 +35,29 @@ def test_synapse_employee_flow():
 
         page.locator('#loadResumeSample').click()
         assert page.locator('[data-confirm]').count()>3
+        # Credential keywords create suggestions, never automatic inventory claims.
+        candidates=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1')).profile.credentialCandidates")
+        assert {c['key'] for c in candidates}=={'aws-sap','security-plus','pmp'}
+        page.locator('button[data-view="credentials"]').first.click()
+        assert page.locator('#credentialSuggestionCount').inner_text()=='3'
+        assert 'AWS Certified Solutions Architect' in page.locator('#credentialCandidateList').inner_text()
+        assert page.locator('#credentialList .cred-card').count()==0
+        page.locator('[data-review-credential="aws-sap"]').click()
+        assert 'Professional' in page.locator('#credName').input_value()
+        assert page.locator('#credExpiry').input_value()==''
+        page.locator('#credAuthority').fill('Amazon Web Services')
+        page.locator('#addCredential').click()
+        assert page.locator('#credentialList .cred-card').count()==1
+        assert 'unverified' in page.locator('#credentialList').inner_text().lower()
+        assert page.locator('#credentialSuggestionCount').inner_text()=='2'
+        page.locator('[data-dismiss-credential="pmp"]').click()
+        assert page.locator('#credentialSuggestionCount').inner_text()=='1'
+        page.locator('#credName').fill('AWS Certified Solutions Architect – Professional')
+        page.locator('#addCredential').click()
+        assert page.locator('#credentialList .cred-card').count()==1
+        page.locator('button[data-view="profile"]').first.click()
+        page.locator('#scanResume').click()
+        assert '1 possible certification' in page.locator('#credentialScanSummary').inner_text()
         # Resume results must immediately update both visualizations, but not
         # invent task confidence or mark suggested skills as confirmed.
         page.locator('button[data-view="radar"]').first.click()
@@ -72,11 +96,16 @@ def test_synapse_employee_flow():
         # Only one attested capability is eligible for a task pulse.
         assert len([x for x in page.locator('#surveySkill option').all() if x.get_attribute('value')])==1
         assert page.locator('#saveSurvey').is_enabled()
+        assert not page.locator('#pulsePanel').is_visible()
+        page.locator('#mySkills [data-pulse-skill]').first.click()
+        assert page.locator('#pulsePanel').is_visible()
+        assert '0 of 1' in page.locator('#pulseProgress').inner_text()
         page.locator('#confidence').select_option('3')
         page.locator('#performed').select_option('recent')
         page.locator('#method').select_option('ai')
         page.locator('#saveSurvey').click()
-        assert page.locator('#surveyCount').inner_text()=='1'
+        assert page.locator('#surveyCount').text_content()=='1'
+        assert '1 of 1' in page.locator('#pulseProgress').inner_text()
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('#radarCanvas .radar-spider-node.is-rated').count()>=1
         page.locator('#refreshRadar').click()
@@ -291,11 +320,11 @@ def test_galaxy_three_confirmed_skills():
         errors=[]
         page.on('pageerror', lambda e: errors.append(str(e)))
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('sky.js','team.js','fleet.js','workforce.js','demo-profiles.js','app.js'):
+        for script in ('sky.js','team.js','fleet.js','workforce.js','credentials.js','demo-profiles.js','app.js'):
             html=html.replace(f'<script src="src/{script}"></script>','')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
-        for path in ('sky','team','fleet','workforce','demo-profiles','app'):
+        for path in ('sky','team','fleet','workforce','credentials','demo-profiles','app'):
             page.add_script_tag(content=(ROOT/'src'/f'{path}.js').read_text())
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==0
@@ -343,6 +372,13 @@ def test_standalone_distribution():
         page.goto(standalone.resolve().as_uri())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert 'No login' in page.locator('.demo-identity').inner_text()
+        page.locator('button[data-view="profile"]').first.click()
+        page.locator('#resumeText').fill('Certifications: CompTIA Security+; AWS Solutions Architect Professional.\nPursuing CISSP.')
+        page.locator('#scanResume').click()
+        page.locator('button[data-view="credentials"]').first.click()
+        assert page.locator('#credentialSuggestionCount').inner_text()=='2'
+        assert page.locator('#credentialList .cred-card').count()==0
+        page.locator('button[data-view="graph"]').first.click()
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==0
         assert page.locator('[data-galaxy-mode="confirmed"]').get_attribute('aria-pressed')=='true'
