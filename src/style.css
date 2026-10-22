@@ -80,3 +80,36 @@
 .sky-related:hover,.sky-related:focus-visible{border-color:#65e5d6;background:#1d5c63;color:#fff}
 .sky-skill-node:focus-visible circle.sky-hit-target{stroke:#dbfff8;stroke-opacity:.9;stroke-width:2}
 @media(prefers-reduced-motion:reduce){.sky-link{transition:none}}
+
+
+/* Galaxy visualization: structured capability clusters, not astrology */
+.galaxy-surface{background:radial-gradient(ellipse at center,#0d2b3c 0%,#09172c 45%,#040b18 100%);border:1px solid #355a70}
+.galaxy-domain-hub{pointer-events:none}
+.galaxy-domain-label{
+ fill:#b5d7e0;font-size:10px;font-weight:650;letter-spacing:.018em;
+ paint-order:stroke;stroke:#091928;stroke-width:3px;stroke-linejoin:round;
+}
+.galaxy-surface .sky-semantic{stroke:#dfa971;stroke-dasharray:5 5;stroke-width:1.6}
+.galaxy-surface .sky-branch{stroke:#65e0c9;stroke-width:1.5}
+.galaxy-surface .sky-local{stroke:#609ebc;stroke-width:1.12}
+.galaxy-surface .sky-link{pointer-events:none}
+.fleet-lab-panel{margin-top:20px}
+.fleet-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:19px}
+.fleet-tabs button{min-width:125px}
+.fleet-tabs .fleet-tab-active,.fleet-tabs [aria-pressed=true]{border-color:#5cdbcf!important;background:#1a4855!important;color:#d9fff8!important}
+.fleet-pane[hidden]{display:none!important}
+.fleet-pane h4{margin:5px 0 8px;color:#e3f7ff}
+.fleet-pane label{font-size:12px;color:#aac4d6}
+.fleet-pane select{width:100%;max-width:420px;display:block;padding:11px;margin:6px 0 11px;border:1px solid #315269;background:#0d1d2d;color:#f1f9ff;border-radius:8px}
+.fleet-roster-entry{display:flex;align-items:center;gap:12px;margin:4px 0;padding:10px 12px;border:1px solid #294357;border-radius:9px;background:#11283a;cursor:pointer}
+.fleet-roster-entry input{accent-color:#5ce8ce;width:16px;height:16px;flex-shrink:0}
+.fleet-roster-entry strong{display:block;color:#d4eff3;font-size:12px}
+.fleet-roster-entry small{display:block;color:#8bafc3;font-size:10px;margin-top:3px}
+.fleet-results{margin-top:16px;padding:12px;border-radius:12px;background:#0d1c30;border:1px solid #2b455d;min-height:85px;max-height:470px;overflow:auto}
+.fleet-results h4{margin-bottom:7px}
+.fleet-skill-result{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid #254158;padding:11px 3px}
+.fleet-skill-result:last-child{border-bottom:0}
+.fleet-skill-result strong{display:block;color:#cfece9;font-size:12px}
+.fleet-skill-result small{display:block;color:#90afc2;margin-top:4px;font-size:10px}
+.fleet-skill-result .tiny-pill{white-space:normal;text-align:right;flex-shrink:0;max-width:50%}
+@media(max-width:680px){.fleet-skill-result{align-items:flex-start;flex-direction:column}.fleet-skill-result .tiny-pill{text-align:left;max-width:100%}}
