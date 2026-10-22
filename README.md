@@ -58,6 +58,12 @@ Synapse renders all twelve Western zodiac constellation figures (Aries through P
 
 Nodes respond to pointer movement using an offline spring-and-repulsion animation, with a short cursor trail. Browsers honoring reduced-motion preferences suppress the animated motion. Higher confidence means brighter stars. Unanswered tasks are shown neutrally, not as deficient capability. The radar likewise does not plot unanswered spokes as zero proficiency.
 
+## Magnetic constellation navigation (v0.2 refinement)
+
+The constellation view now uses a **proximity capture zone**: moving the pointer within roughly 28 SVG units of a skill star catches it with a gentle spring rather than pushing it away. Captured nodes track the cursor locally and release when the pointer moves away. A hover tooltip immediately names the skill, its capability domain, its separate self-reported confidence state, and examples of related skills. Keyboard-focusable stars expose the same information; reduced-motion preferences are respected.
+
+The graph retains its astronomical constellation backdrop while overlaying a distinct **capability relationship network**: same-domain chains, hub-to-skill branches, and curated cross-domain connections (for example SQL Pipelines to Power BI; PowerShell Automation to Workflow Automation; AI Orchestration to AI Outcome Validation). Hovering gently fans related nodes outward and highlights their connected lines. Selecting a node pins its evidence details and provides clickable links to neighboring skills. These are illustrative taxonomy / learning relationships, **not observed coworker interactions, prerequisites, or verified qualifications**.
+
 ## Create and exchange team profiles
 
 1. Confirm personal experience mentions in My capability profile, and optionally complete task-level confidence pulses.
