@@ -23,7 +23,7 @@ function personCard(){
  if(!display)throw Error('Enter a display name.');
  if(!s.profile.confirmed.length)throw Error('Confirm at least one experience mention before sharing.');
  const shareScores=$('includeSurveyShare').checked,ratings={};
- if(shareScores)for(const [key,r] of Object.entries(s.profile.surveys)){if(known(key)&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4)ratings[key]={confidence:Number(r.confidence),method:['independent','ai','guided','none'].includes(r.method)?r.method:'none'}}
+ if(shareScores)for(const [key,r] of Object.entries(s.profile.surveys)){if(known(key)&&s.profile.confirmed.includes(key)&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4)ratings[key]={confidence:Number(r.confidence),method:['independent','ai','guided','none'].includes(r.method)?r.method:'none'}}
  if(!s.profile.shareId)s.profile.shareId=id();
  const extra=s.workforce?.mentorship||{};
  const shareMentor=$('includeMentorShare').checked,shareQualifications=$('includeQualificationShare').checked;
@@ -36,7 +36,7 @@ function normalizeCard(value){
  if(typeof value.id!=='string'||!/^[a-zA-Z0-9-]{8,70}$/.test(value.id)||typeof value.name!=='string'||!value.name.trim())throw Error('Invalid peer identifier or display name.');
  if(!Array.isArray(value.skills)||value.skills.length>104)throw Error('Invalid confirmed skill list.');
  const skills=[...new Set(value.skills.filter(x=>typeof x==='string'&&known(x)))];
- const surveys={};if(value.surveys&&typeof value.surveys==='object'&&!Array.isArray(value.surveys)){for(let [key,r] of Object.entries(value.surveys).slice(0,104)){if(!known(key)||!r||typeof r!=='object')continue;let v=Number(r.confidence);if(Number.isInteger(v)&&v>=0&&v<=4&&['none','independent','ai','guided'].includes(r.method))surveys[key]={confidence:v,method:r.method}}}
+ const surveys={};if(value.surveys&&typeof value.surveys==='object'&&!Array.isArray(value.surveys)){for(let [key,r] of Object.entries(value.surveys).slice(0,104)){if(!known(key)||!skills.includes(key)||!r||typeof r!=='object')continue;let v=Number(r.confidence);if(Number.isInteger(v)&&v>=0&&v<=4&&['none','independent','ai','guided'].includes(r.method))surveys[key]={confidence:v,method:r.method}}}
  return {id:value.id,name:value.name.trim().slice(0,70),skills,surveys,synthetic:false,issued:/^\d{4}-\d{2}-\d{2}$/.test(value.issued||'')?value.issued:'Unknown',
  mentorOptIn:value.mentorOptIn===true,mentorTopics:Array.isArray(value.mentorTopics)?[...new Set(value.mentorTopics.filter(known))].slice(0,30):[],
  availability:['available','limited','unavailable','unknown'].includes(value.availability)?value.availability:'unknown',
