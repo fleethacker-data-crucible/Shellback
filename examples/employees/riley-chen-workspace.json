@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "profile": {
+    "confirmed": [
+      "threat-modeling",
+      "security-controls",
+      "vulnerability-triage",
+      "identity-access",
+      "zero-trust-design",
+      "incident-readiness",
+      "access-reviews",
+      "security-documentation",
+      "risk-assessment",
+      "cloud-observability",
+      "audit-evidence"
+    ],
+    "surveys": {
+      "threat-modeling": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "security-controls": {
+        "confidence": 3,
+        "performed": "before",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "vulnerability-triage": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "identity-access": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "guided",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "zero-trust-design": {
+        "confidence": 2,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "incident-readiness": {
+        "confidence": 4,
+        "performed": "before",
+        "method": "ai",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "access-reviews": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "security-documentation": {
+        "confidence": 3,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      },
+      "risk-assessment": {
+        "confidence": 4,
+        "performed": "recent",
+        "method": "independent",
+        "note": "Fictional training scenario only.",
+        "updated": "2026-10-22"
+      }
+    },
+    "credentials": [
+      {
+        "id": "demo-credential-riley-chen-1",
+        "name": "Synthetic Security Foundations Badge",
+        "authority": "Synthetic training program",
+        "expiry": "2027-04-12",
+        "created": "2026-10-22"
+      }
+    ],
+    "consent": false,
+    "candidates": [
+      "resilience-recovery",
+      "aws-architecture"
+    ],
+    "displayName": "Riley Chen",
+    "demoPersona": "riley-chen"
+  },
+  "roi": {},
+  "workforce": {}
+}
