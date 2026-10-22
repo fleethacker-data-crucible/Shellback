@@ -154,6 +154,9 @@
 .wf-pane .empty{padding:22px 14px}
 @media(max-width:760px){.wf-domain-row{grid-template-columns:minmax(105px,1fr) minmax(55px,1fr) 36px;gap:7px}.wf-domain-row small{grid-column:1/-1;text-align:left}}
 
+.wf-separator{border:0;border-top:1px solid #355668;margin:22px 0 17px}
+.wf-pane button:disabled{opacity:.45;cursor:not-allowed}
+
 </style></head>
 <body>
 <div class="shell">
@@ -230,6 +233,10 @@
     <label for="wfModuleAnswer">Employee-authored reference answer</label><textarea id="wfModuleAnswer" rows="4" placeholder="Document state, unresolved risks, responsible owner..."></textarea>
     <label for="wfModuleScenario">Applied scenario (optional)</label><textarea id="wfModuleScenario" rows="3" placeholder="A shift change occurs with an unresolved maintenance issue..."></textarea>
     <button id="wfModuleCreate" class="primary">Create study guide</button>
+    <hr class="wf-separator"><h4>Import approved plain-text PQS-style outline</h4><p class="note">Paste nonsensitive, authorized task lines such as "1.1 Explain the turnover process." Synapse creates draft questions only; it never fabricates reference answers or qualification sign-offs.</p>
+    <label for="wfOutlineSkill">Skill domain for imported tasks</label><select id="wfOutlineSkill"></select>
+    <label for="wfOutlineText">Approved outline excerpt (up to 12,000 characters)</label><textarea id="wfOutlineText" rows="4" maxlength="12000" placeholder="1.1 Describe the incident turnover process&#10;1.2 Explain escalation requirements"></textarea>
+    <button id="wfOutlineImport" class="secondary">Convert outline into review-required study drafts</button>
    </div></section>
    <section class="panel"><h3>Practice a guide</h3><label for="wfModuleSelect">Select guide</label><select id="wfModuleSelect" class="wf-wide-select"></select><div id="wfStudyArea"></div></section>
   </div>
@@ -714,7 +721,7 @@ function fresh(){return {modules:[],attempts:[],goals:[],mentorship:{enabled:fal
 function normalize(value,known){
  let w=fresh();if(!value||typeof value!=='object'||Array.isArray(value))return w;
  const list=(xs,n)=>Array.isArray(xs)?xs.slice(0,n):[];
- w.modules=list(value.modules,100).map(m=>({id:trim(m?.id,64)||U(),title:trim(m?.title,120),skill:known(m?.skill)?m.skill:'',source:trim(m?.source,220),question:trim(m?.question,1000),answer:trim(m?.answer,1600),scenario:trim(m?.scenario,1200),created:/^\d{4}-\d{2}-\d{2}$/.test(m?.created||'')?m.created:now()})).filter(m=>m.title&&m.question&&m.answer&&m.skill);
+ w.modules=list(value.modules,100).map(m=>({id:trim(m?.id,64)||U(),title:trim(m?.title,120),skill:known(m?.skill)?m.skill:'',source:trim(m?.source,220),question:trim(m?.question,1000),answer:trim(m?.answer,1600),scenario:trim(m?.scenario,1200),created:/^\d{4}-\d{2}-\d{2}$/.test(m?.created||'')?m.created:now()})).filter(m=>m.title&&m.question&&m.skill);
  const moduleIds=new Set(w.modules.map(m=>m.id));
  w.attempts=list(value.attempts,1000).map(a=>({moduleId:trim(a?.moduleId,64),result:a?.result==='reviewed'?'reviewed':'practice',date:/^\d{4}-\d{2}-\d{2}$/.test(a?.date||'')?a.date:now()})).filter(a=>moduleIds.has(a.moduleId));
  w.goals=list(value.goals,120).map(g=>({id:trim(g?.id,64)||U(),skill:known(g?.skill)?g.skill:'',target:trim(g?.target,250),due:/^\d{4}-\d{2}-\d{2}$/.test(g?.due||'')?g.due:'',status:g?.status==='done'?'done':'planned'})).filter(g=>g.skill&&g.target);
@@ -737,10 +744,10 @@ function renderQual(){
  const w=data(),sel=$('wfModuleSelect'),prev=selectedModule;
  sel.innerHTML=w.modules.map(m=>`<option value="${E(m.id)}"${m.id===prev?' selected':''}>${E(m.title)}</option>`).join('');
  const m=moduleSelected();if(m)sel.value=m.id;
- $('wfModuleSkill').innerHTML=options();
+ $('wfModuleSkill').innerHTML=options();$('wfOutlineSkill').innerHTML=options();
  $('wfQualStats').innerHTML=`<div><span>STUDY GUIDES</span><strong>${w.modules.length}</strong></div><div><span>SELF-REVIEW ATTEMPTS</span><strong>${w.attempts.length}</strong></div><div><span>NEEDS REVISIT</span><strong>${w.modules.filter(m=>{const a=[...w.attempts].reverse().find(a=>a.moduleId===m.id);return a&&a.result==='practice'}).length}</strong></div>`;
- $('wfStudyArea').innerHTML=m?`<div class="eyebrow">LOCAL STUDY / UNVERIFIED</div><h4>${E(m.title)}</h4><p class="muted">${E(name(m.skill))} · Source: ${E(m.source||'Unspecified employee-supplied reference')}</p><h4>Knowledge check</h4><p>${E(m.question)}</p><div id="wfStudyAnswer" class="wf-answer" ${revealed?'':'hidden'}><strong>Employee-supplied reference answer</strong><p>${E(m.answer)}</p></div><button class="secondary" id="wfReveal">${revealed?'Hide reference':'Show reference'}</button><h4>Scenario reflection</h4><p>${E(m.scenario||'Explain when and how you would apply this task, and who would verify completion.')}</p><div class="button-row"><button id="wfReviewed" class="primary">I reviewed this task</button><button id="wfPractice" class="secondary">Needs more practice</button><button id="wfDeleteModule" class="danger">Delete guide</button></div><p class="note">Self-review records are learning activity only. No PQS sign-off, demonstration verification or readiness prediction is created.</p>`:'<div class="empty">Create a study guide using approved, nonsensitive learning material. No official PQS content is bundled or generated.</div>';
- if(m){$('wfReveal').onclick=()=>{revealed=!revealed;renderQual()};for(const [id,result] of [['wfReviewed','reviewed'],['wfPractice','practice']])$(id).onclick=()=>{w.attempts.push({moduleId:m.id,result,date:now()});if(w.attempts.length>1000)w.attempts.shift();save()};$('wfDeleteModule').onclick=()=>{if(!confirm('Delete this local study guide and its practice history?'))return;w.modules=w.modules.filter(x=>x.id!==m.id);w.attempts=w.attempts.filter(a=>a.moduleId!==m.id);selectedModule=null;revealed=false;save()}}
+ $('wfStudyArea').innerHTML=m?`<div class="eyebrow">LOCAL STUDY / UNVERIFIED</div><h4>${E(m.title)}</h4><p class="muted">${E(name(m.skill))} · Source: ${E(m.source||'Unspecified employee-supplied reference')}</p><h4>Knowledge check</h4><p>${E(m.question)}</p>${m.answer?'<div id="wfStudyAnswer" class="wf-answer" '+(revealed?'':'hidden')+'><strong>Employee-supplied reference answer</strong><p>'+E(m.answer)+'</p></div><button class="secondary" id="wfReveal">'+(revealed?'Hide reference':'Show reference')+'</button>':'<div class="notice">REVIEW REQUIRED — outline intake does not generate answer keys or validate official content. Add an answer checked against the approved source before recording self-practice.</div><label for="wfDraftReference">Employee-reviewed reference answer</label><textarea id="wfDraftReference" rows="4" maxlength="1600"></textarea><button id="wfDraftSave" class="primary">Complete study draft</button>'}<h4>Scenario reflection</h4><p>${E(m.scenario||'Explain when and how you would apply this task, and who would verify completion.')}</p><div class="button-row"><button id="wfReviewed" class="primary" ${m.answer?"":"disabled"}>I reviewed this task</button><button id="wfPractice" class="secondary" ${m.answer?"":"disabled"}>Needs more practice</button><button id="wfDeleteModule" class="danger">Delete guide</button></div><p class="note">Self-review records are learning activity only. No PQS sign-off, demonstration verification or readiness prediction is created.</p>`:'<div class="empty">Create a study guide using approved, nonsensitive learning material. No official PQS content is bundled or generated.</div>';
+ if(m){if(m.answer){$('wfReveal').onclick=()=>{revealed=!revealed;renderQual()}}else{$('wfDraftSave').onclick=()=>{const answer=trim($('wfDraftReference').value,1600);if(!answer)return message('Review the approved source and supply the reference answer.');m.answer=answer;revealed=false;save()}};for(const [id,result] of [['wfReviewed','reviewed'],['wfPractice','practice']])$(id).onclick=()=>{w.attempts.push({moduleId:m.id,result,date:now()});if(w.attempts.length>1000)w.attempts.shift();save()};$('wfDeleteModule').onclick=()=>{if(!confirm('Delete this local study guide and its practice history?'))return;w.modules=w.modules.filter(x=>x.id!==m.id);w.attempts=w.attempts.filter(a=>a.moduleId!==m.id);selectedModule=null;revealed=false;save()}}
  $('wfStudyHistory').innerHTML=w.attempts.length?[...w.attempts].reverse().slice(0,12).map(a=>`<div class="wf-detail-line"><span>${E(w.modules.find(m=>m.id===a.moduleId)?.title||'Retired guide')}</span><small>${E(a.result==='reviewed'?'Self-reviewed':'Needs practice')} · ${E(a.date)}</small></div>`).join(''):'<p class="muted">No study history yet.</p>';
 }
 function renderSkillfleet(){
@@ -797,6 +804,21 @@ function init(options){
  ctx=options;data();
  document.querySelectorAll('[data-workforce-tab]').forEach(b=>b.onclick=()=>pane(b.dataset.workforceTab));
  $('wfModuleCreate').onclick=()=>{const w=data(),m={id:U(),title:trim($('wfModuleTitle').value,120),skill:$('wfModuleSkill').value,source:trim($('wfModuleSource').value,220),question:trim($('wfModuleQuestion').value,1000),answer:trim($('wfModuleAnswer').value,1600),scenario:trim($('wfModuleScenario').value,1200),created:now()};if(!m.title||!m.question||!m.answer)return message('Enter guide title, question, and reference answer.');if(w.modules.length>=100)return message('Local limit: 100 study guides.');w.modules.push(m);selectedModule=m.id;revealed=false;for(const id of ['wfModuleTitle','wfModuleSource','wfModuleQuestion','wfModuleAnswer','wfModuleScenario'])$(id).value='';save()};
+ $('wfOutlineImport').onclick=()=>{
+  const raw=$('wfOutlineText').value.slice(0,12000),rows=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const tasks=[];
+  for(const row of rows){
+   const m=row.match(/^(?:TASK\s*)?(?:(?:\d+(?:\.\d+)*[.)]?|[A-Z][.)])\s+)(.{8,220})$/i);
+   if(!m)continue;const title=trim(m[1].replace(/\s+\.{3,}$/,''),120);
+   if(title&&!tasks.includes(title))tasks.push(title);
+   if(tasks.length>=50)break
+  }
+  if(!tasks.length)return message('No numbered task lines recognized. Example: 1.1 Explain the turnover process.');
+  const w=data(),count=Math.min(tasks.length,100-w.modules.length);if(count<=0)return message('Guide limit reached.');
+  if(!confirm('Create '+count+' unreviewed study drafts from your supplied outline? No answers or qualification results will be generated.'))return;
+  const skill=$('wfOutlineSkill').value;for(const title of tasks.slice(0,count))w.modules.push({id:U(),title,skill,source:'Employee-supplied approved outline (local; unverified)',question:'Explain the approved steps, checks, and limitations for: '+title,answer:'',scenario:'Describe a practice situation where this task would apply and how you would validate its completion.',created:now()});
+  selectedModule=w.modules[w.modules.length-count].id;revealed=false;$('wfOutlineText').value='';save();message('Created '+count+' review-required study drafts. Supply the source-checked answer for each before recording practice.');
+ };
  $('wfModuleSelect').onchange=e=>{selectedModule=e.target.value;revealed=false;renderQual()};
  $('wfGoalAdd').onclick=()=>{const w=data(),target=trim($('wfGoalTarget').value,250);if(!target)return message('Enter an intended learning or cross-training outcome.');w.goals.push({id:U(),skill:$('wfGoalSkill').value,target,due:$('wfGoalDue').value||'',status:'planned'});$('wfGoalTarget').value='';save()};
  $('wfGoalRows').onclick=e=>{const row=e.target.closest('[data-wfgoal],[data-wfgoaldel]');if(!row)return;const w=data(),id=row.dataset.wfgoal||row.dataset.wfgoaldel;if(row.dataset.wfgoaldel)w.goals=w.goals.filter(g=>g.id!==id);else{const g=w.goals.find(g=>g.id===id);if(g)g.status=g.status==='done'?'planned':'done'}save()};
