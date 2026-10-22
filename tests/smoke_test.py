@@ -13,7 +13,7 @@ def test_synapse_employee_flow():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.on('dialog', lambda dialog: dialog.accept())
         html=(ROOT/'index.html').read_text().replace('<link rel="stylesheet" href="src/style.css">','')
-        for script in ('sky.js', 'team.js', 'fleet.js', 'app.js'):
+        for script in ('sky.js', 'team.js', 'fleet.js', 'workforce.js', 'app.js'):
             html=html.replace(f'<script src="src/{script}"></script>', '')
         page.set_content(html)
         page.evaluate("""() => {const cache={}; Object.defineProperty(window,'localStorage',{configurable:true,value:{setItem:(k,v)=>cache[k]=v,getItem:k=>cache[k]||null,removeItem:k=>delete cache[k],clear:()=>Object.keys(cache).forEach(k=>delete cache[k])}})}""")
@@ -21,6 +21,7 @@ def test_synapse_employee_flow():
         page.add_script_tag(content=(ROOT/'src/sky.js').read_text())
         page.add_script_tag(content=(ROOT/'src/team.js').read_text())
         page.add_script_tag(content=(ROOT/'src/fleet.js').read_text())
+        page.add_script_tag(content=(ROOT/'src/workforce.js').read_text())
         page.add_script_tag(content=(ROOT/'src/app.js').read_text())
         assert page.locator('#metricSkills').inner_text()=='104'
         assert page.locator('#metricDomains').inner_text()=='13'
@@ -74,6 +75,59 @@ def test_synapse_employee_flow():
         assert 'Knowledge transfer watchlist' in page.locator('#fleetRelay').inner_text()
         page.locator('#fleetTabCompose').click()
         assert page.locator('#fleetRoster [data-fleetperson]').count()>=3
+        # End-to-end FLEETHACKER workforce suite tests.
+        page.locator('button[data-view="workforce"]').first.click()
+        assert page.locator('#workforce').is_visible()
+        assert page.locator('[data-workforce-tab]').count()==5
+        page.locator('#wfModuleTitle').fill('Synthetic handoff study guide')
+        page.locator('#wfModuleSkill').select_option('qualification-planning')
+        page.locator('#wfModuleSource').fill('Synthetic exercise; no official PQS material')
+        page.locator('#wfModuleQuestion').fill('What must be checked before turnover?')
+        page.locator('#wfModuleAnswer').fill('Review owner, outstanding actions, and status.')
+        page.locator('#wfModuleScenario').fill('A safety issue remains open at turnover.')
+        page.locator('#wfModuleCreate').click()
+        assert 'Synthetic handoff study guide' in page.locator('#wfStudyArea').inner_text()
+        page.locator('#wfReveal').click()
+        assert 'Review owner' in page.locator('#wfStudyArea').inner_text()
+        page.locator('#wfPractice').click()
+        assert 'Needs practice' in page.locator('#wfStudyHistory').inner_text()
+        page.locator('[data-workforce-tab="skillfleet"]').click()
+        assert 'Shared capability coverage' in page.locator('[data-workforce-pane="skillfleet"]').inner_text()
+        page.locator('#wfGoalSkill').select_option('sql-pipelines')
+        page.locator('#wfGoalTarget').fill('Pair with peer on a data pipeline')
+        page.locator('#wfGoalAdd').click()
+        assert 'Pair with peer' in page.locator('#wfGoalRows').inner_text()
+        page.locator('[data-workforce-tab="teamforge"]').click()
+        page.locator('#wfMissionSkill').select_option('aws-architecture')
+        page.locator('#wfMissionMin').fill('2')
+        page.locator('#wfMissionQualification').fill('Synthetic AWS credential')
+        page.locator('#wfMissionAdd').click()
+        assert 'AWS Architecture' in page.locator('#wfMissionResults').inner_text()
+        assert 'unverified' in page.locator('#wfMissionResults').inner_text().lower()
+        page.locator('[data-workforce-tab="mentorlink"]').click()
+        page.locator('#wfMentorEnabled').check()
+        page.locator('#wfMentorAvailability').select_option('available')
+        page.locator('#wfMentorAdd').select_option('aws-architecture')
+        page.locator('#wfMentorTopicAdd').click()
+        assert 'AWS Architecture' in page.locator('#wfMentorTopics').inner_text()
+        page.locator('#wfMentorSearch').select_option('aws-architecture')
+        assert 'My local profile' in page.locator('#wfMentorMatches').inner_text()
+        page.locator('[data-workforce-tab="relay"]').click()
+        page.locator('#wfKnowledgeTopic').fill('Synthetic shipyard handoff lesson')
+        page.locator('#wfKnowledgeSkill').select_option('qualification-planning')
+        page.locator('#wfKnowledgeContext').fill('A qualification record needs coordination.')
+        page.locator('#wfKnowledgeSteps').fill('Confirm source, owner, and next action.')
+        page.locator('#wfKnowledgeSource').fill('Synthetic reference')
+        page.locator('#wfKnowledgeAdd').click()
+        assert 'Synthetic shipyard handoff lesson' in page.locator('#wfKnowledgeRecords').inner_text()
+        page.locator('[data-wfapprove]').first.click()
+        page.locator('#wfApprovedOnly').check()
+        assert 'OWNER-MARKED APPROVED' in page.locator('#wfKnowledgeRecords').inner_text()
+        backup=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
+        assert len(backup['workforce']['modules'])==1
+        assert len(backup['workforce']['mission']['requirements'])==1
+        assert len(backup['workforce']['knowledge'])==1
+        assert backup['workforce']['mentorship']['enabled'] is True
         page.locator('button[data-view="radar"]').first.click()
         assert page.locator('.radar-svg').count()>0
         page.locator('button[data-view="graph"]').first.click()
@@ -144,6 +198,10 @@ def test_standalone_distribution():
         assert page.locator('#graphSvg .sky-semantic').count()>=12
         page.locator('button[data-view="team"]').first.click()
         assert page.locator('#fleetLab').count()==1
+        page.locator('button[data-view="workforce"]').first.click()
+        assert page.locator('[data-workforce-tab]').count()==5
+        page.locator('[data-workforce-tab="teamforge"]').click()
+        assert page.locator('#wfMissionRequirements').count()==1
         page.locator('#fleetTabMentors').click()
         assert page.locator('#fleetMentorMatches').count()==1
         page.locator('button[data-view="graph"]').first.click()
