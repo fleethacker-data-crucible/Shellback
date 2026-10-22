@@ -239,136 +239,29 @@ def test_standalone_distribution():
         page.on('pageerror', lambda e: errors.append(str(e)))
         page.goto(standalone.resolve().as_uri())
         assert page.locator('#metricSkills').inner_text()=='104'
+        assert 'No login' in page.locator('.demo-identity').inner_text()
         page.locator('button[data-view="graph"]').first.click()
         assert page.locator('#graphSvg .sky-skill-node').count()==104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .sky-branch').count()>=35
         assert page.locator('#graphSvg .sky-semantic').count()>=12
-        page.locator('button[data-view="team"]').first.click()
-        assert page.locator('#fleetLab').count()==1
-        page.locator('button[data-view="workforce"]').first.click()
-        assert page.locator('[data-workforce-tab]').count()==5
-        page.locator('[data-workforce-tab="teamforge"]').click()
-        assert page.locator('#wfMissionRequirements').count()==1
-        page.locator('button[data-view="team"]').first.click()
-        page.locator('#fleetTabMentors').click()
-        assert page.locator('#fleetMentorMatches').is_visible()
-        page.locator('button[data-view="graph"]').first.click()
         skill=page.locator('#graphSvg .sky-skill-node').first
         name=skill.get_attribute('aria-label')
         skill.hover(force=True)
         page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
         assert name in page.locator('#graphHoverTip').inner_text()
-        assert not errors, errors
-        browser.close()
-
-if __name__=='__main__':
-    test_synapse_employee_flow()
-    test_standalone_distribution()
-    print('PASS: modular and standalone Synapse browser smoke flows')
-)
-        assert page.locator('#roiCapacity').inner_text().startswith('
-        saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
-        assert len(saved['profile']['confirmed'])==1
-        assert len(saved['profile']['surveys'])==1
-        page.locator('button[data-view="profile"]').first.click()
-        page.locator('#loadDemoProfile').click()
-        assert page.locator('#profileCount').inner_text()=='20'
-        assert page.locator('#surveyCount').inner_text()=='20'
-        assert page.locator('#radarCanvas .radar-premium-point').count()>0
-        assert not errors, errors
-        browser.close()
-
-def test_standalone_distribution():
-    """The downloadable single HTML file must be equally interactive offline."""
-    standalone=ROOT/'Synapse-Standalone.html'
-    assert standalone.exists()
-    with sync_playwright() as pw:
-        browser=pw.chromium.launch(headless=True,
-            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
-            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
-        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
-        errors=[]
-        page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(standalone.resolve().as_uri())
-        assert page.locator('#metricSkills').inner_text()=='104'
-        page.locator('button[data-view="graph"]').first.click()
-        assert page.locator('#graphSvg .sky-skill-node').count()==104
-        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
-        assert page.locator('#graphSvg .sky-branch').count()>=35
-        assert page.locator('#graphSvg .sky-semantic').count()>=12
-        page.locator('button[data-view="team"]').first.click()
-        assert page.locator('#fleetLab').count()==1
         page.locator('button[data-view="workforce"]').first.click()
         assert page.locator('[data-workforce-tab]').count()==5
-        page.locator('[data-workforce-tab="teamforge"]').click()
-        assert page.locator('#wfMissionRequirements').count()==1
-        page.locator('button[data-view="team"]').first.click()
-        page.locator('#fleetTabMentors').click()
-        assert page.locator('#fleetMentorMatches').is_visible()
-        page.locator('button[data-view="graph"]').first.click()
-        skill=page.locator('#graphSvg .sky-skill-node').first
-        name=skill.get_attribute('aria-label')
-        skill.hover(force=True)
-        page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
-        assert name in page.locator('#graphHoverTip').inner_text()
-        assert not errors, errors
-        browser.close()
-
-if __name__=='__main__':
-    test_synapse_employee_flow()
-    test_standalone_distribution()
-    print('PASS: modular and standalone Synapse browser smoke flows')
-)
-        assert page.locator('#roiSensitivity > div').count()==3
-        assert 'Cash-only net after operating cost' in page.locator('#roi').inner_text()
-        page.locator('[data-roi="adoption"]').fill('0')
-        assert page.locator('#roiCash').inner_text()=='$0'
-        assert page.locator('#roiCapacity').inner_text()=='$0'
-        saved=page.evaluate("() => JSON.parse(localStorage.getItem('synapse-mvp-v1'))")
-        assert len(saved['profile']['confirmed'])==1
-        assert len(saved['profile']['surveys'])==1
-        page.locator('button[data-view="profile"]').first.click()
-        page.locator('#loadDemoProfile').click()
-        assert page.locator('#profileCount').inner_text()=='20'
-        assert page.locator('#surveyCount').inner_text()=='20'
-        assert page.locator('#radarCanvas .radar-premium-point').count()>0
-        assert not errors, errors
-        browser.close()
-
-def test_standalone_distribution():
-    """The downloadable single HTML file must be equally interactive offline."""
-    standalone=ROOT/'Synapse-Standalone.html'
-    assert standalone.exists()
-    with sync_playwright() as pw:
-        browser=pw.chromium.launch(headless=True,
-            executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,
-            args=['--no-sandbox'] if Path('/usr/bin/chromium').exists() else [])
-        page=browser.new_page(viewport={'width':1440,'height':900}, reduced_motion='reduce')
-        errors=[]
-        page.on('pageerror', lambda e: errors.append(str(e)))
-        page.goto(standalone.resolve().as_uri())
-        assert page.locator('#metricSkills').inner_text()=='104'
-        page.locator('button[data-view="graph"]').first.click()
-        assert page.locator('#graphSvg .sky-skill-node').count()==104
-        assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
-        assert page.locator('#graphSvg .sky-branch').count()>=35
-        assert page.locator('#graphSvg .sky-semantic').count()>=12
+        assert page.locator('[data-workforce-open]').count()==5
+        page.locator('[data-workforce-open="mentorlink"]').click()
+        assert page.locator('[data-workforce-pane="mentorlink"]').is_visible()
         page.locator('button[data-view="team"]').first.click()
         assert page.locator('#fleetLab').count()==1
-        page.locator('button[data-view="workforce"]').first.click()
-        assert page.locator('[data-workforce-tab]').count()==5
-        page.locator('[data-workforce-tab="teamforge"]').click()
-        assert page.locator('#wfMissionRequirements').count()==1
-        page.locator('button[data-view="team"]').first.click()
         page.locator('#fleetTabMentors').click()
         assert page.locator('#fleetMentorMatches').is_visible()
-        page.locator('button[data-view="graph"]').first.click()
-        skill=page.locator('#graphSvg .sky-skill-node').first
-        name=skill.get_attribute('aria-label')
-        skill.hover(force=True)
-        page.wait_for_function('() => document.querySelector("#graphHoverTip") && !document.querySelector("#graphHoverTip").hidden')
-        assert name in page.locator('#graphHoverTip').inner_text()
+        page.locator('button[data-view="roi"]').first.click()
+        assert page.locator('#roiCash').inner_text().startswith('$')
+        assert page.locator('#roiCapacity').inner_text().startswith('$')
         assert not errors, errors
         browser.close()
 
