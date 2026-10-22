@@ -25,7 +25,11 @@ function personCard(){
  const shareScores=$('includeSurveyShare').checked,ratings={};
  if(shareScores)for(const [key,r] of Object.entries(s.profile.surveys)){if(known(key)&&Number.isInteger(Number(r.confidence))&&Number(r.confidence)>=0&&Number(r.confidence)<=4)ratings[key]={confidence:Number(r.confidence),method:['independent','ai','guided','none'].includes(r.method)?r.method:'none'}}
  if(!s.profile.shareId)s.profile.shareId=id();
- return {format:'synapse-peer-card',version:1,id:s.profile.shareId,name:display,consent:true,issued:new Date().toISOString().slice(0,10),skills:[...new Set(s.profile.confirmed.filter(known))],surveys:ratings};
+ const extra=s.workforce?.mentorship||{};
+ const shareMentor=$('includeMentorShare').checked,shareQualifications=$('includeQualificationShare').checked;
+ return {format:'synapse-peer-card',version:1,id:s.profile.shareId,name:display,consent:true,issued:new Date().toISOString().slice(0,10),skills:[...new Set(s.profile.confirmed.filter(known))],surveys:ratings,
+  ...(shareMentor?{mentorOptIn:extra.enabled===true,mentorTopics:(extra.topics||[]).filter(known).slice(0,30),availability:['available','limited','unavailable','unknown'].includes(extra.availability)?extra.availability:'unknown',mentorIntro:String(extra.intro||'').slice(0,500)}:{}),
+  ...(shareQualifications?{qualificationClaims:(s.profile.credentials||[]).map(c=>String(c.name||'').slice(0,160)).filter(Boolean).slice(0,100),qualificationDisclaimer:'employee-entered, unverified'}:{})};
 }
 function normalizeCard(value){
  if(!value||value.format!=='synapse-peer-card'||value.version!==1||value.consent!==true)throw Error('Not an opt-in Synapse peer card.');
@@ -33,11 +37,15 @@ function normalizeCard(value){
  if(!Array.isArray(value.skills)||value.skills.length>104)throw Error('Invalid confirmed skill list.');
  const skills=[...new Set(value.skills.filter(x=>typeof x==='string'&&known(x)))];
  const surveys={};if(value.surveys&&typeof value.surveys==='object'&&!Array.isArray(value.surveys)){for(let [key,r] of Object.entries(value.surveys).slice(0,104)){if(!known(key)||!r||typeof r!=='object')continue;let v=Number(r.confidence);if(Number.isInteger(v)&&v>=0&&v<=4&&['none','independent','ai','guided'].includes(r.method))surveys[key]={confidence:v,method:r.method}}}
- return {id:value.id,name:value.name.trim().slice(0,70),skills,surveys,synthetic:false,issued:/^\d{4}-\d{2}-\d{2}$/.test(value.issued||'')?value.issued:'Unknown'};
+ return {id:value.id,name:value.name.trim().slice(0,70),skills,surveys,synthetic:false,issued:/^\d{4}-\d{2}-\d{2}$/.test(value.issued||'')?value.issued:'Unknown',
+ mentorOptIn:value.mentorOptIn===true,mentorTopics:Array.isArray(value.mentorTopics)?[...new Set(value.mentorTopics.filter(known))].slice(0,30):[],
+ availability:['available','limited','unavailable','unknown'].includes(value.availability)?value.availability:'unknown',
+ mentorIntro:String(value.mentorIntro||'').slice(0,500),
+ qualificationClaims:Array.isArray(value.qualificationClaims)?value.qualificationClaims.slice(0,100).filter(x=>typeof x==='string').map(x=>x.slice(0,160)):[]};
 }
 function participants(team){
  let people=[...(Array.isArray(team.members)?team.members:[])];
- const s=ctx.get();if(s.profile.consent&&s.profile.confirmed.length)people.push({id:'self-current',name:'My profile (local opt-in)',skills:s.profile.confirmed.filter(known),surveys:{},synthetic:false,self:true});
+ const s=ctx.get();if(s.profile.consent&&s.profile.confirmed.length)people.push({id:'self-current',name:'My profile (local opt-in)',skills:s.profile.confirmed.filter(known),surveys:{},synthetic:false,self:true,mentorOptIn:s.workforce?.mentorship?.enabled===true,mentorTopics:s.workforce?.mentorship?.topics||[],availability:s.workforce?.mentorship?.availability||'unknown',qualificationClaims:(s.profile.credentials||[]).map(c=>c.name)});
  return people;
 }
 function build(team){
@@ -73,9 +81,9 @@ function init(options){
  $('teamSelect').onchange=e=>{ctx.get().teams.active=e.target.value;selectedPeer=null;save()};
  $('createTeam').onclick=()=>{const n=$('teamName').value.trim().slice(0,80);if(!n)return note('Enter a name for your team.');if(ctx.get().teams.items.length>=25)return note('Limit of 25 local team workspaces reached.');const t={id:'team-'+rnd(),name:n,members:[],priorities:[]};ctx.get().teams.items.push(t);ctx.get().teams.active=t.id;$('teamName').value='';selectedPeer=null;save();note(`Created ${n}. Import peer cards to populate it.`)};
  $('deleteTeam').onclick=()=>{let t=current();if(!confirm(`Delete local team "${t.name}" and its imported copies?`))return;ctx.get().teams.items=ctx.get().teams.items.filter(x=>x.id!==t.id);if(!ctx.get().teams.items.length)ctx.get().teams=defaultTeams();ctx.get().teams.active=ctx.get().teams.items[0].id;selectedPeer=null;save();note('Local team deleted.')};
- $('exportPeer').onclick=()=>{try{const c=personCard();if(!confirm(`Share ${c.skills.length} skill mention(s)${Object.keys(c.surveys).length?', plus '+Object.keys(c.surveys).length+' self-reported task responses':''} under the name "${c.name}"? The recipient can retain and redistribute this file.`))return;ctx.persist();download(c,`synapse-peer-${c.issued}.json`);note('Peer card exported. You control where to send it.')}catch(e){note(e.message)}};
+ $('exportPeer').onclick=()=>{try{const c=personCard();if(!confirm(`Share ${c.skills.length} skill mention(s)${Object.keys(c.surveys).length?', plus '+Object.keys(c.surveys).length+' self-reported task responses':''}${$('includeMentorShare').checked?', mentoring/availability disclosures':''}${$('includeQualificationShare').checked?', employee-entered credential names':''} under the name "${c.name}"? The recipient can retain and redistribute this file.`))return;ctx.persist();download(c,`synapse-peer-${c.issued}.json`);note('Peer card exported. You control where to send it.')}catch(e){note(e.message)}};
  $('importPeerBtn').onclick=()=>$('importPeerFile').click();
- $('importPeerFile').onchange=async e=>{try{let f=e.target.files[0];if(!f)return;if(f.size>256000)throw Error('Peer card exceeds 256 KB.');let c=normalizeCard(JSON.parse(await f.text()));let t=current();if(t.members.length>=100&&!t.members.some(p=>p.id===c.id))throw Error('Team limit of 100 peer cards reached.');if(!confirm(`Import ${c.name}'s opt-in card (${c.skills.length} skills, ${Object.keys(c.surveys).length} optional survey signals) into "${t.name}"?`))return;t.members=t.members.filter(p=>p.id!==c.id);t.members.push(c);selectedPeer=c.id;save();note(`Imported ${c.name}'s card. Information is unverified.`)}catch(err){note('Import blocked: '+err.message)}finally{e.target.value=''}};
+ $('importPeerFile').onchange=async e=>{try{let f=e.target.files[0];if(!f)return;if(f.size>256000)throw Error('Peer card exceeds 256 KB.');let c=normalizeCard(JSON.parse(await f.text()));let t=current();if(t.members.length>=100&&!t.members.some(p=>p.id===c.id))throw Error('Team limit of 100 peer cards reached.');if(!confirm(`Import ${c.name}'s opt-in card (${c.skills.length} skills, ${Object.keys(c.surveys).length} optional survey signals${c.mentorOptIn?', mentoring opt-in':''}${c.qualificationClaims.length?', unverified qualification claims':''}) into "${t.name}"?`))return;t.members=t.members.filter(p=>p.id!==c.id);t.members.push(c);selectedPeer=c.id;save();note(`Imported ${c.name}'s card. Information is unverified.`)}catch(err){note('Import blocked: '+err.message)}finally{e.target.value=''}};
  $('teamMemberList').onclick=e=>{let v=e.target.closest('[data-peerview]'),d=e.target.closest('[data-peerdel]');if(v){selectedPeer=v.dataset.peerview;render()}if(d){let t=current();if(!confirm('Remove this imported peer card from your local team?'))return;t.members=t.members.filter(p=>p.id!==d.dataset.peerdel);selectedPeer=null;save()}};
  $('addCritical').onclick=()=>{let t=current(),sid=$('criticalSkill').value;if(!known(sid)||t.priorities.includes(sid))return;t.priorities.push(sid);save()};
  $('teamCritical').onclick=e=>{let b=e.target.closest('[data-criticalremove]');if(b){let t=current();t.priorities=t.priorities.filter(x=>x!==b.dataset.criticalremove);save()}};
