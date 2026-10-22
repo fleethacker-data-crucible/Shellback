@@ -293,11 +293,11 @@
  border-color:#71e5cf;color:#f3fffa;
  box-shadow:0 1px 15px #66f4d329;
 }
-.galaxy-surface[data-galaxy-mode="confirmed"] .sky-confirmed{
+.galaxy-surface[data-galaxy-view="confirmed"] .sky-confirmed{
  stroke:#73f0d6;stroke-width:2;stroke-opacity:.82;
  filter:drop-shadow(0 0 5px #6ce2d67c);
 }
-.galaxy-surface[data-galaxy-mode="confirmed"] .sky-skill-node.is-confirmed{
+.galaxy-surface[data-galaxy-view="confirmed"] .sky-skill-node.is-confirmed{
  filter:drop-shadow(0 0 5px #84f9da24);
 }
 .galaxy-empty-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
