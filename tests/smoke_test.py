@@ -170,7 +170,7 @@ def test_synapse_employee_flow():
         assert 1 <= page.locator('#graphSvg .sky-skill-node').count() < 104
         assert page.locator('#graphSvg .galaxy-domain-hub').count()==13
         assert page.locator('#graphSvg .galaxy-domain-label').count()==13
-        assert 'capability clusters' in page.locator('#skyExplanation').inner_text()
+        assert 'connected domains' in page.locator('#skyExplanation').inner_text()
         assert page.locator('#constellationMode').count()==0
         page.locator('#graphReset').click()
         assert page.locator('#graphSearch').input_value()==''
@@ -198,10 +198,10 @@ def test_synapse_employee_flow():
         page.mouse.move(box['x']+box['width']/2+48,box['y']+box['height']/2+29,steps=5)
         page.mouse.up()
         assert node.get_attribute('transform')!=still
-        assert 'confidence' in page.locator('#graphHoverTip').inner_text().lower() or 'unrated' in page.locator('#graphHoverTip').inner_text().lower()
+        assert 'confidence' in page.locator('#graphHoverTip').inner_text().lower() or 'experience' in page.locator('#graphHoverTip').inner_text().lower()
         node.click(force=True)
-        assert 'SKILL SIGNAL' in page.locator('#graphDetail').inner_text()
-        assert 'Connected capabilities' in page.locator('#graphDetail').inner_text()
+        assert 'CAPABILITY DETAIL' in page.locator('#graphDetail').inner_text()
+        assert 'Linked capabilities' in page.locator('#graphDetail').inner_text()
         assert page.locator('#graphDetail [data-related-skill]').count()>0
         page.locator('button[data-view="credentials"]').first.click()
         page.locator('#credName').fill('AWS demonstration credential')
@@ -275,7 +275,7 @@ if __name__=='__main__':
         page.locator('#loadDemoProfile').click()
         assert page.locator('#profileCount').inner_text()=='20'
         assert page.locator('#surveyCount').inner_text()=='20'
-        assert page.locator('#radar .radar-dot').count()>0
+        assert page.locator('#radarCanvas .radar-premium-point').count()>0
         assert not errors, errors
         browser.close()
 
@@ -332,7 +332,7 @@ if __name__=='__main__':
         page.locator('#loadDemoProfile').click()
         assert page.locator('#profileCount').inner_text()=='20'
         assert page.locator('#surveyCount').inner_text()=='20'
-        assert page.locator('#radar .radar-dot').count()>0
+        assert page.locator('#radarCanvas .radar-premium-point').count()>0
         assert not errors, errors
         browser.close()
 
