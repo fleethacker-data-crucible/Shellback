@@ -8,26 +8,19 @@ import { buildWorkspaceExport } from '../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../core/crypto';
 import { downloadJson, readJsonFile } from './lib/files';
 import type { ViewId } from '../storage/settings';
-import { OverviewView } from './views/OverviewView';
-import { SpiderWebView } from './views/SpiderWebView';
-import { GalaxyView } from './views/GalaxyView';
+import { HomeView } from './views/HomeView';
 import { ProfileView } from './views/ProfileView';
-import { CredentialsView } from './views/CredentialsView';
+import { ExploreView } from './views/ExploreView';
 import { TeamView } from './views/TeamView';
-import { WorkforceView } from './views/WorkforceView';
-import { RoiView } from './views/RoiView';
-import { TrustView } from './views/TrustView';
+import { ProgramView } from './views/ProgramView';
+import { PulseDrawer } from './components/PulseDrawer';
 
-const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string }> = [
-  { id: 'overview', icon: '▦', label: 'Overview', title: 'Mission capability, made visible.' },
-  { id: 'radar', icon: '◈', label: 'Skills spider web', title: 'Skills spider web' },
-  { id: 'graph', icon: '⌘', label: 'Skills galaxy', title: 'Skills galaxy' },
-  { id: 'profile', icon: '◉', label: 'My capability profile', title: 'My capability profile' },
-  { id: 'credentials', icon: '▤', label: 'Credential desk', title: 'Credential desk' },
-  { id: 'team', icon: '▥', label: 'Teams & sharing', title: 'Team intelligence' },
-  { id: 'workforce', icon: '✧', label: 'Workforce tools', title: 'FLEETHACKER workforce' },
-  { id: 'roi', icon: '◇', label: 'ROI laboratory', title: 'ROI laboratory' },
-  { id: 'trust', icon: '⬡', label: 'Trust & governance', title: 'Trust & governance' },
+const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string; hint: string }> = [
+  { id: 'home', icon: '⌂', label: 'Home', title: 'Home', hint: 'Your journey and next step' },
+  { id: 'profile', icon: '◉', label: 'My profile', title: 'My capability profile', hint: 'Intake · skills · credentials · growth' },
+  { id: 'explore', icon: '◈', label: 'Explore', title: 'Explore', hint: 'Spider web · galaxy' },
+  { id: 'team', icon: '▥', label: 'Team', title: 'Team', hint: 'Sharing · coverage · missions · mentors · knowledge' },
+  { id: 'program', icon: '⬡', label: 'Program', title: 'Program', hint: 'Trust & data · ROI' },
 ];
 
 export function App() {
@@ -36,7 +29,7 @@ export function App() {
   const dialogs = useDialogs();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const pendingCreds = pendingCredentialCandidates(ws).length;
+  const toReview = pendingCredentialCandidates(ws).length + ws.profile.candidates.length;
   const current = NAV.find((n) => n.id === view) ?? NAV[0]!;
 
   useEffect(() => { document.documentElement.dataset.reducedMotion = String(settings.reducedMotion); }, [settings.reducedMotion]);
@@ -104,8 +97,8 @@ export function App() {
               className={cn('flex items-center gap-3 rounded-md px-[13px] py-2 text-left text-[13px] font-bold text-muted transition-colors hover:bg-white/5 hover:text-text', view === n.id && 'bg-mint/10 text-mint')}
               onClick={() => { setMenuOpen(false); navigate(n.id); }}>
               <span className="w-4 text-center text-[13px]" aria-hidden="true">{n.icon}</span>
-              <span className="flex-1">{n.label}</span>
-              {n.id === 'credentials' && pendingCreds > 0 && <span id="credentialNavBadge" aria-label="Pending credential suggestions" className="rounded-full bg-amber px-2 text-[11px] font-extrabold text-[#2b1a05]">{pendingCreds}</span>}
+              <span className="flex-1"><span className="block">{n.label}</span><small className="block text-[10px] font-semibold text-quiet">{n.hint}</small></span>
+              {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[11px] font-extrabold text-[#2b1a05]">{toReview}</span>}
             </button>
           ))}
         </nav>
@@ -127,7 +120,7 @@ export function App() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="demo-identity inline-flex items-center gap-2 rounded-full border border-stroke px-3 py-1 text-[12px] font-bold text-muted hover:text-text" data-view="trust" title="This offline demo has no authenticated sign-in" onClick={() => navigate('trust')}>
+            <button type="button" className="demo-identity inline-flex items-center gap-2 rounded-full border border-stroke px-3 py-1 text-[12px] font-bold text-muted hover:text-text" data-view="program" title="This offline demo has no authenticated sign-in" onClick={() => navigate({ view: 'program', tab: 'governance' })}>
               <span className="text-mint">●</span> Local demo · No login
             </button>
             <Button id="importBtn" onClick={() => fileRef.current?.click()}>↧ Import data</Button>
@@ -138,28 +131,25 @@ export function App() {
           </div>
         </header>
 
-        <div id="flash" role="status" aria-live="polite" className={cn('flash pointer-events-none fixed top-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-[#0d1f2f] px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
+        <div id="flash" role="status" aria-live="polite" className={cn('flash pointer-events-none fixed bottom-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-[#0d1f2f] px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
 
         {loadInfo?.recovered && (
           <Notice tone="warn" className="mb-4">
-            <b>Stored data could not be validated and was set aside, not deleted.</b> Reason: {loadInfo.recovered.reason} A raw copy is kept under <code>{loadInfo.recovered.key}</code>; you can download it from Trust &amp; governance → Recovery.
+            <b>Stored data could not be validated and was set aside, not deleted.</b> Reason: {loadInfo.recovered.reason} A raw copy is kept under <code>{loadInfo.recovered.key}</code>; you can download it from Program → Trust &amp; data → Recovery.
           </Notice>
         )}
         {loadInfo?.source === 'legacy-v1' && <Notice className="mb-4">Your earlier Synapse MVP data was found in this browser and upgraded to the new format. The original copy was left untouched.</Notice>}
 
         {!ready ? <p className="text-muted">Loading local workspace…</p> : (
           <>
-            {view === 'overview' && <OverviewView />}
-            {view === 'radar' && <SpiderWebView />}
-            {view === 'graph' && <GalaxyView />}
+            {view === 'home' && <HomeView />}
             {view === 'profile' && <ProfileView />}
-            {view === 'credentials' && <CredentialsView />}
+            {view === 'explore' && <ExploreView />}
             {view === 'team' && <TeamView />}
-            {view === 'workforce' && <WorkforceView />}
-            {view === 'roi' && <RoiView />}
-            {view === 'trust' && <TrustView />}
+            {view === 'program' && <ProgramView />}
           </>
         )}
+        <PulseDrawer />
         <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-stroke pt-4 text-[11px] text-quiet">
           <span>SYNAPSE <b>v{__SYNAPSE_VERSION__}</b> · build {document.documentElement.dataset.build ?? 'dev'} · {document.documentElement.dataset.edition ?? 'dev'} edition</span>
           <span>Designed for trust · Built for discovery · Synthetic demonstration</span>
