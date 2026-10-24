@@ -206,7 +206,7 @@ export function TeamView() {
         </div>
       </Panel>
       <TeamBriefPanel teamName={team?.name ?? 'Team'} people={people} agg={agg} priorities={team?.priorities ?? []} />
-      <ContributionMap people={people} />
+      <ContributionMap people={people} teamName={team?.name ?? 'Team'} />
       <OrgRollup people={people} />
       </>)}
 

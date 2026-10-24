@@ -8,14 +8,17 @@ import { MIN_AGGREGATE, type Participant } from '../../core/analytics';
 import { hasContribution, stageCoverage, stageObservations, PHASE_LABEL, STAGE_PHASES } from '../../core/contribution';
 import { buildOrgTree, flattenOrg, type OrgNode } from '../../core/org';
 import { BarRow, Button, Empty, Panel, PanelHeading, Pill, cn } from '../components/ui/primitives';
+import { printSheet } from '../lib/print';
 
-export function ContributionMap({ people }: { people: Participant[] }) {
+export function ContributionMap({ people, teamName = 'Team' }: { people: Participant[]; teamName?: string }) {
   const sharers = people.filter((p) => hasContribution(p.contribution));
   const cov = stageCoverage(sharers);
   const notes = stageObservations(cov, sharers.length);
+  const pairings = cov.filter((r) => r.drained.length > 0 && r.energized.length > 0).map((r) => ({ stage: r.stage, from: r.drained, to: r.energized }));
   return (
     <Panel id="contributionMap">
-      <PanelHeading eyebrow="HOW THIS TEAM LIKES TO WORK" title="Energy by stage of work">
+      <PanelHeading eyebrow="HOW THIS TEAM LIKES TO WORK" title="Energy by stage of work"
+        action={sharers.length >= MIN_AGGREGATE ? <Button size="sm" id="workshopPrint" onClick={() => printSheet('workshopSheet')}>Print workshop sheet</Button> : undefined}>
         From the {sharers.length} of {people.length} people who shared contribution preferences. Preference is not ability: someone can be excellent at a stage that drains them.
       </PanelHeading>
       {sharers.length < MIN_AGGREGATE ? (
@@ -42,9 +45,43 @@ export function ContributionMap({ people }: { people: Participant[] }) {
           </div>
           <div className="mt-3 flex flex-wrap gap-4 text-[11px] text-quiet"><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-mint align-middle" />energizes</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-[#56708f] align-middle" />neutral</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-amber align-middle" />drains</span></div>
           {notes.length > 0 && <ul id="contributionNotes" className="mt-3 space-y-1 text-[13px]">{notes.map((n) => <li key={n} className="rounded-md border border-stroke bg-panel2/50 px-3 py-2">{n}</li>)}</ul>}
+          {pairings.length > 0 && (
+            <div id="contributionPairings" className="mt-3 rounded-md border border-stroke bg-panel2/40 p-3 text-[13px]">
+              <strong className="block text-[12px] uppercase tracking-wider text-quiet">Pairing ideas</strong>
+              <p className="note">Where a stage drains someone, a teammate it energizes can take the lead or pair up. Suggestions, not assignments.</p>
+              <ul className="mt-2 space-y-1">{pairings.map((p) => <li key={p.stage.id} data-pairing={p.stage.id}><b>{p.stage.label}</b>: {p.from.join(', ')} could lean on {p.to.join(', ')}.</li>)}</ul>
+            </div>
+          )}
+          <WorkshopSheet teamName={teamName} cov={cov} sharers={sharers.length} total={people.length} notes={notes} />
         </>
       )}
     </Panel>
+  );
+}
+
+/** Printable one-pager for a team conversation. Rendered hidden; printSheet() shows only this. */
+function WorkshopSheet({ teamName, cov, sharers, total, notes }: { teamName: string; cov: ReturnType<typeof stageCoverage>; sharers: number; total: number; notes: string[] }) {
+  return (
+    <section id="workshopSheet" data-print-sheet aria-hidden="true">
+      <h1>{teamName} · How we like to work</h1>
+      <p className="sheet-mute">Printed from Synapse on {new Date().toISOString().slice(0, 10)}. {sharers} of {total} people shared their preferences. Preference is not ability; this sheet is for a conversation, not an evaluation.</p>
+      <h2>Energy by stage</h2>
+      <table>
+        <thead><tr><th>Stage</th><th>Energizes</th><th>Neutral</th><th>Drains</th></tr></thead>
+        <tbody>{cov.map((r) => <tr key={r.stage.id}><td><b>{r.stage.label}</b><br /><span className="sheet-mute">{r.stage.detail}</span></td><td>{r.energized.join(', ') || '—'}</td><td>{r.neutral.join(', ') || '—'}</td><td>{r.drained.join(', ') || '—'}</td></tr>)}</tbody>
+      </table>
+      {notes.length > 0 && <><h2>What stands out</h2><ul>{notes.map((n) => <li key={n}>{n}</li>)}</ul></>}
+      <h2>Talk about it (20 minutes)</h2>
+      <ol>
+        <li>Each person: which stage energizes you most, and when did the team last let you do it?</li>
+        <li>Which stage does nobody here love? Who carries it today, and is that sustainable?</li>
+        <li>Pick one upcoming piece of work. Who takes the lead at each stage, based on energy rather than title?</li>
+        <li>What is one hand-off between stages that keeps going wrong?</li>
+      </ol>
+      <h2>Agreements</h2>
+      <div className="sheet-box" />
+      <p className="sheet-mute">Synapse records only what each person chose to share. Nothing on this page is a score or a ranking.</p>
+    </section>
   );
 }
 

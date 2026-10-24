@@ -135,6 +135,7 @@ export interface MissionResult {
   covered: Participant[]; available: Participant[]; limited: Participant[]; unknown: Participant[]; qualified: Participant[];
   /** Covered people who said the requested stage energizes them (empty when no stage was asked for). */
   energized: Participant[];
+  stagePartners: Participant[];
   gap: boolean;
 }
 export function missionCoverage(roster: Participant[], requirements: ReadonlyArray<{ skill: string; min: number; credential: string; stage?: string }>): MissionResult[] {
@@ -145,6 +146,8 @@ export function missionCoverage(roster: Participant[], requirements: ReadonlyArr
     return {
       skill: r.skill, min: r.min, credential: r.credential, stage, covered,
       energized: stage ? covered.filter((x) => x.contribution?.stages[stage as keyof typeof x.contribution.stages] === 'energizing') : [],
+      // Stage-aware suggestion: people energized by the stage who do NOT hold the skill yet — natural pairing partners.
+      stagePartners: stage ? roster.filter((x) => !x.skills.includes(r.skill) && x.contribution?.stages[stage as keyof typeof x.contribution.stages] === 'energizing') : [],
       available: covered.filter((x) => x.availability === 'available'),
       limited: covered.filter((x) => x.availability === 'limited'),
       unknown: covered.filter((x) => x.availability === 'unknown' || x.availability === 'unavailable'),

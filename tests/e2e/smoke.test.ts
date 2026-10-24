@@ -560,3 +560,33 @@ function buildDocx(deflateRaw: (b: Buffer) => Buffer, xml: string): Buffer {
   const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10); eocd.writeUInt32LE(central.length + name.length, 12); eocd.writeUInt32LE(cdOffset, 16);
   return Buffer.concat([local, name, comp, central, name, eocd]);
 }
+
+test('contribution round two: results import, pairing ideas, workshop sheet, stage partners', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'skills');
+  await page.locator('#contributionImportFile').setInputFiles({ name: 'results.csv', mimeType: 'text/csv', buffer: Buffer.from('stage,energy\nrally,energizing\nfinish,draining\nnonsense,???\n') });
+  await page.locator('#contributionImportNotes').waitFor();
+  assert.equal(await page.locator('[data-stage="rally"] [data-energy="energizing"]').getAttribute('aria-checked'), 'true');
+  assert.equal(await page.locator('[data-stage="finish"] [data-energy="draining"]').getAttribute('aria-checked'), 'true');
+  assert.match(await page.locator('#contributionImportNotes').innerText(), /nonsense/);
+  await page.locator('#shareToggle').check({ force: true });
+  await page.locator('#shareContributionLocally').check();
+  await nav(page, 'team', 'coverage');
+  // Synthetic cohort + me ≥ 3 sharers → map, pairing ideas and a printable sheet exist
+  await page.locator('#contributionPairings').waitFor();
+  assert.ok((await page.locator('#contributionPairings [data-pairing]').count()) > 0);
+  assert.equal(await page.locator('#workshopSheet').count(), 1);
+  assert.equal(await page.locator('#workshopSheet').isVisible(), false, 'sheet is print-only');
+  await page.emulateMedia({ media: 'print' });
+  await page.evaluate(() => { document.body.classList.add('print-sheet-mode'); document.getElementById('workshopSheet')!.setAttribute('data-print-active', 'true'); });
+  assert.equal(await page.locator('#workshopSheet').isVisible(), true);
+  assert.match(await page.locator('#workshopSheet').innerText(), /How we like to work[\s\S]*Talk about it/);
+  await page.emulateMedia({ media: 'screen' });
+  // Missions: a stage requirement lists energized people without the skill as partners
+  await page.locator('[data-testid="tab-missions"]').click();
+  await page.locator('#wfMissionSkill').selectOption('threat-modeling');
+  await page.locator('#wfMissionStage').selectOption('rally');
+  await page.locator('#wfMissionAdd').click();
+  assert.match(await page.locator('#wfMissionResults').innerText(), /Energized by that stage but without the skill yet/);
+  assert.deepEqual(errors, []);
+});

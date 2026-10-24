@@ -70,3 +70,82 @@ export function stageObservations(cov: StageCoverage[], shared: number): string[
   }
   return out;
 }
+
+// ----------------------------------------------------------------------------- results import (vendor-neutral)
+/**
+ * Parse a results file someone exported from a workshop or an assessment they took.
+ * Accepted shapes, all case-insensitive:
+ *   CSV   stage,energy            e.g. "Rallying people,energizes" / "finish,drains" / "3,neutral"
+ *   JSON  { "stages": { "rally": "energizing", ... }, "source": "optional" }
+ *         or [{ "stage": "rally", "energy": "draining" }, ...]
+ * Stage may be the id, the label, a distinctive word from the label, or its 1–6 order.
+ * Energy accepts plain English synonyms. Unknown rows are reported, never guessed.
+ */
+export interface ContributionImport { contribution: Contribution; applied: number; skipped: string[] }
+
+const STAGE_WORDS: ReadonlyArray<readonly [Stage, readonly string[]]> = [
+  ['question', ['question', 'questions', 'wonder', 'wondering', 'ask', 'asking', '1']],
+  ['ideate', ['ideate', 'ideas', 'idea', 'invent', 'inventing', 'invention', 'create', 'creating', '2']],
+  ['evaluate', ['evaluate', 'judge', 'judging', 'judgment', 'judgement', 'discern', 'discernment', 'assess', '3']],
+  ['rally', ['rally', 'rallying', 'galvanize', 'galvanizing', 'mobilize', 'mobilizing', 'inspire', '4']],
+  ['support', ['support', 'supporting', 'help', 'helping', 'enable', 'enabling', 'enablement', 'assist', '5']],
+  ['finish', ['finish', 'finishing', 'complete', 'completing', 'tenacity', 'tenacious', 'deliver', 'push', '6']],
+];
+const ENERGY_WORDS: ReadonlyArray<readonly [Energy, readonly string[]]> = [
+  ['energizing', ['energizing', 'energising', 'energizes', 'energises', 'energized', 'energy', 'strength', 'love', 'loves', 'genius', 'gift', 'thrive', 'high', '+', '2']],
+  ['neutral', ['neutral', 'ok', 'okay', 'fine', 'competent', 'competency', 'competence', 'capable', 'medium', 'mid', '0', '1']],
+  ['draining', ['draining', 'drains', 'drained', 'drain', 'frustration', 'frustrating', 'frustrates', 'dislike', 'avoid', 'low', '-', '-1']],
+];
+const norm = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/[^a-z0-9+\- ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+export function parseStage(v: unknown): Stage | null {
+  const q = norm(v);
+  if (!q) return null;
+  for (const [id, words] of STAGE_WORDS) if (q === id || words.includes(q)) return id;
+  for (const d of STAGE_DEFS) if (norm(d.label) === q) return d.id;
+  const toks = q.split(' ');
+  for (const [id, words] of STAGE_WORDS) if (toks.some((t) => words.includes(t) && !/^\d$/.test(t))) return id;
+  return null;
+}
+export function parseEnergy(v: unknown): Energy | null {
+  const q = norm(v);
+  if (!q) return null;
+  for (const [id, words] of ENERGY_WORDS) if (q === id || words.includes(q)) return id;
+  const toks = q.split(' ');
+  for (const [id, words] of ENERGY_WORDS) if (toks.some((t) => words.includes(t) && !/^[\d+-]+$/.test(t))) return id;
+  return null;
+}
+
+export function importContribution(text: string, existing: Contribution = emptyContribution()): ContributionImport {
+  const out: ContributionImport = { contribution: { stages: { ...existing.stages }, source: existing.source }, applied: 0, skipped: [] };
+  const rows: Array<[unknown, unknown]> = [];
+  const trimmed = text.trim().slice(0, 50_000);
+  if (!trimmed) return out;
+  let source = '';
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    let json: unknown;
+    try { json = JSON.parse(trimmed); } catch { out.skipped.push('File is not valid JSON.'); return out; }
+    if (Array.isArray(json)) for (const r of json.slice(0, 50)) { const o = r as Record<string, unknown>; rows.push([o?.stage ?? o?.name ?? o?.id, o?.energy ?? o?.value ?? o?.rating]); }
+    else if (json && typeof json === 'object') {
+      const o = json as Record<string, unknown>;
+      if (typeof o.source === 'string') source = o.source;
+      const stages = (o.stages && typeof o.stages === 'object' ? o.stages : o) as Record<string, unknown>;
+      for (const [k, v] of Object.entries(stages).slice(0, 50)) if (k !== 'source') rows.push([k, v]);
+    }
+  } else {
+    for (const line of trimmed.split(/\r?\n/).slice(0, 60)) {
+      const cells = line.split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
+      if (cells.length < 2) { if (line.trim()) out.skipped.push(`"${line.trim().slice(0, 40)}" has no separator.`); continue; }
+      if (/^stage$/i.test(cells[0] ?? '') && /^(energy|value|rating)$/i.test(cells[1] ?? '')) continue; // header
+      rows.push([cells[0], cells[1]]);
+    }
+  }
+  for (const [s, e] of rows) {
+    const stage = parseStage(s), energy = parseEnergy(e);
+    if (!stage || !energy) { out.skipped.push(`"${String(s ?? '').slice(0, 30)} → ${String(e ?? '').slice(0, 20)}" not understood.`); continue; }
+    out.contribution.stages[stage] = energy;
+    out.applied++;
+  }
+  if (source && !out.contribution.source) out.contribution.source = source.slice(0, 160);
+  return out;
+}
