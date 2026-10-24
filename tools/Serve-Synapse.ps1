@@ -33,7 +33,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$Root = [System.IO.Path]::GetFullPath($Root)
+$Root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
 if (-not (Test-Path -LiteralPath (Join-Path $Root 'index.html'))) {
   Write-Error "Compiled application not found at '$Root'. Build off-workstation (npm run build) and copy dist\ here."
   exit 1
@@ -121,6 +121,12 @@ try {
       $client.ReceiveTimeout = 5000
       $client.SendTimeout = 10000
       $stream = $client.GetStream()
+      # Browsers open speculative (preconnect) sockets that may never send a request.
+      # Give a connection 300 ms to start talking; otherwise drop it so real requests are not
+      # stuck behind it (the browser simply opens a new connection when it needs one).
+      $waited = 0
+      while (-not $stream.DataAvailable -and $waited -lt 300) { Start-Sleep -Milliseconds 10; $waited += 10 }
+      if (-not $stream.DataAvailable) { continue }
       $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 4096, $true)
       $requestLine = $reader.ReadLine()
       if (-not $requestLine) { continue }

@@ -71,3 +71,27 @@ test('peer card without consent or with a bad id is refused', () => {
   assert.throws(() => parsePeerCard({ ...base, id: 'x' }));
   assert.throws(() => parsePeerCard({ ...base, name: '   ' }));
 });
+
+test('reserved member ids are refused; duplicate ids are collapsed (independent review #7, #8)', () => {
+  const base = { format: 'synapse-peer-card', version: 1, name: 'X', consent: true, skills: ['sql-pipelines'] };
+  assert.throws(() => parsePeerCard({ ...base, id: 'self-current' }), /reserved/);
+  assert.throws(() => parsePeerCard({ ...base, id: 'demo-12345678' }), /reserved/);
+  const ws = newWorkspace();
+  const raw = { ...ws, teams: { active: 't', items: [{ id: 't', name: 'A', members: [{ id: 'm1', name: 'P' }, { id: 'm1', name: 'Q' }] }, { id: 't', name: 'B' }] } };
+  const parsed = parseWorkspace(JSON.parse(JSON.stringify(raw))).workspace;
+  assert.equal(parsed.teams.items.length, 1);
+  assert.deepEqual(parsed.teams.items[0]!.members.map((m) => m.name), ['P']);
+});
+
+test('a v2 file with missing or null sections still imports (independent review #8)', () => {
+  const ws = JSON.parse(JSON.stringify(newWorkspace()));
+  ws.profile.confirmed = ['sql-pipelines'];
+  delete ws.workforce;
+  ws.teams = null;
+  delete ws.meta;
+  const parsed = parseWorkspace(ws).workspace;
+  assert.deepEqual(parsed.profile.confirmed, ['sql-pipelines']);
+  assert.deepEqual(parsed.workforce.modules, []);
+  assert.deepEqual(parsed.teams.items, []);
+  assert.equal(parsed.meta.rev, 0);
+});

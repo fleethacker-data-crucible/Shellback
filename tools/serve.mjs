@@ -25,7 +25,8 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
-  let rel = decodeURIComponent(url.pathname);
+  let rel;
+  try { rel = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end('Bad request'); }
   if (rel.endsWith('/')) rel += 'index.html';
   const file = path.normalize(path.join(rootDir, rel));
   const headers = {

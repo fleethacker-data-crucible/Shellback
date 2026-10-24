@@ -35,8 +35,9 @@ export function TeamView() {
       const card = buildPeerCard(ws, shareName, disclose, shareId);
       const ok = await dialogs.confirm(<>Share {describeCard(card)} under the name <b>"{card.name}"</b>? The recipient can retain and redistribute this file; it cannot be recalled.</>, { title: 'Export opt-in card', confirmLabel: 'Export card' });
       if (!ok) return;
-      const protect = await dialogs.confirm('Encrypt the card with a passphrase you will give the recipient separately?', { title: 'Protect the file', confirmLabel: 'Encrypt', cancelLabel: 'Plain JSON' });
-      if (protect) {
+      const mode = await dialogs.choose('Encrypt the card with a passphrase you will give the recipient separately?', { title: 'Protect the file', choices: [{ value: 'plain', label: 'Plain JSON' }, { value: 'encrypt', label: 'Encrypt', primary: true }] });
+      if (mode === null) return;
+      if (mode === 'encrypt') {
         const pass = await dialogs.prompt('Passphrase for this card (share it over a different channel).', { label: 'Passphrase', password: true, minLength: 8 });
         if (pass === null) return;
         downloadJson(await encryptJson(card, pass, 'synapse-peer-card'), `synapse-peer-${card.issued}.encrypted.json`);

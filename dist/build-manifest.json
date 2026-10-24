@@ -1,27 +1,27 @@
 {
   "name": "synapse",
   "version": "1.0.0",
-  "buildId": "5d060dc26654",
+  "buildId": "34e6df7100f4",
   "files": {
     "index.html": {
       "bytes": 1074,
-      "sha256": "9e3fad9a116d1637da5dba0c2dd0e273ed943cdcdf0fb58c864b3ade855350b8"
+      "sha256": "8ef0d6c6a5da08a3cba5258cab44ca51370f7644a3a5d0ddcc8c6399cbfe5217"
     },
     "assets/app.js": {
-      "bytes": 544460,
-      "sha256": "69f561cdb51e19af8fa18fbb94d733b22ab16299e302f838ac0a8134ac79bfc1"
+      "bytes": 546808,
+      "sha256": "2f2df3369dbc60011de5bab16fc87646e01c414df1d8b893e705e86a738903fe"
     },
     "assets/app.css": {
       "bytes": 47529,
       "sha256": "463547bd022e6557d2bb08b120a5c2443642b75ce88c4b355d20c897d1dc53ff"
     },
     "sw.js": {
-      "bytes": 1055,
-      "sha256": "373973d7258d555d9fec163344b3d302b911c08779e2ea1d262b8ed5e0d6aa29"
+      "bytes": 1401,
+      "sha256": "9d1cb905d4263dff2751046c1ced7a78ee97a73e059edbb8d9e2815d8083d2a2"
     },
     "Synapse-Standalone.html": {
-      "bytes": 593060,
-      "sha256": "a3d077e25fbc160466da5190d471f46ff9cb2d87b18164b8b1065ef2ee6f4057"
+      "bytes": 595408,
+      "sha256": "c088ff1551a411b6ed87d4d6c66f4d9b9f36bb877ca20b728c1b04d2ad96ec37"
     }
   }
 }

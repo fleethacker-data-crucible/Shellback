@@ -37,6 +37,8 @@ export function ProfileView() {
     try {
       const result = await scanResume({ text, confirmed: ws.profile.confirmed });
       act((d) => applyScan(d, result));
+    } catch (err) {
+      flash(`The résumé could not be scanned: ${err instanceof Error ? err.message : String(err)}`);
     } finally { setScanning(false); }
   }
   async function onFile(e: ChangeEvent<HTMLInputElement>) {

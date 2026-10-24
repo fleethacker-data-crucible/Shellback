@@ -26,6 +26,17 @@ export interface LoadResult {
 }
 
 let dbPromise: Promise<IDBDatabase | null> | null = null;
+/** Set when IndexedDB could not be read: we must not overwrite a record we never saw. */
+let idbReadFailed = false;
+const channel: BroadcastChannel | null = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('synapse-workspace') : null;
+
+/** Notify other tabs of this origin that a newer revision was saved. */
+export function onRemoteSave(cb: (rev: number) => void): () => void {
+  if (!channel) return () => undefined;
+  const handler = (e: MessageEvent<{ type: string; rev: number }>) => { if (e.data?.type === 'saved') cb(e.data.rev); };
+  channel.addEventListener('message', handler);
+  return () => channel.removeEventListener('message', handler);
+}
 
 function openDb(): Promise<IDBDatabase | null> {
   if (dbPromise) return dbPromise;
@@ -93,42 +104,59 @@ async function stashBackup(db: IDBDatabase | null, raw: unknown, reason: string)
   return key;
 }
 
+/**
+ * Reads every place a workspace can live and returns the newest valid one (highest meta.rev).
+ * IndexedDB and the localStorage fallback can both hold data when an IndexedDB write once failed;
+ * neither silently wins. Anything unparsable is copied to the backups store first.
+ */
 export async function loadWorkspace(): Promise<LoadResult> {
   const db = await openDb();
-  let stored: unknown;
-  let source: LoadResult['source'] = 'new';
-
+  const raw: Array<{ source: LoadResult['source']; value: unknown }> = [];
+  idbReadFailed = false;
   if (db) {
-    try { stored = await idbGet(db, STORE, KEY); } catch { stored = undefined; }
-    if (stored !== undefined) source = 'indexeddb';
+    try {
+      const v = await idbGet(db, STORE, KEY);
+      if (v !== undefined) raw.push({ source: 'indexeddb', value: v });
+    } catch {
+      idbReadFailed = true; // keep going with other sources, but never overwrite IndexedDB this session
+    }
   }
-  if (stored === undefined) {
-    stored = readLocal(FALLBACK_LOCAL_KEY);
-    if (stored !== undefined) source = 'localstorage';
+  const local = readLocal(FALLBACK_LOCAL_KEY);
+  if (local !== undefined) raw.push({ source: 'localstorage', value: local });
+  if (!raw.length) {
+    const legacy = readLocal(LEGACY_LOCAL_KEY);
+    if (legacy !== undefined) raw.push({ source: 'legacy-v1', value: legacy });
   }
-  if (stored === undefined) {
-    stored = readLocal(LEGACY_LOCAL_KEY);
-    if (stored !== undefined) source = 'legacy-v1';
-  }
-  if (stored === undefined) return { workspace: newWorkspace(), source: 'new', warnings: [] };
+  if (!raw.length) return { workspace: newWorkspace(), source: 'new', warnings: [] };
 
-  try {
-    const parsed = parseWorkspace(stored);
-    return { workspace: parsed.workspace, source, warnings: parsed.warnings };
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    const key = await stashBackup(db, stored, reason);
-    return { workspace: newWorkspace(), source: 'new', warnings: [], recovered: { key, reason } };
+  let best: { source: LoadResult['source']; workspace: Workspace; warnings: string[] } | null = null;
+  let recovered: LoadResult['recovered'];
+  for (const r of raw) {
+    try {
+      const parsed = parseWorkspace(r.value);
+      if (!best || parsed.workspace.meta.rev > best.workspace.meta.rev) best = { source: r.source, workspace: parsed.workspace, warnings: parsed.warnings };
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      recovered = { key: await stashBackup(db, r.value, reason), reason };
+    }
   }
+  if (!best) return { workspace: newWorkspace(), source: 'new', warnings: [], ...(recovered ? { recovered } : {}) };
+  return { workspace: best.workspace, source: best.source, warnings: best.warnings, ...(recovered ? { recovered } : {}) };
 }
 
 export async function saveWorkspace(ws: Workspace): Promise<'indexeddb' | 'localstorage'> {
   const db = await openDb();
-  if (db) {
-    try { await idbPut(db, STORE, KEY, ws); return 'indexeddb'; } catch { /* fall back */ }
+  let where: 'indexeddb' | 'localstorage' = 'localstorage';
+  if (db && !idbReadFailed) {
+    try {
+      await idbPut(db, STORE, KEY, ws);
+      where = 'indexeddb';
+      try { localStorage.removeItem(FALLBACK_LOCAL_KEY); } catch { /* ignore */ }
+    } catch { /* fall back below */ }
   }
-  localStorage.setItem(FALLBACK_LOCAL_KEY, JSON.stringify(ws));
-  return 'localstorage';
+  if (where === 'localstorage') localStorage.setItem(FALLBACK_LOCAL_KEY, JSON.stringify(ws));
+  channel?.postMessage({ type: 'saved', rev: ws.meta.rev });
+  return where;
 }
 
 export interface BackupEntry { key: string; reason: string; created: string; raw: unknown }
