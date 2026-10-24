@@ -32,7 +32,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Provider contract documented (`docs/INTELLIGENCE_PROVIDERS.md`) | ✅ | |
 | GenAI.mil / Advana adapter implementations | 🚫 | Owned by the program's AI integration lead; Synapse only exposes the seam |
 
-## Phase C — First intelligent features 🔧
+## Phase C — First intelligent features ✅
 
 | Item | Status | Notes |
 |---|---|---|
@@ -54,13 +54,17 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 
 | Item | Status | Notes |
 |---|---|---|
-| Edit credentials in place; issue date; verifier; provenance (`claimed` / `reviewed` / `verified` / `expired`) | ✅ | schema v3 migration, exports unchanged for peers |
+| Edit credentials in place; issue date; verifier; provenance (`claimed` / `reviewed` / `verified`; *expired* derived from dates) | ✅ | additive schema fields, peer cards unchanged |
 | Advana as an authoritative credential source: adapter design only | ✅ | `docs/INTELLIGENCE_PROVIDERS.md` § Authoritative sources |
-| Accessibility pass: focus order, names, contrast; keyboard-only e2e | ✅ | |
+| Accessibility pass: names on every control, contrast ≥ 4.5:1 in both themes, keyboard-only e2e | ✅ | |
 | Light theme (system or manual) | ✅ | `data-theme` on `<html>` |
 | Printable capability summary | ✅ | Profile → Skills → Print summary |
 
-## Phase F — Later
+## Phase F — Contribution framework v2 (next)
+
+Replace the single energizing/neutral/draining answer per stage with two axes — **energy** (drains ↔ energizes) and **fluency** (how practiced) — giving four honest quadrants per stage: Flow, Growth edge, Grind (good at it, costs you), Avoid/pair. Optional context tags and a one-line recent example per stage. Team views read out quadrants, aggregate and consent-scoped. Today's answers map onto the energy axis, so nothing is lost.
+
+## Later
 
 - Multi-workspace / role switching for supervisors who are also employees.
 - Signed peer cards (detached signature, local trust list).

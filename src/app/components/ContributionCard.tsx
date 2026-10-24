@@ -72,7 +72,7 @@ export function ContributionCard() {
         </Field>
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone={answered === 6 ? 'mint' : 'neutral'}>{answered} of 6 answered</Pill>
-          <input ref={fileRef} id="contributionImportFile" type="file" accept=".csv,.json,.txt,text/csv,application/json,text/plain" className="sr-only" onChange={onImport} />
+          <input ref={fileRef} id="contributionImportFile" type="file" accept=".csv,.json,.txt,text/csv,application/json,text/plain" className="sr-only" aria-label="Import contribution results file" onChange={onImport} />
           <Button size="sm" id="contributionImport" onClick={() => fileRef.current?.click()} title="CSV 'stage,energy' or JSON; any vendor's export you have re-typed into that shape">Import results file…</Button>
         </div>
       </div>

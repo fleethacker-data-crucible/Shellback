@@ -18,6 +18,7 @@ import { StatusChip } from '../components/SkillActions';
 import { SKILL_OPTIONS, modeLabel } from '../lib/options';
 import { CredentialsView } from './CredentialsView';
 import { GrowthPanel } from './WorkforcePanels';
+import { CapabilitySheet, PrintSummaryButton } from '../components/CapabilitySummary';
 
 export function ProfileView() {
   const { ws, settings, navigate } = useStore();
@@ -187,8 +188,9 @@ function SkillsTab() {
 
   return (
     <div id="skills" className="space-y-5">
+      <CapabilitySheet />
       <Panel>
-        <PanelHeading eyebrow="CONFIRMED" title="My confirmed skills" action={<Button id="clearMyData" variant="danger" size="sm" onClick={clear}>Clear my profile</Button>}>
+        <PanelHeading eyebrow="CONFIRMED" title="My confirmed skills" action={<span className="flex gap-2"><PrintSummaryButton /><Button id="clearMyData" variant="danger" size="sm" onClick={clear}>Clear my profile</Button></span>}>
           These are the skills you attest to. They build your web and galaxy. Rate confidence whenever you like; it only changes how brightly a skill shines.
         </PanelHeading>
         <div className="flex flex-wrap items-end gap-2">

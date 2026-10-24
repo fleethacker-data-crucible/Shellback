@@ -20,11 +20,14 @@ export interface Settings {
   programTab: ProgramTab;
   galaxyMode: 'confirmed' | 'pathways';
   reducedMotion: boolean;
+  theme: Theme;
 }
+export type Theme = 'system' | 'dark' | 'light';
+export const THEMES: readonly Theme[] = ['system', 'dark', 'light'];
 
 const KEY = 'synapse-settings-v3';
 export const DEFAULT_SETTINGS: Settings = {
-  view: 'home', profileTab: 'intake', exploreTab: 'web', teamTab: 'roster', programTab: 'governance', galaxyMode: 'confirmed', reducedMotion: false,
+  view: 'home', profileTab: 'intake', exploreTab: 'web', teamTab: 'roster', programTab: 'governance', galaxyMode: 'confirmed', reducedMotion: false, theme: 'system',
 };
 
 const pick = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback);
@@ -42,6 +45,7 @@ export function loadSettings(): Settings {
       programTab: pick(v.programTab, PROGRAM_TABS, 'governance'),
       galaxyMode: v.galaxyMode === 'pathways' ? 'pathways' : 'confirmed',
       reducedMotion: v.reducedMotion === true,
+      theme: pick(v.theme, THEMES, 'system'),
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -59,3 +63,11 @@ export type Route =
   | { view: 'explore'; tab?: ExploreTab }
   | { view: 'team'; tab?: TeamTab }
   | { view: 'program'; tab?: ProgramTab };
+
+/** Resolve and apply the theme to <html data-theme>. 'system' follows prefers-color-scheme. */
+export function applyTheme(theme: Theme): 'dark' | 'light' {
+  const resolved = theme === 'system' ? (typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : theme;
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.dataset.themeSetting = theme;
+  return resolved;
+}

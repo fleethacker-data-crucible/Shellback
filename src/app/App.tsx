@@ -7,7 +7,7 @@ import { parseWorkspace } from '../core/schema';
 import { buildWorkspaceExport } from '../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../core/crypto';
 import { downloadJson, readJsonFile } from './lib/files';
-import type { ViewId } from '../storage/settings';
+import { applyTheme, type Theme, type ViewId } from '../storage/settings';
 import { HomeView } from './views/HomeView';
 import { ProfileView } from './views/ProfileView';
 import { ExploreView } from './views/ExploreView';
@@ -26,7 +26,7 @@ const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: strin
 
 export function App() {
   const store = useStore();
-  const { ws, view, navigate, flashMessage, ready, loadInfo, replace, flash, settings } = store;
+  const { ws, view, navigate, flashMessage, ready, loadInfo, replace, flash, settings, setSettings } = store;
   const dialogs = useDialogs();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -34,6 +34,14 @@ export function App() {
   const current = NAV.find((n) => n.id === view) ?? NAV[0]!;
 
   useEffect(() => { document.documentElement.dataset.reducedMotion = String(settings.reducedMotion); }, [settings.reducedMotion]);
+  useEffect(() => {
+    applyTheme(settings.theme);
+    if (settings.theme !== 'system') return;
+    const mq = matchMedia('(prefers-color-scheme: light)');
+    const onChange = () => applyTheme('system');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [settings.theme]);
   useEffect(() => { setMenuOpen(false); }, [view]);
 
   async function exportWorkspace() {
@@ -84,20 +92,20 @@ export function App() {
   return (
     <div className="flex min-h-screen">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">Skip to content</a>
-      <aside aria-label="Main navigation" className={cn('fixed inset-y-0 left-0 z-40 flex w-[255px] flex-col border-r border-[#25334a] bg-gradient-to-br from-[#0d1729] to-[#0b1423] px-[15px] py-[26px] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
+      <aside aria-label="Main navigation" className={cn('fixed inset-y-0 left-0 z-40 flex w-[255px] flex-col border-r border-stroke bg-gradient-to-br from-side to-bg px-[15px] py-[26px] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex items-center gap-3 px-[13px] pb-9">
           <SynapseMark size={38} className="shrink-0 drop-shadow-[0_0_12px_#5cf1cb55]" />
-          <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SYNAPSE</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-[#7d9bae]">CAPABILITY INTELLIGENCE</small></div>
+          <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SYNAPSE</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-quiet">CAPABILITY INTELLIGENCE</small></div>
         </div>
         <div className="px-[13px] pb-3 text-[10px] font-extrabold tracking-[0.1em] text-quiet">WORKSPACE <span className="mt-2 block text-mint">SYNTHETIC PILOT</span></div>
         <nav id="nav" aria-label="Application sections" className="flex flex-col gap-1">
           {NAV.map((n) => (
             <button key={n.id} type="button" data-view={n.id} aria-current={view === n.id ? 'page' : undefined}
-              className={cn('flex items-center gap-3 rounded-md px-[13px] py-2 text-left text-[13px] font-bold text-muted transition-colors hover:bg-white/5 hover:text-text', view === n.id && 'bg-mint/10 text-mint')}
+              className={cn('flex items-center gap-3 rounded-md px-[13px] py-2 text-left text-[13px] font-bold text-muted transition-colors hover:bg-text/5 hover:text-text', view === n.id && 'bg-mint/10 text-mint')}
               onClick={() => { setMenuOpen(false); navigate(n.id); }}>
               <span className="w-4 text-center text-[13px]" aria-hidden="true">{n.icon}</span>
               <span className="flex-1"><span className="block">{n.label}</span><small className="block text-[10px] font-semibold text-quiet">{n.hint}</small></span>
-              {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[11px] font-extrabold text-[#2b1a05]">{toReview}</span>}
+              {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[11px] font-extrabold text-on-accent">{toReview}</span>}
             </button>
           ))}
         </nav>
@@ -105,6 +113,9 @@ export function App() {
           <div className="text-[10px] font-extrabold tracking-[0.1em] text-mint">● &nbsp; OFFLINE DEMO · NO AUTHENTICATED ACCOUNT</div>
           <p className="mt-2 text-[11px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
           <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}>↥ Export my workspace</Button>
+          <div role="radiogroup" aria-label="Theme" id="themeSwitch" className="mt-3 flex gap-1 rounded-md border border-stroke bg-bg/40 p-1">
+            {(['system', 'dark', 'light'] as Theme[]).map((t) => <button key={t} type="button" role="radio" aria-checked={settings.theme === t} data-theme-choice={t} className={cn('flex-1 rounded-sm px-2 py-1 text-[11px] font-bold capitalize text-quiet hover:text-text', settings.theme === t && 'bg-panel2 text-text')} onClick={() => setSettings({ theme: t })}>{t === 'system' ? 'Auto' : t}</button>)}
+          </div>
         </div>
       </aside>
       {menuOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)} />}
@@ -123,14 +134,14 @@ export function App() {
               <span className="text-mint">●</span> Local demo · No login
             </button>
             <Button id="importBtn" onClick={() => fileRef.current?.click()}>↧ Import data</Button>
-            <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace} />
-            <button type="button" className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-blue text-[12px] font-extrabold text-bg" data-view="profile" aria-label="Open my capability profile" onClick={() => navigate('profile')}>
+            <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace}  aria-label="Import a Synapse file"/>
+            <button type="button" className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-blue text-[12px] font-extrabold text-on-accent" data-view="profile" aria-label="Open my capability profile" onClick={() => navigate('profile')}>
               {ws.profile.displayName.trim() ? ws.profile.displayName.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'ME'}
             </button>
           </div>
         </header>
 
-        <div id="flash" role="status" aria-live="polite" className={cn('flash pointer-events-none fixed bottom-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-[#0d1f2f] px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
+        <div id="flash" role="status" aria-live="polite" className={cn('flash pointer-events-none fixed bottom-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-panel2 px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
 
         {loadInfo?.recovered && (
           <Notice tone="warn" className="mb-4">

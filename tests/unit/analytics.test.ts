@@ -10,7 +10,7 @@ function ws() {
   const w = newWorkspace();
   w.teams = defaultTeams();
   w.profile.confirmed = ['aws-architecture'];
-  w.profile.credentials = [{ id: 'c1', name: 'Secret Internal Cert', authority: '', expiry: '', created: '2026-10-24', source: 'self-entered' }];
+  w.profile.credentials = [{ id: 'c1', name: 'Secret Internal Cert', authority: '', expiry: '', created: '2026-10-24', source: 'self-entered', issued: '', verifier: '', provenance: 'claimed', note: '' }];
   w.workforce.mentorship = { enabled: true, topics: ['aws-architecture'], availability: 'available', intro: 'hi' };
   return w;
 }
