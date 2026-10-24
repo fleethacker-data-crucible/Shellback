@@ -25,13 +25,20 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Root = (Join-Path $PSScriptRoot '..\dist'),
+  [string]$Root = '',
   [ValidateRange(1, 65535)][int]$Port = 8765,
   [switch]$NoBrowser
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
+
+# Resolve the default here, not in param(): $PSScriptRoot can be empty in param defaults on older hosts.
+if (-not $Root) {
+  $scriptDir = $PSScriptRoot
+  if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition }
+  $Root = Join-Path $scriptDir '..\dist'
+}
 
 $Root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
 if (-not (Test-Path -LiteralPath (Join-Path $Root 'index.html'))) {
