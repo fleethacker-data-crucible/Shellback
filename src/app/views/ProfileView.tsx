@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { SAMPLE_RESUME, SKILL_BY_ID } from '../../core/taxonomy';
 import { PERSONAS } from '../../core/personas';
-import { parseWorkspace } from '../../core/schema';
+import { isDraftCard, parseDraftCard, parseWorkspace } from '../../core/schema';
+import { readJsonFile } from '../lib/files';
 import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
-import { applyScan, clearProfile, confirmSkill, dismissSkillCandidate, loadSyntheticProfile, pendingCredentialCandidates, removeSkill, setConsent, setOrg } from '../state/actions';
+import { applyDraftToProfile, applyScan, clearProfile, confirmSkill, dismissSkillCandidate, loadSyntheticProfile, pendingCredentialCandidates, removeSkill, setConsent, setOrg } from '../state/actions';
 import { orgAncestors, orgLevelName } from '../../core/org';
 import { mapSkillName } from '../../core/mapping';
 import { ContributionCard } from '../components/ContributionCard';
@@ -94,6 +95,20 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
       await runScanOn(text);
     } catch (err) { flash(err instanceof Error ? err.message : 'Could not read that file.'); }
   }
+  const draftRef = useRef<HTMLInputElement | null>(null);
+  async function onDraft(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const data = await readJsonFile(f, 256_000);
+      if (!isDraftCard(data)) { flash('That is not a Synapse draft card. Peer cards are imported under Team → Roster.'); return; }
+      const draft = parseDraftCard(data);
+      const ok = await dialogs.confirm(<>A draft card for <b>{draft.name}</b> with {draft.skills.length} suggested skills{draft.credentialNames.length ? ` and ${draft.credentialNames.length} credential names` : ''}{draft.draftedBy ? `, prepared by ${draft.draftedBy}` : ''}. Load it as <b>suggestions</b> for you to confirm or dismiss? Nothing is added to your profile automatically.</>, { title: 'Import draft card', confirmLabel: 'Load as suggestions' });
+      if (!ok) return;
+      act((d) => applyDraftToProfile(d, draft));
+    } catch (err) { flash(err instanceof Error ? err.message : 'Could not read that file.'); }
+  }
   async function loadPersona() {
     const p = PERSONAS.find((x) => x.id === persona);
     if (!p) { flash('Choose a fictional employee.'); return; }
@@ -123,6 +138,8 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
         <div className="mt-3 flex flex-wrap gap-2">
           <Button id="scanResume" variant="primary" disabled={scanning} onClick={() => runScanOn(resume)}>{scanning ? 'Scanning…' : 'Find skill suggestions'}</Button>
           <Button id="loadResumeSample" onClick={() => { setResume(SAMPLE_RESUME); void runScanOn(SAMPLE_RESUME); }}>Use synthetic résumé</Button>
+          <Button id="importDraftBtn" onClick={() => draftRef.current?.click()} title="A supervisor or teammate prepared a draft card for you">Import a draft card prepared for me ↧</Button>
+          <input ref={draftRef} id="importDraftFile" hidden type="file" accept=".json,application/json" aria-label="Import a draft card" onChange={onDraft} />
         </div>
         <details className="mt-5 rounded-md border border-stroke bg-panel2/40 p-3 text-[13px]" open={!ws.profile.confirmed.length || !!ws.profile.demoPersona}>
           <summary className="cursor-pointer font-bold">Just exploring? Use fictional data</summary>
