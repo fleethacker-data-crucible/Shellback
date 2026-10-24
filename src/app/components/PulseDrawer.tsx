@@ -17,8 +17,15 @@ export function PulseDrawer() {
   const { ws, pulseFor, closePulse, flash } = useStore();
   const act = useAction();
   const ref = useRef<HTMLDialogElement | null>(null);
-  const [skill, setSkill] = useState('');
+  const [skill, setSkillState] = useState('');
   const [form, setForm] = useState({ confidence: '', performed: '', method: '', note: '' });
+  /** Select a skill and load its saved answer in the same render, so there is no window in which
+   *  a value the user already entered could be reset by a later effect. */
+  const setSkill = (id: string) => {
+    const v = ws.profile.surveys[id];
+    setSkillState(id);
+    setForm({ confidence: v ? String(v.confidence) : '', performed: v?.performed ?? '', method: v?.method ?? '', note: v?.note ?? '' });
+  };
 
   const confirmed = useMemo(() => SKILLS.filter((s) => ws.profile.confirmed.includes(s.id)).sort((a, b) => a.name.localeCompare(b.name)), [ws.profile.confirmed]);
   const unrated = ws.profile.confirmed.filter((id) => !ws.profile.surveys[id]);
@@ -36,12 +43,6 @@ export function PulseDrawer() {
     if (!open && el.open) el.close();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pulseFor]);
-
-  // Load the saved answer whenever the selected skill changes.
-  useEffect(() => {
-    const v = ws.profile.surveys[skill];
-    setForm({ confidence: v ? String(v.confidence) : '', performed: v?.performed ?? '', method: v?.method ?? '', note: v?.note ?? '' });
-  }, [skill, ws.profile.surveys]);
 
   const s = SKILL_BY_ID.get(skill);
   const nextAfter = (id: string) => {
