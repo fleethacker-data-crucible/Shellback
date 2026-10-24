@@ -32,6 +32,7 @@
     --color-quiet: #72889e;
     --color-mint: #5cf1cb;
     --color-blue: #67abff;
+    --color-purple: #ac91fb;
     --color-amber: #fac58e;
     --color-danger: #ff7d8f;
     --color-on-accent: #062219;
@@ -690,6 +691,12 @@
       border-color: color-mix(in oklab, var(--color-blue) 30%, transparent);
     }
   }
+  .border-blue\/60 {
+    border-color: color-mix(in srgb, #67abff 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-blue) 60%, transparent);
+    }
+  }
   .border-danger\/40 {
     border-color: color-mix(in srgb, #ff7d8f 40%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -724,6 +731,12 @@
     border-color: color-mix(in srgb, #5cf1cb 60%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       border-color: color-mix(in oklab, var(--color-mint) 60%, transparent);
+    }
+  }
+  .border-purple\/60 {
+    border-color: color-mix(in srgb, #ac91fb 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      border-color: color-mix(in oklab, var(--color-purple) 60%, transparent);
     }
   }
   .border-stroke {
@@ -792,6 +805,12 @@
       background-color: color-mix(in oklab, var(--color-blue) 10%, transparent);
     }
   }
+  .bg-blue\/15 {
+    background-color: color-mix(in srgb, #67abff 15%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-blue) 15%, transparent);
+    }
+  }
   .bg-danger\/10 {
     background-color: color-mix(in srgb, #ff7d8f 10%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -856,6 +875,12 @@
     background-color: color-mix(in srgb, #14243a 70%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-panel2) 70%, transparent);
+    }
+  }
+  .bg-purple\/15 {
+    background-color: color-mix(in srgb, #ac91fb 15%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-purple) 15%, transparent);
     }
   }
   .bg-gradient-to-br {
@@ -972,6 +997,9 @@
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
   }
+  .py-\[2px\] {
+    padding-block: 2px;
+  }
   .py-\[3px\] {
     padding-block: 3px;
   }
@@ -1019,6 +1047,9 @@
   }
   .text-\[8px\] {
     font-size: 8px;
+  }
+  .text-\[10\.5px\] {
+    font-size: 10.5px;
   }
   .text-\[10px\] {
     font-size: 10px;

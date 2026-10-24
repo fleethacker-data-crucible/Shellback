@@ -7,7 +7,7 @@ import { credentialKey } from '../../core/scanners';
 import { defaultTeams, DEMO_TEAM_ID, SELF_ID } from '../../core/analytics';
 import { newId, newShareId } from '../../core/ids';
 import { normalizeOrgCode } from '../../core/org';
-import { STAGES, type Contribution, type Energy, type Stage } from '../../core/contribution';
+import { STAGES, energyFromScore, scoreFromEnergy, type Contribution, type Energy, type Stage, type StageDetail } from '../../core/contribution';
 import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate, type CredentialProvenance } from '../../core/schema';
 import type { ScanResponse } from '../../core/scanners';
 
@@ -90,12 +90,22 @@ export function setOrg(ws: Workspace, code: string, title: string): void {
   ws.profile.orgTitle = title.trim().slice(0, 80);
 }
 export function setContributionStage(ws: Workspace, stage: Stage, energy: Energy | null): void {
-  if (energy === null) delete ws.profile.contribution.stages[stage];
-  else ws.profile.contribution.stages[stage] = energy;
+  if (energy === null) { delete ws.profile.contribution.stages[stage]; delete ws.profile.contribution.detail[stage]; return; }
+  ws.profile.contribution.stages[stage] = energy;
+  const d = ws.profile.contribution.detail[stage];
+  ws.profile.contribution.detail[stage] = { energy: scoreFromEnergy(energy), fluency: d?.fluency ?? null, tags: d?.tags ?? [], example: d?.example ?? '' };
 }
-export function setContribution(ws: Workspace, c: Contribution): void { ws.profile.contribution = { stages: { ...c.stages }, source: c.source.trim().slice(0, 160) }; }
+/** Two-axis answer. Energy keeps the one-axis summary in sync; fluency/tags/example are optional. */
+export function setStageDetail(ws: Workspace, stage: Stage, patch: Partial<StageDetail>): void {
+  const c = ws.profile.contribution;
+  const cur = c.detail[stage] ?? { energy: scoreFromEnergy(c.stages[stage] ?? 'neutral'), fluency: null, tags: [], example: '' };
+  const next: StageDetail = { ...cur, ...patch, tags: [...new Set(patch.tags ?? cur.tags)].slice(0, 7), example: (patch.example ?? cur.example).trim().slice(0, 160) };
+  c.detail[stage] = next;
+  c.stages[stage] = energyFromScore(next.energy);
+}
+export function setContribution(ws: Workspace, c: Contribution): void { ws.profile.contribution = { stages: { ...c.stages }, source: c.source.trim().slice(0, 160), detail: structuredClone(c.detail ?? {}) }; }
 export function setContributionSource(ws: Workspace, source: string): void { ws.profile.contribution.source = source.trim().slice(0, 160); }
-export function clearContribution(ws: Workspace): string { ws.profile.contribution = { stages: {}, source: '' }; return 'Contribution preferences cleared.'; }
+export function clearContribution(ws: Workspace): string { ws.profile.contribution = { stages: {}, source: '', detail: {} }; return 'Contribution preferences cleared.'; }
 
 // ---------------------------------------------------------------------------- Credentials
 export interface CredentialInput { name: string; authority: string; expiry: string; issued?: string; verifier?: string; provenance?: CredentialProvenance; note?: string }

@@ -130,9 +130,9 @@ export function Switch({ id, checked, onChange, label, onText = 'On', offText = 
 }
 
 // ---------------------------------------------------------------------------- Display
-export function Pill({ children, tone = 'neutral', className }: { children: ReactNode; tone?: 'neutral' | 'mint' | 'amber' | 'danger'; className?: string }) {
+export function Pill({ children, tone = 'neutral', className, title }: { children: ReactNode; tone?: 'neutral' | 'mint' | 'amber' | 'danger'; className?: string; title?: string }) {
   const tones = { neutral: '', mint: 'border-mint/40 text-mint bg-mint/10', amber: 'border-amber/50 text-amber bg-amber/10', danger: 'border-danger/40 text-danger bg-danger/10' };
-  return <span className={cn('tiny-pill', tones[tone], className)}>{children}</span>;
+  return <span className={cn('tiny-pill', tones[tone], className)} title={title}>{children}</span>;
 }
 
 export function Notice({ children, tone = 'info', className }: { children: ReactNode; tone?: 'info' | 'warn' | 'danger'; className?: string }) {
