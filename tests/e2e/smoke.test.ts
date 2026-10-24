@@ -323,7 +323,7 @@ test('corrupted stored data is set aside, never silently discarded (review bug #
   await page.reload();
   await page.getByText('set aside, not deleted', { exact: false }).waitFor();
   await nav(page, 'trust');
-  assert.match(await page.locator('#recovery').innerText(), /backup-/);
+  await page.locator('#recovery').getByText(/backup-/).first().waitFor();
   assert.deepEqual(errors, []);
 });
 
