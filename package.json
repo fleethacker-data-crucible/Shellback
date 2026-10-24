@@ -18,7 +18,10 @@
     "test:unit": "node tools/run-tests.mjs unit",
     "test:e2e": "node tools/run-tests.mjs e2e",
     "test": "npm run typecheck:core && npm run typecheck:tests && npm run test:unit && npm run build:check && npm run test:e2e",
-    "typecheck:tests": "tsc -p tsconfig.test.json --noEmit"
+    "typecheck:tests": "tsc -p tsconfig.test.json --noEmit",
+    "build:intel": "node tools/build.mjs --out dist-intel",
+    "serve:intel": "node tools/serve.mjs --root dist-intel",
+    "intel:adapter": "node tools/intel-adapter.mjs"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",

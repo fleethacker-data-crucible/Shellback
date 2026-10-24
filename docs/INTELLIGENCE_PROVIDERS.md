@@ -23,6 +23,29 @@ npm run build
 
 The origins are written into `dist/build-manifest.json` (`intelHosts`) and shown in the Intelligence tab ("Allowed by this build"). A build with no `SYNAPSE_INTEL_HOST` is network-silent by construction.
 
+## Quickest way to try it: the loopback adapter
+
+`tools/intel-adapter.mjs` is a zero-dependency Node bridge that implements contract v1 on `http://127.0.0.1:8790` and forwards each task as a chat-completion request to any **OpenAI-compatible** endpoint (most enterprise gateways are), using an API key that never leaves your workstation.
+
+```powershell
+# 1. Build an edition that is allowed to talk to the adapter (not the committed dist/)
+$env:SYNAPSE_INTEL_HOST = "http://127.0.0.1:8790"
+npm run build:intel                      # → dist-intel
+# 2. Start the adapter (keep this window open)
+$env:INTEL_UPSTREAM_URL = "https://<your-gateway>/v1/chat/completions"
+$env:INTEL_API_KEY      = "<your key>"
+$env:INTEL_MODEL        = "<model or deployment name>"   # optional
+$env:INTEL_TOKEN        = "pick-a-shared-secret"         # optional; Synapse presents it as the bearer token
+npm run intel:adapter
+
+# 3. Serve that edition in a second window
+npm run serve:intel                      # or: .	ools\Serve-Synapse.ps1 -Root .\dist-intel
+```
+
+Then in Synapse: Program → Intelligence → endpoint `http://127.0.0.1:8790`, *Add bearer token…* = the `INTEL_TOKEN` you chose, *Test connection*, select *Remote provider*. If the gateway is not OpenAI-shaped, the adapter is ~80 lines; change `upstream()` and the three prompts.
+
+The adapter is a development convenience. For production the platform team should implement the contract server-side so the browser talks to the accredited service directly over HTTPS.
+
 ## Contract (version 1)
 
 One endpoint, `POST`, JSON in and out, `Authorization: Bearer <token>` when a token is configured. Requests are sent with `credentials: 'omit'` and `referrerPolicy: 'no-referrer'`.
