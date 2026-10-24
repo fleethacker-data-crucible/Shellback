@@ -384,23 +384,42 @@ export const fleetPlansSchema = z.unknown().transform((value) => {
 // ----------------------------------------------------------------------------
 // ROI
 // ----------------------------------------------------------------------------
+/** Conservative, illustrative defaults for a 100-person pilot. Every one of them should be replaced by a measured figure. */
 export const ROI_DEFAULTS = {
-  employees: 100, trainingCost: 2000, trainingAvoidance: 15, trainingHours: 8, hourlyRate: 75,
-  externalSpend: 100000, externalAvoidance: 10, minutesSaved: 55, weeks: 46, realization: 70,
-  adoption: 75, overlap: 25, annualCost: 60000,
+  employees: 100, adoption: 60, hourlyRate: 85, weeks: 46,
+  externalHours: 600, externalRate: 180, internalCoverage: 25, internalAnswerHours: 1.25,
+  trainingCost: 1500, trainingAvoidance: 8, trainingHours: 24,
+  lapsesPerYear: 6, lapseCost: 2500, lapseAvoidance: 50,
+  leads: 12, searchMinutes: 30, realization: 50,
+  annualCost: 25000, upkeepMinutes: 15, adminHours: 120,
 } as const;
-export type RoiInputs = { -readonly [K in keyof typeof ROI_DEFAULTS]: number };
-export const ROI_PERCENT_KEYS: ReadonlySet<keyof RoiInputs> = new Set(['trainingAvoidance', 'externalAvoidance', 'realization', 'adoption', 'overlap']);
+export type RoiKey = keyof typeof ROI_DEFAULTS;
+export type RoiInputs = { -readonly [K in RoiKey]: number };
+export const ROI_PERCENT_KEYS: ReadonlySet<RoiKey> = new Set<RoiKey>(['adoption', 'internalCoverage', 'trainingAvoidance', 'lapseAvoidance', 'realization']);
+export const ROI_BASES = ['assumed', 'benchmark', 'measured'] as const;
+export type RoiBasis = (typeof ROI_BASES)[number];
+export type RoiBasisMap = Partial<Record<RoiKey, RoiBasis>>;
+
+/** Inputs from the retired v1.0–v1.4 model that map onto the new one; everything else is dropped. */
+const ROI_LEGACY: Partial<Record<string, RoiKey>> = { minutesSaved: 'searchMinutes' };
 
 export const roiSchema = z.unknown().transform((value): RoiInputs => {
   const out: RoiInputs = { ...ROI_DEFAULTS };
   if (!value || typeof value !== 'object') return out;
-  for (const key of Object.keys(ROI_DEFAULTS) as (keyof RoiInputs)[]) {
-    const n = Number((value as Record<string, unknown>)[key]);
+  const v = value as Record<string, unknown>;
+  for (const key of Object.keys(ROI_DEFAULTS) as RoiKey[]) {
+    const n = Number(v[key]);
     if (Number.isFinite(n) && n >= 0) out[key] = Math.min(n, ROI_PERCENT_KEYS.has(key) ? 100 : 100_000_000);
   }
+  for (const [legacy, key] of Object.entries(ROI_LEGACY)) { const n = Number(v[legacy]); if (key && v[key] === undefined && Number.isFinite(n) && n >= 0) out[key] = Math.min(n, 100_000_000); }
   return out;
 });
+export const roiBasisSchema = z.unknown().transform((value): RoiBasisMap => {
+  const out: RoiBasisMap = {};
+  if (!value || typeof value !== 'object') return out;
+  for (const [k, b] of Object.entries(value as Record<string, unknown>)) if (k in ROI_DEFAULTS && (ROI_BASES as readonly unknown[]).includes(b)) out[k as RoiKey] = b as RoiBasis;
+  return out;
+}).catch({});
 
 // ----------------------------------------------------------------------------
 // Workspace (v2)
@@ -412,6 +431,7 @@ export const workspaceSchema = z.object({
   fleetPlans: fleetPlansSchema,
   workforce: workforceSchema,
   roi: roiSchema,
+  roiBasis: roiBasisSchema,
   meta: z.object({ created: dateOrToday, updated: dateOrToday, rev: z.number().int().min(0).catch(0) }).catch({ created: today(), updated: today(), rev: 0 }),
 });
 export type Workspace = z.infer<typeof workspaceSchema>;
@@ -435,6 +455,7 @@ export function newWorkspace(): Workspace {
     fleetPlans: {},
     workforce: emptyWorkforce(),
     roi: { ...ROI_DEFAULTS },
+    roiBasis: {},
     meta: { created: today(), updated: today(), rev: 0 },
   };
 }

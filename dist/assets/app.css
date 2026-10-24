@@ -213,6 +213,9 @@
   .relative {
     position: relative;
   }
+  .static {
+    position: static;
+  }
   .inset-0 {
     inset: 0px;
   }
@@ -603,6 +606,9 @@
   .gap-y-1 {
     row-gap: var(--spacing);
   }
+  .gap-y-2 {
+    row-gap: calc(var(--spacing) * 2);
+  }
   .truncate {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -949,6 +955,12 @@
   .px-0 {
     padding-inline: 0px;
   }
+  .px-1 {
+    padding-inline: var(--spacing);
+  }
+  .px-1\.5 {
+    padding-inline: calc(var(--spacing) * 1.5);
+  }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
   }
@@ -993,6 +1005,9 @@
   }
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
+  }
+  .py-\[1px\] {
+    padding-block: 1px;
   }
   .py-\[2px\] {
     padding-block: 2px;
@@ -1487,6 +1502,9 @@
     }
     .xl\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .xl\:grid-cols-\[minmax\(0\,1\.1fr\)_minmax\(0\,0\.9fr\)\] {
+      grid-template-columns: minmax(0,1.1fr) minmax(0,0.9fr);
     }
     .xl\:grid-cols-\[minmax\(0\,1\.6fr\)_minmax\(300px\,0\.8fr\)\] {
       grid-template-columns: minmax(0,1.6fr) minmax(300px,0.8fr);
