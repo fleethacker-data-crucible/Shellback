@@ -6,16 +6,19 @@ import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
 import { applyScan, clearProfile, confirmSkill, dismissSkillCandidate, loadSyntheticProfile, pendingCredentialCandidates, removeSkill, setConsent, setOrg } from '../state/actions';
 import { orgAncestors, orgLevelName } from '../../core/org';
+import { mapSkillName } from '../../core/mapping';
 import { ContributionCard } from '../components/ContributionCard';
 import { scanResume, scanRunsInWorker } from '../../storage/scan-client';
+import { activeProvider } from '../../storage/intel-settings';
+import { extractDocumentText } from '../lib/document-text';
 import type { ProfileTab } from '../../storage/settings';
 import { useDialogs } from '../components/ui/dialogs';
 import { Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Switch, Tabs, Textarea } from '../components/ui/primitives';
 import { StatusChip } from '../components/SkillActions';
 import { SKILL_OPTIONS, modeLabel } from '../lib/options';
-import { readFileText } from '../lib/files';
 import { CredentialsView } from './CredentialsView';
 import { GrowthPanel } from './WorkforcePanels';
+import { CapabilitySheet, PrintSummaryButton } from '../components/CapabilitySummary';
 
 export function ProfileView() {
   const { ws, settings, navigate } = useStore();
@@ -64,9 +67,18 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
   async function runScanOn(text: string) {
     if (!text.trim()) { flash('Paste selected experience or load the synthetic example first.'); return; }
     setScanning(true);
+    const provider = activeProvider();
+    const info = provider.describe();
     try {
-      const result = await scanResume({ text, confirmed: ws.profile.confirmed });
+      // Local rules run in the worker; a remote provider is called directly and falls back to local on failure.
+      let result, fallback = '';
+      if (info.offline) result = await scanResume({ text, confirmed: ws.profile.confirmed });
+      else {
+        try { result = await provider.scanResume({ text, confirmed: ws.profile.confirmed }); }
+        catch (err) { fallback = `${info.label} failed (${err instanceof Error ? err.message : String(err)}). Used local rules instead.`; result = await scanResume({ text, confirmed: ws.profile.confirmed }); }
+      }
       act((d) => applyScan(d, result));
+      if (fallback) flash(fallback);
     } catch (err) {
       flash(`The résumé could not be scanned: ${err instanceof Error ? err.message : String(err)}`);
     } finally { setScanning(false); }
@@ -75,10 +87,10 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    if (!/\.txt$/i.test(f.name)) { flash('Please select a plain-text .txt file under 500 KB.'); return; }
     try {
-      const text = (await readFileText(f, 512_000)).slice(0, 100_000);
+      const { text, note } = await extractDocumentText(f);
       setResume(text);
+      if (note) { flash(note); return; }
       await runScanOn(text);
     } catch (err) { flash(err instanceof Error ? err.message : 'Could not read that file.'); }
   }
@@ -99,11 +111,11 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+    <div id="intake" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <Panel>
-        <PanelHeading eyebrow="ADD EXPERIENCE" title="Scan a résumé">Synapse looks for skill and certification names locally{scanRunsInWorker() ? ' in a background worker' : ''}. The text is never stored, only the suggestions you then review.</PanelHeading>
-        <Field label="Upload a plain-text résumé (.txt)" htmlFor="resumeFile">
-          <input id="resumeFile" type="file" accept=".txt,text/plain" className="control file:mr-3 file:rounded-sm file:border-0 file:bg-panel2 file:px-3 file:py-1 file:text-[12px] file:font-bold file:text-text" onChange={onFile} />
+        <PanelHeading eyebrow="ADD EXPERIENCE" title="Scan a résumé">{activeProvider().describe().offline ? <>Synapse looks for skill and certification names locally{scanRunsInWorker() ? ' in a background worker' : ''}. The text is never stored, only the suggestions you then review.</> : <>Suggestions come from <b>{activeProvider().describe().label}</b>: the text is sent there (<Button size="sm" variant="ghost" className="underline" onClick={() => navigate({ view: 'program', tab: 'intelligence' })}>what leaves this workstation</Button>). Only the suggestions you then review are kept.</>}</PanelHeading>
+        <Field label="Upload a résumé (.txt, .docx or .pdf — read in this browser)" htmlFor="resumeFile">
+          <input id="resumeFile" type="file" accept=".txt,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="control file:mr-3 file:rounded-sm file:border-0 file:bg-panel2 file:px-3 file:py-1 file:text-[12px] file:font-bold file:text-text" onChange={onFile} />
         </Field>
         <Field label="Or paste selected experience" htmlFor="resumeText">
           <Textarea id="resumeText" rows={7} value={resume} onChange={setResume} placeholder="Designed AWS infrastructure, wrote SQL pipelines, used Power BI ..." />
@@ -161,6 +173,8 @@ function SkillsTab() {
   const act = useAction();
   const dialogs = useDialogs();
   const [manual, setManual] = useState('');
+  const [free, setFree] = useState('');
+  const freeMatch = free.trim().length >= 2 ? mapSkillName(free) : null;
   const manualRef = useRef<HTMLSelectElement | null>(null);
 
   useEffect(() => {
@@ -173,9 +187,10 @@ function SkillsTab() {
   }
 
   return (
-    <div className="space-y-5">
+    <div id="skills" className="space-y-5">
+      <CapabilitySheet />
       <Panel>
-        <PanelHeading eyebrow="CONFIRMED" title="My confirmed skills" action={<Button id="clearMyData" variant="danger" size="sm" onClick={clear}>Clear my profile</Button>}>
+        <PanelHeading eyebrow="CONFIRMED" title="My confirmed skills" action={<span className="flex gap-2"><PrintSummaryButton /><Button id="clearMyData" variant="danger" size="sm" onClick={clear}>Clear my profile</Button></span>}>
           These are the skills you attest to. They build your web and galaxy. Rate confidence whenever you like; it only changes how brightly a skill shines.
         </PanelHeading>
         <div className="flex flex-wrap items-end gap-2">
@@ -186,6 +201,9 @@ function SkillsTab() {
             </select>
           </Field>
           <Button id="manualAdd" onClick={() => { if (!manual) { flash('Choose a skill to add.'); return; } if (act((d) => confirmSkill(d, manual)) !== undefined) setManual(''); }}>Add skill</Button>
+          <Field label="…or type what you call it" htmlFor="manualFree" hint={freeMatch ? (freeMatch.skill ? <>Closest match: <b>{freeMatch.skill.name}</b> ({freeMatch.skill.domain}) <Button size="sm" variant="ghost" className="underline" id="manualFreeUse" onClick={() => { setManual(freeMatch.skill!.id); setFree(''); manualRef.current?.focus(); }}>use it</Button></> : 'No close match in the taxonomy. Pick from the list.') : undefined}>
+            <Input id="manualFree" className="w-[240px]" value={free} onChange={setFree} placeholder="e.g. terraform, k8s, PBI" maxLength={80} />
+          </Field>
           {ws.profile.confirmed.some((id) => !ws.profile.surveys[id]) && <Button id="openPulseFromProfile" variant="primary" onClick={() => openPulse()}>Rate unrated skills</Button>}
         </div>
         <div id="mySkills" className="mt-4 grid gap-2 md:grid-cols-2">

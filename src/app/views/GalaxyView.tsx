@@ -6,6 +6,7 @@ import { SkillActions, StatusChip, skillStatus } from '../components/SkillAction
 import { Galaxy } from '../viz/Galaxy';
 import { buildGalaxyModel } from '../viz/galaxy-model';
 import { modeLabel } from '../lib/options';
+import { TrustChip } from '../components/TrustChip';
 
 export function GalaxyView() {
   const { ws, settings, setSettings, navigate, intent, consumeIntent } = useStore();
@@ -13,11 +14,14 @@ export function GalaxyView() {
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [showGhosts, setShowGhosts] = useState(false);
+  const [fitSignal, setFitSignal] = useState(0);
   useEffect(() => { if (intent?.type === 'galaxy-select') { setSelected(intent.skillId); consumeIntent(); } }, [intent, consumeIntent]);
 
-  const model = useMemo(() => buildGalaxyModel({ profile: ws.profile, pending: ws.profile.candidates, scope, filter, query }), [ws.profile, scope, filter, query]);
+  const model = useMemo(() => buildGalaxyModel({ profile: ws.profile, pending: ws.profile.candidates, scope, filter, query, showGhosts }), [ws.profile, scope, filter, query, showGhosts]);
   const pathways = scope === 'pathways';
-  const chosen = selected && model.displayed.has(selected) ? model.byId.get(selected) : undefined;
+  const chosen = selected && (model.displayed.has(selected) || model.ghosts.has(selected)) ? model.byId.get(selected) : undefined;
+  const chosenGhost = !!chosen && model.ghosts.has(chosen.s.id);
   const answer = chosen && ws.profile.confirmed.includes(chosen.s.id) ? ws.profile.surveys[chosen.s.id] : undefined;
   const relations = model.edges.filter((e) => model.displayed.has(e.a) && model.displayed.has(e.b)).length;
   const setScope = (mode: 'confirmed' | 'pathways') => { setSettings({ galaxyMode: mode }); setSelected(null); };
@@ -42,15 +46,19 @@ export function GalaxyView() {
           </div>
           <label className="text-[12px] text-muted">Domain<Select id="graphFilter" className="mt-1 w-[220px]" value={filter} onChange={(v) => { setFilter(v); setSelected(null); }} options={[{ value: 'all', label: 'All domains in this view' }, ...DOMAINS.map((d) => ({ value: String(d.index), label: d.name }))]} /></label>
           <label className="text-[12px] text-muted">Find a skill<Input id="graphSearch" type="search" className="mt-1 w-[220px]" value={query} onChange={setQuery} placeholder="e.g. SQL, AWS, training..." /></label>
-          <Button id="graphReset" onClick={() => { setFilter('all'); setQuery(''); setSelected(null); setScope('confirmed'); }}>Reset galaxy</Button>
-          <span className="note">Hover = inspect · Click = select · Hold + drag = rearrange · No idle movement</span>
+          <Button id="graphFit" onClick={() => setFitSignal((n) => n + 1)} title="Fit the map to the stars shown">Fit</Button>
+          <Button id="graphReset" onClick={() => { setFilter('all'); setQuery(''); setSelected(null); setShowGhosts(false); setScope('confirmed'); setFitSignal((n) => n + 1); }}>Reset galaxy</Button>
+          {!pathways && (
+            <label className="flex items-center gap-2 text-[12px] text-muted"><input id="graphGhosts" type="checkbox" checked={showGhosts} onChange={(e: { target: { checked: boolean } }) => setShowGhosts(e.target.checked)} />Show nearby pathways (faint, not yours)</label>
+          )}
+          <span className="note">Wheel = zoom · Drag space = pan · Hover = inspect · Click = select · Hold + drag a star = rearrange · Arrow keys = move between stars · No idle movement</span>
         </div>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,0.8fr)]">
-          <div id="graphSurface" className="galaxy-surface"><Galaxy model={model} selected={selected} onSelect={setSelected} reducedMotion={settings.reducedMotion} /></div>
+          <div id="graphSurface" className="galaxy-surface"><Galaxy model={model} selected={selected} onSelect={setSelected} fitSignal={fitSignal} reducedMotion={settings.reducedMotion} /></div>
           <div id="graphDetail" className="rounded-md border border-stroke bg-panel2/60 p-4 text-[13px]">
             {chosen ? (
               <>
-                <div className="eyebrow">{pathways ? 'POSSIBLE CAPABILITY' : 'CONFIRMED CAPABILITY'}</div>
+                <div className="eyebrow">{chosenGhost ? 'NEARBY PATHWAY · NOT IN YOUR PROFILE' : pathways ? 'POSSIBLE CAPABILITY' : 'CONFIRMED CAPABILITY'}</div>
                 <h3 className="mt-1 text-[18px]">{chosen.s.name}</h3>
                 <p className="mt-1 text-muted">{chosen.s.task}</p>
                 <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]">
@@ -58,11 +66,11 @@ export function GalaxyView() {
                   <dt className="text-quiet">Status</dt><dd><StatusChip status={skillStatus(ws.profile, chosen.s.id)} rated={!!answer} /></dd>
                   <dt className="text-quiet">Self-reported confidence</dt><dd>{answer ? `${answer.confidence}/4` : 'Not answered'}</dd>
                   <dt className="text-quiet">Execution mode</dt><dd>{answer ? modeLabel(answer.method) : 'Not reported'}</dd>
-                  <dt className="text-quiet">Verification</dt><dd>Not independently verified</dd>
+                  <dt className="text-quiet">Verification</dt><dd><TrustChip kind="self-reported" /></dd>
                 </dl>
                 <div className="mt-3"><SkillActions skillId={chosen.s.id} idPrefix="graph" /></div>
                 {(() => {
-                  const next = [...(model.adj.get(chosen.s.id) ?? [])].filter((x) => model.displayed.has(x)).slice(0, 12);
+                  const next = [...(model.adj.get(chosen.s.id) ?? [])].filter((x) => model.displayed.has(x) || model.ghosts.has(x)).slice(0, 12);
                   return next.length ? (
                     <section className="mt-4">
                       <h4 className="text-[13px]">Linked capabilities</h4>
@@ -101,13 +109,13 @@ export function GalaxyView() {
           {pathways ? (
             <><Legend color="#5de7d2">{model.counts.confirmed} confirmed of {SKILLS.length} possible skills</Legend><Legend color="#f3bd76">{model.counts.pending} unreviewed suggestions</Legend><Legend color="#98aec6">Grey = possible pathway, not attested</Legend><Legend color="#e0ad79">Cross-domain links</Legend></>
           ) : (
-            <><Legend color="#5de7d2">{model.counts.confirmed} attested skills in your profile</Legend><Legend color="#8bd0be">Branches connect attested capabilities only</Legend><Legend color="#98aec6">Confidence controls brightness, not presence</Legend></>
+            <><Legend color="#5de7d2">{model.counts.confirmed} attested skills in your profile</Legend><Legend color="#8bd0be">Branches connect attested capabilities only</Legend><Legend color="#98aec6">Confidence controls brightness, not presence</Legend>{showGhosts && <Legend color="#3d5572">{model.ghosts.size} dotted = nearby pathways, not yours</Legend>}</>
           )}
         </div>
         <p id="skyExplanation" aria-live="polite" className="note mt-2">
           {pathways
             ? `Pathways: ${model.displayed.size} possible skills across ${model.activeDomains.size} disciplines with ${relations} visible conceptual relationships. Only mint-ringed skills are attested; other nodes are possible learning routes.`
-            : `Confirmed Skills: exactly ${model.displayed.size} of your ${model.counts.confirmed} attested skills shown across ${model.activeDomains.size} disciplines${filter !== 'all' || query ? ' after filters' : ''}. Only connections between confirmed, displayed skills are drawn.`}
+            : `Confirmed Skills: exactly ${model.displayed.size} of your ${model.counts.confirmed} attested skills shown across ${model.activeDomains.size} disciplines${filter !== 'all' || query ? ' after filters' : ''}. Only connections between confirmed, displayed skills are drawn.${showGhosts ? ` ${model.ghosts.size} nearby pathway skills are shown dotted; none is attested.` : ''}`}
         </p>
       </Panel>
     </div>

@@ -54,6 +54,9 @@ export function SpiderWeb({ items, small = false, uid, onSelect, ariaLabel }: Pr
       <circle cx={cx} cy={cy} r={r + 33} fill={`url(#radar-deep-${uid})`} />
       <g transform={`translate(${cx} ${cy})`}>
         {[4, 3, 2, 1].map((ring) => <path key={ring} className={`radar-ring radar-ring-${ring}`} d={ringPath(ring / 4)} fill="none" strokeWidth={ring === 4 ? 1.8 : 0.9} />)}
+        {/* Floor: every confirmed domain reaches at least this far; the web never starts at zero. */}
+        <path className="radar-floor" data-radar-floor d={ringPath(0.23)} fill="none" stroke="#6bf3dd" strokeOpacity={0.45} strokeWidth={0.9} strokeDasharray="3 4" />
+        {!small && active > 0 && <text className="radar-floor-label" x={0} y={-r * 0.23 - 4} textAnchor="middle">confirmed floor</text>}
       </g>
       {items.map((item, i) => {
         const [x, y] = pt(i, 1), [tx, ty] = pt(i, 1 + (small ? 0.27 : 0.28)), a = angle(i);

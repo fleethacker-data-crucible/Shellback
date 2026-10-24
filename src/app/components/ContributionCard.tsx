@@ -2,9 +2,11 @@
  * "How I like to contribute": six stages of work, each marked energizing / neutral / draining.
  * Synapse's own neutral vocabulary; not an assessment. See core/contribution.ts.
  */
-import { ENERGY, ENERGY_LABEL, PHASE_LABEL, STAGE_DEFS, STAGE_PHASES, type Energy } from '../../core/contribution';
+import { useRef, useState, type ChangeEvent } from 'react';
+import { ENERGY, ENERGY_LABEL, PHASE_LABEL, STAGE_DEFS, STAGE_PHASES, importContribution, type Energy } from '../../core/contribution';
+import { readFileText } from '../lib/files';
 import { useStore } from '../state/store';
-import { clearContribution, setContributionSource, setContributionStage } from '../state/actions';
+import { clearContribution, setContribution, setContributionSource, setContributionStage } from '../state/actions';
 import { Button, Field, Input, Panel, PanelHeading, Pill, cn } from './ui/primitives';
 
 const TONE: Record<Energy, string> = {
@@ -14,9 +16,23 @@ const TONE: Record<Energy, string> = {
 };
 
 export function ContributionCard() {
-  const { ws, update } = useStore();
+  const { ws, update, flash } = useStore();
   const c = ws.profile.contribution;
   const answered = Object.keys(c.stages).length;
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [importNote, setImportNote] = useState<string[]>([]);
+  async function onImport(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const r = importContribution(await readFileText(f, 256_000), c);
+      if (!r.applied) { setImportNote(r.skipped.length ? r.skipped : ['Nothing in that file looked like a stage + energy pair.']); return; }
+      update((d) => setContribution(d, r.contribution));
+      setImportNote(r.skipped);
+      flash(`${r.applied} stage preference${r.applied === 1 ? '' : 's'} imported. Review them below; you can change any of them.`);
+    } catch (err) { flash(err instanceof Error ? err.message : 'Could not read that file.'); }
+  }
   return (
     <Panel id="contributionCard">
       <PanelHeading eyebrow="HOW I LIKE TO CONTRIBUTE" title="Which stages of work give you energy?"
@@ -54,8 +70,13 @@ export function ContributionCard() {
         <Field label="Based on (optional)" htmlFor="contributionSource" hint="For example 'self-reflection', a team workshop, or the name of a results report you hold. Free text, in your words.">
           <Input id="contributionSource" value={c.source} onChange={(v) => update((d) => setContributionSource(d, v))} maxLength={160} placeholder="Where these preferences come from" />
         </Field>
-        <Pill tone={answered === 6 ? 'mint' : 'neutral'}>{answered} of 6 answered</Pill>
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone={answered === 6 ? 'mint' : 'neutral'}>{answered} of 6 answered</Pill>
+          <input ref={fileRef} id="contributionImportFile" type="file" accept=".csv,.json,.txt,text/csv,application/json,text/plain" className="sr-only" aria-label="Import contribution results file" onChange={onImport} />
+          <Button size="sm" id="contributionImport" onClick={() => fileRef.current?.click()} title="CSV 'stage,energy' or JSON; any vendor's export you have re-typed into that shape">Import results file…</Button>
+        </div>
       </div>
+      {importNote.length > 0 && <ul id="contributionImportNotes" className="note mt-2 list-disc pl-5">{importNote.slice(0, 6).map((n) => <li key={n}>{n}</li>)}</ul>}
       <p className="note mt-3">Shared with this browser's team tools only if you tick "contribution preferences" under Consent, and put on a peer card only if you tick it at export.</p>
     </Panel>
   );

@@ -88,8 +88,14 @@ export const credentialSchema = z.object({
   expiry: isoDate.or(z.literal('')).catch(''),
   created: dateOrToday,
   source: z.enum(['self-entered', 'resume-reviewed']).catch('self-entered'),
-});
+  /** v1.3 additions (all optional; older records read as claimed/reviewed from `source`). */
+  issued: isoDate.or(z.literal('')).catch(''),
+  verifier: strTrim(160).catch(''),
+  provenance: z.enum(['claimed', 'reviewed', 'verified']).optional().catch(undefined),
+  note: strTrim(300).catch(''),
+}).transform((c) => ({ ...c, provenance: c.provenance ?? (c.source === 'resume-reviewed' ? 'reviewed' : 'claimed') } as const));
 export type Credential = z.infer<typeof credentialSchema>;
+export type CredentialProvenance = Credential['provenance'];
 
 export const credentialCandidateSchema = z.object({
   key: z.string().min(1).max(65),

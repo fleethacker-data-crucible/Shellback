@@ -16,8 +16,8 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-mint text-[#062219] hover:bg-[#7bf5d6] shadow-glow',
-        secondary: 'border border-stroke bg-panel2 text-text hover:border-mint/50 hover:bg-[#1a2d47]',
+        primary: 'bg-mint text-on-accent hover:brightness-110 shadow-glow',
+        secondary: 'border border-stroke bg-panel2 text-text hover:border-mint/50 hover:bg-panel',
         danger: 'border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20',
         ghost: 'text-muted hover:text-text hover:bg-white/5',
         text: 'text-mint underline-offset-4 hover:underline px-0',
@@ -136,7 +136,7 @@ export function Pill({ children, tone = 'neutral', className }: { children: Reac
 }
 
 export function Notice({ children, tone = 'info', className }: { children: ReactNode; tone?: 'info' | 'warn' | 'danger'; className?: string }) {
-  const tones = { info: 'border-blue/30 bg-blue/10 text-[#d7e6ff]', warn: 'border-amber/40 bg-amber/10 text-[#ffe7c7]', danger: 'border-danger/40 bg-danger/10 text-[#ffd9de]' };
+  const tones = { info: 'border-blue/30 bg-blue/10 text-text', warn: 'border-amber/40 bg-amber/10 text-text', danger: 'border-danger/40 bg-danger/10 text-text' };
   return <div role="note" className={cn('rounded-md border px-4 py-3 text-[13px] leading-relaxed', tones[tone], className)}>{children}</div>;
 }
 

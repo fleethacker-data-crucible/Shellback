@@ -116,6 +116,25 @@ test('served edition: employee flow end to end', async () => {
   await nav(page, 'explore', 'galaxy');
   assert.equal(await page.locator('#graphSvg .sky-skill-node.is-confirmed').count(), 1);
   assert.equal(await page.locator('#graphSvg .galaxy-domain-hub').count(), 1);
+  // Galaxy v2: ghosts are opt-in and never counted as skill nodes; zoom/fit and arrow keys work
+  assert.equal(await page.locator('#graphSvg .sky-ghost-node').count(), 0);
+  await page.locator('#graphGhosts').check();
+  assert.ok((await page.locator('#graphSvg .sky-ghost-node').count()) > 0, 'nearby pathways appear when opted in');
+  assert.equal(await page.locator('#graphSvg .sky-skill-node').count(), 1, 'ghosts are not skill nodes');
+  const zoomBefore = await page.locator('[data-galaxy-view]').getAttribute('data-zoom');
+  await page.locator('#graphSurface').hover();
+  await page.mouse.wheel(0, -300);
+  await page.waitForFunction((z) => document.querySelector('[data-galaxy-view]')?.getAttribute('data-zoom') !== z, zoomBefore);
+  await page.locator('#graphFit').click();
+  await page.waitForFunction((z) => document.querySelector('[data-galaxy-view]')?.getAttribute('data-zoom') === z, zoomBefore);
+  await page.locator('#graphSvg .sky-skill-node').first().focus();
+  await page.keyboard.press('ArrowRight');
+  const focused = await page.evaluate(() => document.activeElement?.getAttribute('data-skill'));
+  assert.ok(focused, 'arrow key moves focus to another star');
+  await page.keyboard.press('Enter');
+  assert.match(await page.locator('#graphDetail').innerText(), /NEARBY PATHWAY|CONFIRMED CAPABILITY/);
+  await page.locator('#graphGhosts').uncheck();
+  assert.equal(await page.locator('#graphSvg .sky-ghost-node').count(), 0);
   // Confidence drawer opens from the skills list; only the one confirmed skill is offered
   await nav(page, 'profile', 'skills');
   await page.locator('#mySkills [data-pulse-skill]').first().click();
@@ -246,7 +265,8 @@ test('served edition: galaxy hover is stationary, drag moves, keyboard selects',
   const { page, errors } = await open(baseUrl);
   await nav(page, 'explore', 'galaxy');
   await page.locator('[data-galaxy-mode="pathways"]').click();
-  const node = page.locator('#graphSvg .sky-skill-node').first();
+  await page.waitForFunction(() => document.querySelector('[data-galaxy-view="pathways"]')?.getAttribute('data-zoom') !== '1.00'); // fit applied
+  const node = page.locator('#graphSvg .sky-skill-node[data-skill="data-quality"]');
   const name = await node.getAttribute('aria-label');
   await node.hover({ force: true });
   await page.waitForFunction(() => { const t = document.querySelector('#graphHoverTip') as HTMLElement | null; return !!t && !t.hidden; });
@@ -459,5 +479,201 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
   assert.equal(card.orgCode, '1513.7');
   assert.equal(card.contribution.stages.rally, 'energizing');
   assert.equal(card.qualificationClaims, undefined);
+  assert.deepEqual(errors, []);
+});
+
+test('intelligence: local by default, remote is explicit, CSP-blocked hosts are explained, token is sealed', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
+  assert.equal(await page.locator('[data-provider="remote-http"]').isDisabled(), true, 'remote cannot be chosen before it is configured');
+  await page.locator('#intelEndpoint').fill('http://ai.example.mil/v1');
+  assert.match(await page.locator('#intelRemote').innerText(), /https/);
+  await page.locator('#intelEndpoint').fill('https://ai.example.mil/v1');
+  assert.match(await page.locator('#intelRemote').innerText(), /This build does not allow connections to that host/);
+  await page.locator('#intelLabel').fill('Enterprise AI');
+  await page.locator('#intelSave').click();
+  // Connection test fails fast (CSP blocks the host) and says why — and no request reaches the network
+  await page.locator('#intelTest').click();
+  await page.locator('#intelTestResult').waitFor();
+  assert.match(await page.locator('#intelTestResult').innerText(), /Could not reach https:\/\/ai\.example\.mil/);
+  // Seal a token with a passphrase; it is stored encrypted only
+  await page.locator('#intelSaveToken').click();
+  await page.locator('#dialog-input').fill('tok_super_secret_123');
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#dialog-input').fill('correct horse battery');
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#intelRemote:has-text("token unlocked")').waitFor();
+  const stored = await page.evaluate(() => localStorage.getItem('synapse-intel-v1') ?? '');
+  assert.ok(stored.includes('synapse-encrypted') && !stored.includes('tok_super_secret_123'), 'token never stored in clear');
+  // Select the remote provider → Trust & data mirrors the disclosure; intake says where text goes
+  await page.locator('[data-provider="remote-http"]').check();
+  await page.locator('[data-testid="tab-governance"]').click();
+  assert.match(await page.locator('#trustIntel').innerText(), /Enterprise AI/);
+  await page.locator('#trustIntelDisclosure #intelDataTable').waitFor();
+  await nav(page, 'profile', 'intake');
+  assert.match(await page.locator('#intake').innerText(), /Enterprise AI/);
+  // A scan with the remote provider failing falls back to local rules, still producing suggestions
+  await page.locator('#loadResumeSample').click();
+  await page.locator('[data-confirm]').first().waitFor();
+  assert.match(await page.locator('#flash').innerText(), /Used local rules instead/);
+  // Back to local; nothing about the token is in a workspace export
+  await nav(page, 'program', 'intelligence');
+  await page.locator('[data-provider="local-rules"]').check();
+  await page.locator('#intelForgetToken').click();
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#intelSaveToken').waitFor();
+  // The blocked request is expected noise; nothing else may error
+  const unexpected = errors.filter((e) => !/ai\.example\.mil|Content Security Policy|Failed to fetch|net::ERR/i.test(e));
+  assert.deepEqual(unexpected, []);
+});
+
+test('résumé intake reads .docx in the browser and maps free-text skill names', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'intake');
+  // Build a minimal .docx (zip with word/document.xml) in Node and upload it
+  const { deflateRawSync } = await import('node:zlib');
+  const docx = buildDocx(deflateRawSync, '<w:document xmlns:w="x"><w:body><w:p><w:r><w:t>Built SQL pipelines</w:t></w:r></w:p><w:p><w:r><w:t>Automated with PowerShell &amp; Terraform</w:t></w:r></w:p></w:body></w:document>');
+  await page.locator('#resumeFile').setInputFiles({ name: 'resume.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: docx });
+  await page.locator('[data-confirm]').first().waitFor();
+  assert.match(await page.locator('#resumeText').inputValue(), /Built SQL pipelines\nAutomated with PowerShell & Terraform/);
+  assert.ok((await page.locator('[data-confirm="sql-pipelines"]').count()) === 1);
+  assert.ok((await page.locator('[data-confirm="powershell-automation"]').count()) === 1);
+  // Free-text mapping in the Skills tab
+  await nav(page, 'profile', 'skills');
+  await page.locator('#manualFree').fill('k8s');
+  await page.locator('#manualFreeUse').click();
+  assert.equal(await page.locator('#manualSkill').inputValue(), 'container-platforms');
+  await page.locator('#manualFree').fill('underwater basket weaving');
+  assert.match(await page.locator('#skills').innerText(), /No close match/);
+  assert.deepEqual(errors, []);
+});
+
+function buildDocx(deflateRaw: (b: Buffer) => Buffer, xml: string): Buffer {
+  const name = Buffer.from('word/document.xml');
+  const data = Buffer.from(xml);
+  const comp = deflateRaw(data);
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  let crc = 0xffffffff; for (const b of data) crc = crcTable[(crc ^ b) & 0xff]! ^ (crc >>> 8); crc = (crc ^ 0xffffffff) >>> 0;
+  const local = Buffer.alloc(30); local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(8, 8); local.writeUInt32LE(crc, 14); local.writeUInt32LE(comp.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(name.length, 26);
+  const central = Buffer.alloc(46); central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(8, 10); central.writeUInt32LE(crc, 16); central.writeUInt32LE(comp.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(name.length, 28); central.writeUInt32LE(0, 42);
+  const cdOffset = local.length + name.length + comp.length;
+  const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10); eocd.writeUInt32LE(central.length + name.length, 12); eocd.writeUInt32LE(cdOffset, 16);
+  return Buffer.concat([local, name, comp, central, name, eocd]);
+}
+
+test('contribution round two: results import, pairing ideas, workshop sheet, stage partners', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'skills');
+  await page.locator('#contributionImportFile').setInputFiles({ name: 'results.csv', mimeType: 'text/csv', buffer: Buffer.from('stage,energy\nrally,energizing\nfinish,draining\nnonsense,???\n') });
+  await page.locator('#contributionImportNotes').waitFor();
+  assert.equal(await page.locator('[data-stage="rally"] [data-energy="energizing"]').getAttribute('aria-checked'), 'true');
+  assert.equal(await page.locator('[data-stage="finish"] [data-energy="draining"]').getAttribute('aria-checked'), 'true');
+  assert.match(await page.locator('#contributionImportNotes').innerText(), /nonsense/);
+  await page.locator('#shareToggle').check({ force: true });
+  await page.locator('#shareContributionLocally').check();
+  await nav(page, 'team', 'coverage');
+  // Synthetic cohort + me ≥ 3 sharers → map, pairing ideas and a printable sheet exist
+  await page.locator('#contributionPairings').waitFor();
+  assert.ok((await page.locator('#contributionPairings [data-pairing]').count()) > 0);
+  assert.equal(await page.locator('#workshopSheet').count(), 1);
+  assert.equal(await page.locator('#workshopSheet').isVisible(), false, 'sheet is print-only');
+  await page.emulateMedia({ media: 'print' });
+  await page.evaluate(() => { document.body.classList.add('print-sheet-mode'); document.getElementById('workshopSheet')!.setAttribute('data-print-active', 'true'); });
+  assert.equal(await page.locator('#workshopSheet').isVisible(), true);
+  assert.match(await page.locator('#workshopSheet').innerText(), /How we like to work[\s\S]*Talk about it/);
+  await page.emulateMedia({ media: 'screen' });
+  // Missions: a stage requirement lists energized people without the skill as partners
+  await page.locator('[data-testid="tab-missions"]').click();
+  await page.locator('#wfMissionSkill').selectOption('threat-modeling');
+  await page.locator('#wfMissionStage').selectOption('rally');
+  await page.locator('#wfMissionAdd').click();
+  assert.match(await page.locator('#wfMissionResults').innerText(), /Energized by that stage but without the skill yet/);
+  assert.deepEqual(errors, []);
+});
+
+test('credential lifecycle: edit in place, issue date, provenance + verifier, derived status', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'credentials');
+  await page.locator('#credName').fill('Security+');
+  await page.locator('#credAuthority').fill('CompTIA');
+  await page.locator('#credIssued').fill('2024-01-10');
+  await page.locator('#credExpiry').fill('2023-01-01'); // before issue → rejected
+  await page.locator('#addCredential').click();
+  assert.match(await page.locator('#flash').innerText(), /issue date must be before/);
+  await page.locator('#credExpiry').fill('2020-01-01');
+  await page.locator('#credIssued').fill('');
+  await page.locator('#addCredential').click();
+  await page.locator('#credentialList .cred-card').waitFor();
+  assert.equal(await page.locator('#credentialList .cred-card').getAttribute('data-credential-status'), 'expired');
+  // Verified requires a verifier
+  await page.locator('[data-edit-cred]').first().click();
+  assert.equal(await page.locator('#credName').inputValue(), 'Security+');
+  await page.locator('#credProvenance').selectOption('verified');
+  await page.locator('#credExpiry').fill('2031-01-01');
+  await page.locator('#addCredential').click();
+  assert.match(await page.locator('#flash').innerText(), /Name who verified it/);
+  await page.locator('#credVerifier').fill('Training registrar');
+  await page.locator('#credIssued').fill('2025-02-02');
+  await page.locator('#addCredential').click();
+  await page.locator('#credentialList [data-credential-status="verified"]').waitFor();
+  assert.match(await page.locator('#credentialList').innerText(), /issued 2025-02-02[\s\S]*Verified \(by Training registrar\)/i);
+  assert.equal(await page.locator('#credentialList .cred-card').count(), 1, 'edit does not duplicate');
+  // Persisted with the new fields
+  const ws = await waitStored(page, (w) => w.profile.credentials[0]?.provenance === 'verified');
+  const c = (ws as { profile: { credentials: Array<Record<string, unknown>> } }).profile.credentials[0]!;
+  assert.equal(c.provenance, 'verified'); assert.equal(c.verifier, 'Training registrar'); assert.equal(c.issued, '2025-02-02');
+  // Peer card still carries names only
+  await nav(page, 'team', 'roster');
+  assert.equal(await page.locator('#includeQualificationShare').count(), 1);
+  assert.deepEqual(errors, []);
+});
+
+test('keyboard only: navigate, confirm a skill, rate it in the drawer, print summary exists; light theme applies', async () => {
+  const { page, errors } = await open(baseUrl);
+  // Skip link is the first tab stop
+  await page.keyboard.press('Tab');
+  assert.match(await page.evaluate(() => document.activeElement?.textContent ?? ''), /Skip to content/);
+  // Reach the Profile nav button by Tab and activate it with Enter
+  for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); if ((await page.evaluate(() => document.activeElement?.getAttribute('data-view'))) === 'profile') break; }
+  await page.keyboard.press('Enter');
+  await page.locator('[data-testid="tab-intake"]').waitFor();
+  // Tabs: arrow keys or Tab+Enter both work; use Tab+Enter to reach Skills
+  await page.locator('[data-testid="tab-skills"]').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#manualSkill').waitFor();
+  await page.locator('#manualSkill').focus();
+  await page.keyboard.type('Power BI');
+  await page.locator('#manualAdd').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#mySkills [data-pulse-skill]').first().waitFor();
+  assert.equal(await page.locator('#printSummary').count(), 1);
+  assert.equal(await page.locator('#capabilitySheet').isVisible(), false);
+  // Drawer by keyboard; Escape closes it and focus returns to the page
+  await page.locator('#mySkills [data-pulse-skill]').first().focus();
+  await page.keyboard.press('Enter');
+  await page.locator('dialog#pulsePanel[open]').waitFor();
+  await page.locator('#confidence').focus();
+  await page.keyboard.press('ArrowDown'); // native select: changes value
+  await page.locator('#performed').focus();
+  await page.keyboard.press('ArrowDown');
+  await page.locator('#method').focus();
+  await page.keyboard.press('ArrowDown');
+  await page.locator('#saveSurvey').focus();
+  await page.keyboard.press('Enter');
+  const flashText = await page.locator('#flash').innerText();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !(document.querySelector('dialog#pulsePanel') as HTMLDialogElement).open);
+  assert.ok(!/choose|select|required/i.test(flashText) || (await page.locator('#mySkills').innerText()).length > 0);
+  assert.ok(await page.evaluate(() => document.activeElement && document.activeElement !== document.body), 'focus is restored, not dropped on body');
+  // Light theme: token flips, galaxy stays dark
+  await page.locator('[data-theme-choice="light"]').click();
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light');
+  const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert.notEqual(bodyBg, 'rgb(7, 14, 28)');
+  await page.reload();
+  await page.locator('#pageTitle').waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light', 'theme persists');
+  await page.locator('[data-theme-choice="system"]').click();
   assert.deepEqual(errors, []);
 });

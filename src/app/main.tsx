@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { StoreProvider } from './state/store';
 import { DialogProvider } from './components/ui/dialogs';
+import { applyTheme, loadSettings } from '../storage/settings';
+
+// Apply the theme before first paint so a light-theme user does not see a dark flash.
+applyTheme(loadSettings().theme);
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root');

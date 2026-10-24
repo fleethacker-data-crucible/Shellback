@@ -24,6 +24,12 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
+// Optional: origins a remote intelligence provider may be contacted at. Anything else is blocked by CSP.
+const intelHosts = (process.env.SYNAPSE_INTEL_HOST ?? '').split(',').map((s) => s.trim()).filter(Boolean).map((h) => {
+  const u = new URL(h.includes('://') ? h : `https://${h}`);
+  if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error(`SYNAPSE_INTEL_HOST must be https: ${h}`);
+  return u.origin;
+});
 const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-dist-')) : path.join(root, 'dist');
 
 // ---------------------------------------------------------------------------
@@ -77,6 +83,7 @@ const appBuild = await esbuild.build({
   jsx: 'automatic', define: {
     'process.env.NODE_ENV': '"production"',
     '__SYNAPSE_VERSION__': JSON.stringify(pkg.version),
+    '__SYNAPSE_INTEL_HOSTS__': JSON.stringify(intelHosts),
   },
   loader: { '.json': 'json' },
   plugins: [inlineWorkerPlugin],
@@ -126,7 +133,7 @@ const cspBase = [
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
+  `connect-src 'self'${intelHosts.map((h) => ' ' + h).join('')}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "base-uri 'none'",
@@ -166,7 +173,7 @@ for (const [rel, content] of Object.entries(outputs)) {
   fs.writeFileSync(path.join(outDir, rel), content);
 }
 const manifest = {
-  name: pkg.name, version: pkg.version, buildId,
+  name: pkg.name, version: pkg.version, buildId, intelHosts,
   files: Object.fromEntries(Object.entries(outputs).map(([rel, content]) => [rel, { bytes: Buffer.byteLength(content), sha256: sha256(content) }])),
 };
 fs.writeFileSync(path.join(outDir, 'build-manifest.json'), JSON.stringify(manifest, null, 2) + '\n');

@@ -78,7 +78,7 @@ test('peer card disclosure is opt-in per field', () => {
   const w = fresh();
   A.confirmSkill(w, 'sql-pipelines');
   A.saveSurvey(w, 'sql-pipelines', { confidence: '4', performed: 'recent', method: 'independent', note: 'private note' });
-  w.profile.credentials.push({ id: 'c', name: 'Cert', authority: '', expiry: '', created: '2026-10-24', source: 'self-entered' });
+  w.profile.credentials.push({ id: 'c', name: 'Cert', authority: '', expiry: '', created: '2026-10-24', source: 'self-entered', issued: '', verifier: '', provenance: 'claimed', note: '' });
   const minimal = buildPeerCard(w, 'Pat', { confidence: false, mentoring: false, credentials: false, org: false, contribution: false }, 'sp-0123456789');
   assert.deepEqual(minimal.surveys, {});
   assert.equal('qualificationClaims' in minimal, false);

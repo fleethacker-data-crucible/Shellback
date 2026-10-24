@@ -23,6 +23,7 @@
   --color-amber: #fac58e;
   --color-danger: #ff7d8f;
   --color-ok: #7de0a3;
+  --color-on-accent: #062219;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -33,13 +34,41 @@
   --shadow-glow: 0 0 0 1px rgba(92, 241, 203, 0.25), 0 0 28px -6px rgba(92, 241, 203, 0.45);
 }
 
+/* Light theme: same semantic tokens, re-pointed. The galaxy and spider-web canvases stay dark on purpose
+   (they are a night sky); everything around them follows the theme. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f3f6fb;
+  --color-side: #e9eef7;
+  --color-panel: #ffffff;
+  --color-panel2: #eef2f8;
+  --color-stroke: #cdd7e6;
+  --color-text: #0f1b2d;
+  --color-muted: #3f5168;
+  --color-quiet: #596b80;
+  --color-mint: #0b7a66;
+  --color-blue: #1f5fbd;
+  --color-purple: #6246c7;
+  --color-orange: #a4530c;
+  --color-amber: #8f570a;
+  --color-danger: #b82e44;
+  --color-ok: #1b7a43;
+  --color-on-accent: #ffffff;
+  --shadow-panel: 0 10px 30px -22px rgba(15, 27, 45, 0.35);
+  --shadow-glow: 0 0 0 1px rgba(14, 143, 120, 0.3), 0 0 20px -8px rgba(14, 143, 120, 0.35);
+}
+:root[data-theme="light"] .galaxy-svg, :root[data-theme="light"] .galaxy-surface { color-scheme: dark; }
+:root[data-theme="light"] .radar-ring { stroke: #b9c7da; }
+:root[data-theme="light"] .radar-ring-4 { stroke: #9fb1c9; }
+:root[data-theme="light"] .radar-axis { stroke: #c8d4e4; }
+
 @layer base {
   :root { color-scheme: dark; }
   html { scroll-behavior: smooth; }
   body { @apply m-0 bg-bg text-text font-sans text-[14px] leading-[1.55] antialiased; }
   button, input, textarea, select { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  :focus-visible { outline: 2px solid #a0eeea; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--color-mint); outline-offset: 3px; }
   h1, h2, h3, h4 { @apply m-0 font-extrabold tracking-tight; }
   p { @apply m-0; }
   @media (prefers-reduced-motion: reduce) {
@@ -76,22 +105,29 @@
 .radar-ring { stroke: #2b4463; }
 .radar-ring-4 { stroke: #3c5c82; }
 .radar-axis { stroke: #243a56; stroke-width: 1; }
-.radar-label { fill: #c7d7ea; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer; }
-.radar-label:hover, .radar-label:focus-visible { fill: #5cf1cb; }
+.radar-label { fill: var(--color-text); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer; }
+.radar-label:hover, .radar-label:focus-visible { fill: var(--color-mint); }
 .radar-web { transition: d 0.4s ease, points 0.4s ease; }
 .radar-node { cursor: pointer; transition: r 0.25s ease; }
 .radar-node:hover { stroke: #ffffff; }
-.radar-center { fill: #dbe7f6; font-size: 20px; font-weight: 800; }
-.radar-subtitle { fill: #96aabd; font-size: 12px; }
-.radar-footnote { fill: #5f7690; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; }
+.radar-center { fill: var(--color-text); font-size: 20px; font-weight: 800; }
+.radar-floor-label { fill: #6bf3dd; fill-opacity: .7; font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; pointer-events: none; }
+.radar-subtitle { fill: var(--color-muted); font-size: 12px; }
+.radar-footnote { fill: var(--color-quiet); font-size: 9px; font-weight: 800; letter-spacing: 0.16em; }
 
 .galaxy-svg { width: 100%; height: auto; display: block; background: radial-gradient(ellipse at center, #0e1a33 0%, #070e1c 70%); border-radius: 18px; touch-action: none; user-select: none; }
 .sky-link { stroke: #6e8cb5; stroke-width: 1.1; transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease; }
 .sky-semantic { stroke: #e0ad79; stroke-dasharray: 4 4; }
 .sky-branch { stroke: #8fb4df; }
 .sky-confirmed { stroke: #8bd0be; stroke-width: 1.6; }
-.sky-skill-node { cursor: grab; outline: none; }
-.sky-skill-node:focus-visible circle:nth-child(2) { stroke: #ffffff; stroke-width: 2.4; }
+.sky-skill-node, .sky-ghost-node { cursor: grab; outline: none; }
+.sky-skill-node:focus-visible .sky-ring, .sky-ghost-node:focus-visible circle:first-child { stroke: #ffffff; stroke-width: 2.4; stroke-opacity: 1; }
+.sky-ghost-node { cursor: pointer; }
+.sky-ghost-link { stroke-dasharray: 2 4; }
+.sky-star-label { fill: #c6d6ea; font-size: 10.5px; font-weight: 600; text-anchor: middle; pointer-events: none; paint-order: stroke fill; stroke: #070e1c; stroke-width: 3px; stroke-linejoin: round; }
+.sky-star-label.is-confirmed { fill: #eef5ff; font-weight: 700; }
+.sky-star-label.is-ghost { fill: #7f94ad; font-style: italic; }
+.sky-tip-related { color: #8fa6c0 !important; }
 .galaxy-domain-label { fill: #9fb6d2; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; }
 .galaxy-domain-count { fill: #5cf1cb; font-size: 10px; font-weight: 700; pointer-events: none; }
 .sky-hover-tip { position: absolute; z-index: 5; max-width: 230px; pointer-events: none; border-radius: 10px; border: 1px solid #2d4664; background: rgba(9, 18, 33, 0.96); padding: 8px 10px; font-size: 12px; line-height: 1.4; box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.8); }
@@ -99,15 +135,26 @@
 .sky-hover-tip span { display: block; color: #96aabd; font-size: 11px; }
 .sky-hover-tip small { display: block; color: #bcd0e6; margin-top: 3px; }
 
-/* Hero orbit decoration (pure CSS, honors reduced motion). */
-.orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(92, 241, 203, 0.25); animation: spin 28s linear infinite; }
-.orbit-b { animation-duration: 40s; animation-direction: reverse; border-color: rgba(103, 171, 255, 0.25); }
-.orbit-c { animation-duration: 56s; border-color: rgba(172, 145, 251, 0.25); }
-@keyframes spin { to { transform: rotate(360deg); } }
-
 /* Flash message */
 .flash { transform: translateY(8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }
 .flash.show { transform: translateY(0); opacity: 1; }
 
 /* Native dialog */
 dialog::backdrop { background: rgba(3, 8, 18, 0.72); backdrop-filter: blur(2px); }
+
+/* Printable sheets: when print-sheet-mode is on, only the active [data-print-sheet] is visible. */
+[data-print-sheet] { display: none; }
+@media print {
+  body.print-sheet-mode { background: #fff !important; }
+  body.print-sheet-mode #root[data-print-hidden], body.print-sheet-mode dialog, body.print-sheet-mode #flash { display: none !important; }
+  body.print-sheet-mode [data-print-active] { display: block !important; width: 100%; background: #fff; color: #111; padding: 0; }
+  body.print-sheet-mode [data-print-active] * { color: #111; }
+  body.print-sheet-mode [data-print-active] .sheet-mute { color: #555 !important; }
+  [data-print-sheet] h1 { font-size: 20pt; margin: 0 0 4pt; }
+  [data-print-sheet] h2 { font-size: 13pt; margin: 14pt 0 4pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+  [data-print-sheet] table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  [data-print-sheet] th, [data-print-sheet] td { border: 1px solid #bbb; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  [data-print-sheet] .sheet-box { border: 1px dashed #999; min-height: 48pt; margin-top: 4pt; }
+  [data-print-sheet] p, [data-print-sheet] li { font-size: 10.5pt; line-height: 1.4; }
+  @page { margin: 16mm; }
+}
