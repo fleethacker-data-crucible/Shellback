@@ -9,6 +9,9 @@ import { useAction } from '../state/hooks';
 import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, selectTeam, togglePriority } from '../state/actions';
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
+import { ContributionMap, OrgRollup } from './TeamInsightPanels';
+import { orgLevelName } from '../../core/org';
+import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
 import { BarRow, Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Stat, Tabs } from '../components/ui/primitives';
 import { SKILL_OPTIONS_SHORT } from '../lib/options';
@@ -24,7 +27,7 @@ export function TeamView() {
   const agg = useMemo(() => aggregate(people), [people]);
   const [teamName, setTeamName] = useState('');
   const [shareName, setShareName] = useState(ws.profile.displayName || 'Demo participant');
-  const [disclose, setDisclose] = useState({ confidence: false, mentoring: false, credentials: false });
+  const [disclose, setDisclose] = useState({ confidence: false, mentoring: false, credentials: false, org: false, contribution: false });
   const [selectedPeer, setSelectedPeer] = useState<string | null>(null);
   const [priority, setPriority] = useState('aws-architecture');
   const [status, setStatus] = useState('');
@@ -138,6 +141,8 @@ export function TeamView() {
                 <div className="mt-1 space-y-1">{Object.entries(peer.surveys).map(([sid, r]) => <div key={sid} className="bench-row flex justify-between"><span>{skillName(sid)}</span><strong>{r.confidence}/4 · {r.method}</strong></div>)}</div>
                 {peer.mentorOptIn && <p className="mt-2 text-muted">Mentoring opt-in shared · availability {peer.availability}{peer.mentorTopics.length ? ` · topics: ${peer.mentorTopics.map(skillName).join(', ')}` : ''}</p>}
                 {peer.qualificationClaims.length > 0 && <p className="mt-2 text-muted">Unverified credential names shared: {peer.qualificationClaims.join('; ')}</p>}
+                {peer.orgCode && <p className="mt-2 text-muted">Organization: {orgLevelName(peer.orgCode)} {peer.orgCode}{peer.orgTitle ? ` · ${peer.orgTitle}` : ''}</p>}
+                {hasContribution(peer.contribution) && <p className="mt-2 text-muted">Energized by: {STAGE_DEFS.filter((st) => peer.contribution.stages[st.id] === 'energizing').map((st) => st.label.toLowerCase()).join(', ') || 'nothing marked'}{peer.contribution.source ? ` (based on: ${peer.contribution.source})` : ''}</p>}
               </>
             ) : <p className="text-muted">Select a peer to inspect only the fields they chose to share.</p>}
           </div>
@@ -150,6 +155,8 @@ export function TeamView() {
             <Checkbox id="includeSurveyShare" checked={disclose.confidence} onChange={(v) => setDisclose({ ...disclose, confidence: v })}>Also disclose task confidence and execution method</Checkbox>
             <Checkbox id="includeMentorShare" checked={disclose.mentoring} onChange={(v) => setDisclose({ ...disclose, mentoring: v })}>Also disclose my mentoring opt-in, chosen topics and availability</Checkbox>
             <Checkbox id="includeQualificationShare" checked={disclose.credentials} onChange={(v) => setDisclose({ ...disclose, credentials: v })}>Also disclose self-entered credential names (UNVERIFIED)</Checkbox>
+            <Checkbox id="includeOrgShare" checked={disclose.org} onChange={(v) => setDisclose({ ...disclose, org: v })}>Also disclose my organization code and title{ws.profile.orgCode ? ` (${ws.profile.orgCode})` : ' (none entered yet)'}</Checkbox>
+            <Checkbox id="includeContributionShare" checked={disclose.contribution} onChange={(v) => setDisclose({ ...disclose, contribution: v })}>Also disclose my contribution preferences{Object.keys(ws.profile.contribution.stages).length ? '' : ' (none entered yet)'}</Checkbox>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button id="exportPeer" variant="primary" onClick={exportCard}>Export opt-in card ↗</Button>
@@ -196,6 +203,8 @@ export function TeamView() {
           {agg.allowed ? (gaps.length ? gaps.map((sk) => <div key={sk.id} className="bench-row row-card py-1"><span>{prio.has(sk.id) ? '★ ' : ''}{sk.name} <small className="text-quiet">· {sk.domain}</small></span><strong>{agg.skillCounts[sk.id] === 0 ? 'No claims' : 'One contributor'}</strong></div>) : <Empty>No uncovered or single-contributor skills in the shared dataset.</Empty>) : <Empty>Suppressed until {MIN_AGGREGATE} shared profiles.</Empty>}
         </div>
       </Panel>
+      <ContributionMap people={people} />
+      <OrgRollup people={people} />
       </>)}
 
       {tab === 'missions' && <MissionsPanel />}

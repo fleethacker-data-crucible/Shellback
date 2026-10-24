@@ -27,6 +27,19 @@ export function defaultTeams(): { active: string; items: Team[] } {
     availability: i % 2 === 0 ? 'limited' : 'unknown',
     mentorIntro: '',
     qualificationClaims: [],
+    orgCode: ['1510', '1513', '1513', '1520', '1513.1', '1520'][i] ?? '',
+    orgTitle: ['Division Head', 'Branch Head', 'Engineer', 'Analyst', 'Technician', 'Planner'][i] ?? '',
+    contribution: {
+      source: 'Synthetic example',
+      stages: {
+        question: (['energizing', 'neutral', 'draining', 'neutral', 'energizing', 'neutral'] as const)[i]!,
+        ideate: (['energizing', 'draining', 'neutral', 'energizing', 'neutral', 'draining'] as const)[i]!,
+        evaluate: (['neutral', 'energizing', 'energizing', 'neutral', 'draining', 'neutral'] as const)[i]!,
+        rally: (['draining', 'energizing', 'neutral', 'neutral', 'neutral', 'energizing'] as const)[i]!,
+        support: (['neutral', 'neutral', 'energizing', 'draining', 'energizing', 'neutral'] as const)[i]!,
+        finish: (['neutral', 'draining', 'neutral', 'energizing', 'neutral', 'energizing'] as const)[i]!,
+      },
+    },
   }));
   return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning'] }] };
 }
@@ -58,6 +71,9 @@ export function selfParticipant(ws: Workspace): Participant | null {
     availability: mentoring ? m.availability : 'unknown',
     mentorIntro: mentoring ? m.intro : '',
     qualificationClaims: p.shareCredentialsLocally ? p.credentials.map((c) => c.name) : [],
+    orgCode: p.shareOrgLocally ? p.orgCode : '',
+    orgTitle: p.shareOrgLocally ? p.orgTitle : '',
+    contribution: p.shareContributionLocally ? p.contribution : { stages: {}, source: '' },
   };
 }
 
@@ -115,16 +131,20 @@ export function skillCoverage(people: Participant[], skillIds: readonly string[]
 }
 
 export interface MissionResult {
-  skill: string; min: number; credential: string;
+  skill: string; min: number; credential: string; stage: string;
   covered: Participant[]; available: Participant[]; limited: Participant[]; unknown: Participant[]; qualified: Participant[];
+  /** Covered people who said the requested stage energizes them (empty when no stage was asked for). */
+  energized: Participant[];
   gap: boolean;
 }
-export function missionCoverage(roster: Participant[], requirements: ReadonlyArray<{ skill: string; min: number; credential: string }>): MissionResult[] {
+export function missionCoverage(roster: Participant[], requirements: ReadonlyArray<{ skill: string; min: number; credential: string; stage?: string }>): MissionResult[] {
   return requirements.map((r) => {
     const covered = roster.filter((x) => x.skills.includes(r.skill));
     const needle = r.credential.trim().toLowerCase();
+    const stage = r.stage ?? '';
     return {
-      skill: r.skill, min: r.min, credential: r.credential, covered,
+      skill: r.skill, min: r.min, credential: r.credential, stage, covered,
+      energized: stage ? covered.filter((x) => x.contribution?.stages[stage as keyof typeof x.contribution.stages] === 'energizing') : [],
       available: covered.filter((x) => x.availability === 'available'),
       limited: covered.filter((x) => x.availability === 'limited'),
       unknown: covered.filter((x) => x.availability === 'unknown' || x.availability === 'unavailable'),
