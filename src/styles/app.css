@@ -106,7 +106,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Flash message */
-.flash { transform: translateY(-8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }
+.flash { transform: translateY(8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }
 .flash.show { transform: translateY(0); opacity: 1; }
 
 /* Native dialog */

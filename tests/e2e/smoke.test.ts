@@ -44,7 +44,10 @@ async function open(url: string): Promise<{ page: Page; errors: string[] }> {
   await page.locator('#metricSkills').waitFor();
   return { page, errors };
 }
-const nav = (page: Page, view: string) => page.locator(`nav button[data-view="${view}"]`).click();
+const nav = async (page: Page, view: string, tab?: string) => {
+  await page.locator(`nav button[data-view="${view}"]`).click();
+  if (tab) await page.locator(`[data-testid="tab-${tab}"]`).click();
+};
 const confirmDialog = async (page: Page) => {
   try { await page.locator('dialog [data-dialog="confirm"]').click({ timeout: 10_000 }); }
   catch (err) { throw new Error(`No confirm dialog. Flash: "${await page.locator('#flash').innerText()}" Status: "${await page.locator('#teamExchangeStatus').innerText().catch(() => '')}"`, { cause: err }); }
@@ -67,12 +70,11 @@ test('served edition: employee flow end to end', async () => {
   assert.equal(await page.locator('html').getAttribute('data-edition'), 'served');
 
   // Résumé → suggestions (no auto-confirm, no auto-credential)
-  await nav(page, 'profile');
-  assert.ok(await page.locator('#surveySkill').count() === 0 || true);
+  await nav(page, 'profile', 'intake');
   await page.locator('#loadResumeSample').click();
   await page.locator('[data-confirm]').first().waitFor();
   assert.ok((await page.locator('[data-confirm]').count()) > 3);
-  await nav(page, 'credentials');
+  await nav(page, 'profile', 'credentials');
   assert.equal(await page.locator('#credentialSuggestionCount').innerText(), '3');
   assert.equal(await page.locator('#credentialList .cred-card').count(), 0);
   await page.locator('[data-review-credential="aws-sap"]').click();
@@ -88,10 +90,10 @@ test('served edition: employee flow end to end', async () => {
   assert.equal(await page.locator('#credentialList .cred-card').count(), 1, 'duplicate rejected');
 
   // Spider web + galaxy before attestation
-  await nav(page, 'radar');
+  await nav(page, 'explore', 'web');
   assert.ok((await page.locator('.radar-evidence-halo.is-pending').count()) > 0);
   assert.match(await page.locator('#radarCanvas').innerText(), /No skills attested/);
-  await nav(page, 'graph');
+  await nav(page, 'explore', 'galaxy');
   assert.equal(await page.locator('[data-galaxy-mode="confirmed"]').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#graphSvg .sky-skill-node').count(), 0);
   await page.locator('[data-galaxy-mode="pathways"]').click();
@@ -102,30 +104,53 @@ test('served edition: employee flow end to end', async () => {
   await page.locator('[data-galaxy-mode="confirmed"]').click();
 
   // Confirm one → exactly one node, web appears, pulse unlocks for it only
-  await nav(page, 'profile');
+  await nav(page, 'profile', 'intake');
+  // Dismissing a suggestion removes it and keeps it out of later scans
+  const dismissed = await page.locator('[data-dismiss]').first().getAttribute('data-dismiss');
+  await page.locator('[data-dismiss]').first().click();
   await page.locator('[data-confirm]').first().click();
+  await page.locator('#loadResumeSample').click();
+  await page.locator('[data-confirm]').first().waitFor();
+  assert.equal(await page.locator(`[data-confirm="${dismissed}"]`).count(), 0, 'dismissed suggestion must not return');
   assert.equal(await page.locator('#profileCount').innerText(), '1');
-  await nav(page, 'graph');
+  await nav(page, 'explore', 'galaxy');
   assert.equal(await page.locator('#graphSvg .sky-skill-node.is-confirmed').count(), 1);
   assert.equal(await page.locator('#graphSvg .galaxy-domain-hub').count(), 1);
-  await nav(page, 'profile');
+  // Confidence drawer opens from the skills list; only the one confirmed skill is offered
+  await nav(page, 'profile', 'skills');
   await page.locator('#mySkills [data-pulse-skill]').first().click();
-  assert.equal(await page.locator('#pageTitle').innerText(), 'Skills spider web');
-  assert.equal(await page.locator('#surveySkill option[value]:not([value=""])').count(), 1);
+  await page.locator('dialog#pulsePanel[open]').waitFor();
+  assert.equal(await page.locator('#surveySkill option').count(), 1);
   assert.match(await page.locator('#pulseProgress').innerText(), /0 of 1/);
-  await page.locator('#radarCanvas .radar-node').first().waitFor();
   await page.locator('#confidence').selectOption('3');
   await page.locator('#performed').selectOption('recent');
   await page.locator('#method').selectOption('ai');
-  await page.locator('#saveSurvey').click();
-  assert.match(await page.locator('#pulseProgress').innerText(), /1 of 1/);
+  await page.locator('#saveSurveyNext').click();
+  await page.waitForFunction(() => !(document.querySelector('dialog#pulsePanel') as HTMLDialogElement).open);
+  await nav(page, 'explore', 'web');
+  await page.locator('#radarCanvas .radar-node').first().waitFor();
   assert.ok((await page.locator('#radarCanvas .radar-node.is-rated').count()) >= 1);
-
+  // In-context actions on the web: open a domain, pick a suggested skill, confirm it right there
+  await page.locator('#radarHome').click();
+  await page.locator('[data-radar-index="0"]').first().click();
+  const suggestedRow = page.locator('#radarSkillList [data-radar-item].border-amber\\/40').first();
+  if (await suggestedRow.count()) {
+    await suggestedRow.click();
+    await page.locator('#radarConfirm').click();
+    await page.locator('#radarPulse').waitFor();
+  }
   // Radar labels are keyboard-operable (review bug #7)
   await page.locator('#radarHome').click();
   await page.locator('#radarCanvas text.radar-label').first().focus();
   await page.keyboard.press('Enter');
   assert.match(await page.locator('#radarBreadcrumb').innerText(), /›/);
+
+  // Home shows the journey with the review step needing attention
+  await nav(page, 'home');
+  assert.equal(await page.locator('#journey li[data-step="review"]').getAttribute('data-state'), 'attention');
+  assert.equal(await page.locator('#journey li[data-step="confirm"]').getAttribute('data-state'), 'done');
+  await page.locator('#homeNext').click();
+  assert.ok(await page.locator('[data-testid="tab-intake"]').getAttribute('aria-pressed') === 'true');
 
   // Persisted in IndexedDB
   const saved = await waitStored(page, (ws) => Object.keys(ws.profile.surveys).length === 1);
@@ -135,51 +160,54 @@ test('served edition: employee flow end to end', async () => {
   // Reload: state survives (IndexedDB), settings restore view
   await page.reload();
   await page.locator('#pageTitle').waitFor();
-  await nav(page, 'profile');
+  await nav(page, 'profile', 'skills');
   assert.equal(await page.locator('#profileCount').innerText(), '1');
 
   // Teams: consent, create, import cards (incl. apostrophe name — review bug #1), aggregates unlock at 3
   await page.locator('#shareToggle').check({ force: true });
   assert.equal(await page.locator('#sharingState').innerText(), 'ON');
-  await nav(page, 'team');
+  await nav(page, 'team', 'roster');
   await page.locator('#teamName').fill('Pilot peers');
   await page.locator('#createTeam').click();
+  await page.locator('[data-testid="tab-coverage"]').click();
   assert.match(await page.locator('#teamBars').innerText(), /At least 3/);
+  await page.locator('[data-testid="tab-roster"]').click();
   for (let n = 0; n < 2; n++) {
     const card = { format: 'synapse-peer-card', version: 1, id: `peer-example-${n}0`, name: n === 0 ? `Pat O'Brien "PJ"` : 'Synthetic peer 1', consent: true, issued: '2026-10-21', skills: ['aws-architecture', 'sql-pipelines'], surveys: { 'aws-architecture': { confidence: 4, method: 'independent' } }, mentorOptIn: n === 0, mentorTopics: n === 0 ? ['aws-architecture'] : [], availability: n === 0 ? 'available' : 'unknown', qualificationClaims: n === 0 ? ['Synthetic AWS credential'] : [] };
     await page.locator('#importPeerFile').setInputFiles({ name: `peer-${n}.json`, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(card)) });
     await confirmDialog(page);
     await page.waitForFunction((c) => document.querySelectorAll('#teamMemberList [data-peerview]').length >= c, n + 2);
   }
+  await page.locator('[data-testid="tab-coverage"]').click();
   assert.match(await page.locator('#teamBars').innerText(), / 3/);
-  await page.locator('[data-testid="fleetTabMentors"]').click();
-  await page.locator('#fleetMentorSkill').selectOption('aws-architecture');
-  const mentors = await page.locator('#fleetMentorMatches').innerText();
+  await page.locator('[data-testid="tab-mentors"]').click();
+  await page.locator('#wfMentorSearch').selectOption('aws-architecture');
+  const mentors = await page.locator('#wfMentorMatches').innerText() + await page.locator('#wfSkillPeers').innerText();
   assert.ok(mentors.includes(`Pat O'Brien "PJ"`), mentors);
   assert.ok(!mentors.includes('undefined'));
+  await page.locator('[data-testid="tab-roster"]').click();
 
   // Re-importing the same id warns about replacement
   const again = { format: 'synapse-peer-card', version: 1, id: 'peer-example-00', name: 'Impostor', consent: true, skills: ['sql-pipelines'] };
   await page.locator('#importPeerFile').setInputFiles({ name: 'again.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(again)) });
   await page.locator('dialog[open] form').waitFor();
-  assert.match(await page.locator('dialog').innerText(), /replaces the existing card/);
+  assert.match(await page.locator('dialog[aria-labelledby="dialog-title"]').innerText(), /replaces the existing card/);
   await cancelDialog(page);
 
   // Workforce: TEAMFORGE sees my credential only with the explicit local toggle (review bug #3)
-  await nav(page, 'workforce');
-  await page.locator('[data-workforce-open="teamforge"]').click();
+  await nav(page, 'team', 'missions');
   const mine = (await stored(page)).profile.confirmed[0];
   await page.locator('#wfMissionSkill').selectOption(mine);
   await page.locator('#wfMissionQualification').fill('Solutions Architect');
   await page.locator('#wfMissionAdd').click();
   assert.match(await page.locator('#wfMissionResults').innerText(), /0 self-declared qualification match/);
-  await nav(page, 'profile');
+  await nav(page, 'profile', 'skills');
   await page.locator('#shareCredentialsLocally').check();
-  await nav(page, 'workforce');
+  await nav(page, 'team', 'missions');
   assert.match(await page.locator('#wfMissionResults').innerText(), /1 self-declared qualification match/);
 
   // QUALFORGE outline: drafts without answers; practice disabled until answered
-  await page.locator('[data-workforce-open="qualforge"]').click();
+  await nav(page, 'profile', 'growth');
   await page.locator('#wfOutlineText').fill('1.1 Explain the turnover process\n1.2 Describe escalation requirements');
   await page.locator('#wfOutlineImport').click();
   await confirmDialog(page);
@@ -190,7 +218,7 @@ test('served edition: employee flow end to end', async () => {
   assert.ok(await page.locator('#wfReviewed').isEnabled());
 
   // ROI
-  await nav(page, 'roi');
+  await nav(page, 'program', 'roi');
   const before = await page.locator('#roiTotal').innerText();
   await page.locator('[data-roi="minutesSaved"]').fill('0');
   assert.notEqual(await page.locator('#roiTotal').innerText(), before);
@@ -199,10 +227,10 @@ test('served edition: employee flow end to end', async () => {
   assert.equal(await page.locator('#roiCapacity').innerText(), '$0');
 
   // Withdrawn skill hides its confidence in Pathways (review bug #2)
-  await nav(page, 'profile');
+  await nav(page, 'profile', 'skills');
   const removed = await page.locator('#mySkills [data-remove]').first().getAttribute('data-remove');
   await page.locator('#mySkills [data-remove]').first().click();
-  await nav(page, 'graph');
+  await nav(page, 'explore', 'galaxy');
   await page.locator('[data-galaxy-mode="pathways"]').click();
   await page.locator(`#graphSvg .sky-skill-node[data-skill="${removed}"]`).focus();
   const tip = await page.locator('#graphHoverTip').innerText();
@@ -216,7 +244,7 @@ test('served edition: employee flow end to end', async () => {
 
 test('served edition: galaxy hover is stationary, drag moves, keyboard selects', async () => {
   const { page, errors } = await open(baseUrl);
-  await nav(page, 'graph');
+  await nav(page, 'explore', 'galaxy');
   await page.locator('[data-galaxy-mode="pathways"]').click();
   const node = page.locator('#graphSvg .sky-skill-node').first();
   const name = await node.getAttribute('aria-label');
@@ -251,17 +279,17 @@ test('standalone edition: personas, v1 import, peer exchange, encrypted round tr
   assert.equal(await page.locator('html').getAttribute('data-edition'), 'standalone');
   const shapes = new Set<string | null>();
   for (const pid of ['morgan-vale', 'riley-chen', 'jordan-brooks', 'casey-rivera']) {
-    await nav(page, 'profile');
+    await nav(page, 'profile', 'intake');
     await page.locator('#demoPersona').selectOption(pid);
     await page.locator('#loadPersona').click();
     await confirmDialog(page);
     const expected = readFixture(`${pid}-workspace.json`);
     await page.locator('#radarCanvas .radar-node').first().waitFor();
     shapes.add(await page.locator('#radarCanvas .radar-web').getAttribute('d'));
-    await nav(page, 'profile');
+    await nav(page, 'profile', 'intake');
     assert.equal(await page.locator('#profileCount').innerText(), String(expected.profile.confirmed.length));
-    assert.match(await page.locator('#demoPersonaState').innerText(), new RegExp(expected.profile.displayName));
-    await nav(page, 'graph');
+    assert.match((await page.locator('#demoPersonaState').textContent()) ?? '', new RegExp(expected.profile.displayName));
+    await nav(page, 'explore', 'galaxy');
     assert.equal(await page.locator('#graphSvg .sky-skill-node').count(), expected.profile.confirmed.length);
     const hubs = await page.locator('#graphSvg .galaxy-domain-hub').count();
     assert.ok(hubs >= 1 && hubs < 13);
@@ -271,13 +299,13 @@ test('standalone edition: personas, v1 import, peer exchange, encrypted round tr
   // Legacy v1 workspace file import
   await page.locator('#importFile').setInputFiles(fixture('riley-chen-workspace.json'));
   await page.locator('dialog[open] form').waitFor();
-  assert.match(await page.locator('dialog').innerText(), /Upgraded from the v1 MVP format/);
+  assert.match(await page.locator('dialog[aria-labelledby="dialog-title"]').innerText(), /Upgraded from the v1 MVP format/);
   await confirmDialog(page);
-  await nav(page, 'profile');
-  assert.match(await page.locator('#demoPersonaState').innerText(), /Riley Chen/);
+  await nav(page, 'profile', 'intake');
+  assert.match((await page.locator('#demoPersonaState').textContent()) ?? '', /Riley Chen/);
 
   // Peer cards from fixtures unlock aggregates
-  await nav(page, 'team');
+  await nav(page, 'team', 'roster');
   await page.locator('#teamName').fill('Demo peer exchange');
   await page.locator('#createTeam').click();
   for (const [i, pid] of ['morgan-vale', 'jordan-brooks', 'casey-rivera'].entries()) {
@@ -285,6 +313,7 @@ test('standalone edition: personas, v1 import, peer exchange, encrypted round tr
     await confirmDialog(page);
     await page.waitForFunction((c) => document.querySelectorAll('#teamMemberList [data-peerview]').length >= c, i + 1);
   }
+  await page.locator('[data-testid="tab-coverage"]').click();
   assert.ok(!(await page.locator('#teamBars').innerText()).includes('At least 3'));
 
   // Encrypted export → re-import with passphrase
@@ -322,7 +351,7 @@ test('corrupted stored data is set aside, never silently discarded (review bug #
   }));
   await page.reload();
   await page.getByText('set aside, not deleted', { exact: false }).waitFor();
-  await nav(page, 'trust');
+  await nav(page, 'program', 'governance');
   await page.locator('#recovery').getByText(/backup-/).first().waitFor();
   assert.deepEqual(errors, []);
 });
@@ -332,9 +361,10 @@ test('phone width: no horizontal overflow on any view', async () => {
   const page = await context.newPage();
   await page.goto(baseUrl);
   await page.locator('#pageTitle').waitFor();
-  for (const v of ['overview', 'radar', 'graph', 'profile', 'credentials', 'team', 'workforce', 'roi', 'trust']) {
+  for (const [v, t] of [['home'], ['profile', 'intake'], ['profile', 'skills'], ['profile', 'credentials'], ['profile', 'growth'], ['explore', 'web'], ['explore', 'galaxy'], ['team', 'roster'], ['team', 'coverage'], ['team', 'missions'], ['team', 'mentors'], ['team', 'knowledge'], ['program', 'governance'], ['program', 'roi']] as const) {
     await page.locator('button[aria-label="Open navigation"]').click();
     await page.locator(`nav button[data-view="${v}"]`).click();
+    if (t) await page.locator(`[data-testid="tab-${t}"]`).click();
     const w = await page.evaluate(() => document.documentElement.scrollWidth);
     assert.ok(w <= 390, `${v} overflows: ${w}px`);
   }
@@ -362,10 +392,12 @@ test('two tabs: a save in one tab is adopted by the other (independent review #4
   const a = await context.newPage(), b = await context.newPage();
   for (const p of [a, b]) { await p.goto(baseUrl); await p.locator('#metricSkills').waitFor(); }
   await a.locator('nav button[data-view="profile"]').click();
+  await a.locator('[data-testid="tab-skills"]').click();
   await a.locator('#manualSkill').selectOption('python-development');
   await a.locator('#manualAdd').click();
   await b.waitForFunction(() => document.querySelector('#metricMine')?.textContent === '1', undefined, { timeout: 5000 });
   await b.locator('nav button[data-view="profile"]').click();
+  await b.locator('[data-testid="tab-skills"]').click();
   await b.locator('#manualSkill').selectOption('sql-pipelines');
   await b.locator('#manualAdd').click();
   await a.waitForFunction(() => document.querySelector('#profileCount')?.textContent === '2', undefined, { timeout: 5000 });

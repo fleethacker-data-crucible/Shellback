@@ -5,7 +5,7 @@ import { useAction } from '../state/hooks';
 import { addCredential, deleteCredential, dismissCredentialCandidate, pendingCredentialCandidates } from '../state/actions';
 import { Button, Empty, Field, Input, Panel, PanelHeading, Pill, SectionIntro } from '../components/ui/primitives';
 
-export function CredentialsView() {
+export function CredentialsView({ embedded = false }: { embedded?: boolean }) {
   const { ws, navigate, flash } = useStore();
   const act = useAction();
   const [form, setForm] = useState({ name: '', authority: '', expiry: '' });
@@ -18,11 +18,11 @@ export function CredentialsView() {
 
   return (
     <section id="credentials" className="space-y-5">
-      <SectionIntro eyebrow="PLAN / CREDENTIAL READINESS" title="Credential desk.">Résumé intake can suggest recognizable certifications and qualifications for your review. Suggestions are not automatically added, verified, or assigned expiry dates. Save only credentials you actually hold.</SectionIntro>
+      {!embedded && <SectionIntro eyebrow="PLAN / CREDENTIAL READINESS" title="Credential desk.">Résumé intake can suggest recognizable certifications and qualifications for your review. Suggestions are not automatically added, verified, or assigned expiry dates. Save only credentials you actually hold.</SectionIntro>}
 
       <Panel className="credential-review-panel">
         <PanelHeading eyebrow="STEP 1 / REVIEW RÉSUMÉ MENTIONS" title={<>Credential suggestions <Pill tone={records.length ? 'amber' : 'neutral'}><span id="credentialSuggestionCount">{records.length}</span></Pill></>}
-          action={<Button id="scanCredentialsFromDesk" size="sm" onClick={() => { navigate('profile'); flash('Paste or upload a text résumé in My capability profile; credential mentions are checked during the same scan.'); }}>Scan résumé text ↻</Button>}>
+          action={<Button id="scanCredentialsFromDesk" size="sm" onClick={() => { navigate({ view: 'profile', tab: 'intake' }); flash('Credential names are checked during the same résumé scan as skills.'); }}>Scan résumé text ↻</Button>}>
           Local keyword matching finds possible credential names. Review the exact matched phrase, then approve, correct, or dismiss each one. Plans to pursue a credential should not be recorded as credentials held.
         </PanelHeading>
         <div id="credentialCandidateList" aria-live="polite" className="space-y-2">

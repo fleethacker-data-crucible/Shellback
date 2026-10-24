@@ -18,7 +18,14 @@ export function confirmSkill(ws: Workspace, id: string): string {
   if (ws.profile.confirmed.includes(id)) return fail('You have already confirmed this skill.');
   ws.profile.confirmed.push(id);
   ws.profile.candidates = ws.profile.candidates.filter((x) => x !== id);
+  ws.profile.candidateDismissed = ws.profile.candidateDismissed.filter((x) => x !== id);
   return 'Skill confirmed. No confidence value was assigned.';
+}
+
+export function dismissSkillCandidate(ws: Workspace, id: string): string {
+  ws.profile.candidates = ws.profile.candidates.filter((x) => x !== id);
+  ws.profile.candidateDismissed = [...new Set([...ws.profile.candidateDismissed, id])];
+  return 'Suggestion dismissed. Later résumé scans will not suggest it again; you can still add it manually.';
 }
 
 export function removeSkill(ws: Workspace, id: string): string {
@@ -27,7 +34,8 @@ export function removeSkill(ws: Workspace, id: string): string {
 }
 
 export function applyScan(ws: Workspace, result: ScanResponse): string {
-  ws.profile.candidates = result.skills.filter((id) => SKILL_BY_ID.has(id) && !ws.profile.confirmed.includes(id));
+  ws.profile.lastScan = today();
+  ws.profile.candidates = result.skills.filter((id) => SKILL_BY_ID.has(id) && !ws.profile.confirmed.includes(id) && !ws.profile.candidateDismissed.includes(id));
   const held = new Set(ws.profile.credentials.map((c) => credentialKey(c.name)));
   const dismissed = new Set(ws.profile.credentialDismissed);
   ws.profile.credentialCandidates = result.credentials.filter((c) => !held.has(c.key) && !dismissed.has(c.key));

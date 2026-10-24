@@ -9,13 +9,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { newWorkspace, today, type Workspace } from '../../core/schema';
 import { defaultTeams } from '../../core/analytics';
 import { loadWorkspace, onRemoteSave, saveWorkspace, storageDescription, type LoadResult } from '../../storage/idb';
-import { loadSettings, saveSettings, type Settings, type ViewId } from '../../storage/settings';
+import { loadSettings, saveSettings, type Route, type Settings, type ViewId } from '../../storage/settings';
 
+/** One-shot instructions for the view being opened (focus a field, drill into a domain, …). */
 export type Intent =
-  | { type: 'pulse'; skillId: string }
   | { type: 'manual-add'; skillId: string }
   | { type: 'radar-domain'; di: number }
-  | { type: 'credential-review' };
+  | { type: 'galaxy-select'; skillId: string };
 
 export interface Store {
   ws: Workspace;
@@ -27,7 +27,13 @@ export interface Store {
   settings: Settings;
   setSettings: (patch: Partial<Settings>) => void;
   view: ViewId;
-  navigate: (view: ViewId, intent?: Intent) => void;
+  /** Go to a view (and optionally one of its tabs). */
+  navigate: (route: Route | ViewId, intent?: Intent) => void;
+  /** Open the confidence drawer for a confirmed skill (or the next unrated one) from anywhere. */
+  openPulse: (skillId?: string) => void;
+  closePulse: () => void;
+  /** null = drawer closed; '' = open on the next unrated skill. */
+  pulseFor: string | null;
   intent: Intent | null;
   consumeIntent: () => void;
   flash: (message: string) => void;
@@ -56,6 +62,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<Settings>(() => loadSettings());
   const [intent, setIntent] = useState<Intent | null>(null);
   const [flashMessage, setFlashMessage] = useState('');
+  const [pulseFor, setPulseFor] = useState<string | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef<Workspace>(ws);
@@ -147,16 +154,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettingsState((prev) => { const next = { ...prev, ...patch }; saveSettings(next); return next; });
   }, []);
 
-  const navigate = useCallback((view: ViewId, nextIntent?: Intent) => {
-    setSettings({ view });
-    if (nextIntent) setIntent(nextIntent);
+  const navigate = useCallback((routeOrView: Route | ViewId, nextIntent?: Intent) => {
+    const route: Route = typeof routeOrView === 'string' ? ({ view: routeOrView } as Route) : routeOrView;
+    const patch: Partial<Settings> = { view: route.view };
+    if ('tab' in route && route.tab) {
+      if (route.view === 'profile') patch.profileTab = route.tab;
+      if (route.view === 'explore') patch.exploreTab = route.tab;
+      if (route.view === 'team') patch.teamTab = route.tab;
+      if (route.view === 'program') patch.programTab = route.tab;
+    }
+    setSettings(patch);
+    setIntent(nextIntent ?? null);
     window.scrollTo({ top: 0 });
   }, [setSettings]);
 
+  const openPulse = useCallback((skillId?: string) => {
+    const p = latest.current.profile;
+    if (!p.confirmed.length) { flash('Confirm at least one skill first. Confidence can only be recorded for skills you have attested to.'); return; }
+    setPulseFor(skillId && p.confirmed.includes(skillId) ? skillId : '');
+  }, []);
+
   const value = useMemo<Store>(() => ({
     ws, ready, loadInfo, storage, update, replace, settings, setSettings, view: settings.view, navigate,
+    openPulse, closePulse: () => setPulseFor(null), pulseFor,
     intent, consumeIntent: () => setIntent(null), flash, flashMessage,
-  }), [ws, ready, loadInfo, storage, update, replace, settings, setSettings, navigate, intent, flashMessage]);
+  }), [ws, ready, loadInfo, storage, update, replace, settings, setSettings, navigate, openPulse, pulseFor, intent, flashMessage]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
