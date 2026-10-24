@@ -54,6 +54,6 @@ test('team step counts only real teams, never the synthetic cohort', () => {
   const w = fresh();
   assert.equal(stateOf(w, 'team'), 'optional');
   A.createTeam(w, 'Pilot');
-  A.importMember(w, w.teams.active, { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown', mentorIntro: '', qualificationClaims: [], orgCode: '', orgTitle: '', contribution: { stages: {}, source: '', detail: {} } });
+  A.importMember(w, w.teams.active, { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown', mentorIntro: '', qualificationClaims: [], orgCode: '', orgTitle: '', contribution: { stages: {}, source: '', detail: {} }, attested: true, draftNote: '' });
   assert.equal(stateOf(w, 'team'), 'done');
 });

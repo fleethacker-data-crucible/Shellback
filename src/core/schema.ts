@@ -188,6 +188,9 @@ export const memberSchema = z.object({
   orgCode: orgCodeSchema,
   orgTitle: strTrim(80),
   contribution: contributionSchema,
+  /** false = a draft someone else prepared (e.g. from a résumé); the person has not attested to it. */
+  attested: z.boolean().catch(true),
+  draftNote: strTrim(200).catch(''),
 }).transform((m) => ({ ...m, surveys: Object.fromEntries(Object.entries(m.surveys).filter(([id]) => m.skills.includes(id))) }));
 export type Member = z.infer<typeof memberSchema>;
 
@@ -196,6 +199,8 @@ export const teamSchema = z.object({
   name: strTrim(80).pipe(z.string().min(1)),
   members: arrayOf(memberSchema, 100).transform(uniqueById),
   priorities: skillIdList(104),
+  /** Count unattested drafts in coverage views. Off by default; always labelled when on. */
+  includeDrafts: z.boolean().catch(false),
 });
 export type Team = z.infer<typeof teamSchema>;
 
@@ -228,6 +233,43 @@ export type PeerCard = {
   qualificationClaims?: string[]; qualificationDisclaimer?: string;
   orgCode?: string; orgTitle?: string; contribution?: Contribution;
 };
+
+/**
+ * Draft card: prepared by someone else (typically a supervisor from a résumé). Not consented, not attested.
+ * A team can hold it as a draft member; the person can import it into their own profile as suggestions.
+ */
+export const draftCardSchema = z.object({
+  format: z.literal('synapse-draft-card'),
+  version: z.literal(1),
+  id: z.string().regex(/^[a-zA-Z0-9-]{8,70}$/),
+  name: z.string().transform((s) => s.trim().slice(0, 70)).pipe(z.string().min(1)),
+  attested: z.literal(false),
+  issued: isoDate.catch('Unknown'),
+  draftedBy: strTrim(70).catch(''),
+  skills: skillIdList(104),
+  credentialNames: z.unknown().transform((v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((x) => x.trim().slice(0, 160)).filter(Boolean).slice(0, 50) : [])),
+  orgCode: orgCodeSchema,
+  orgTitle: strTrim(80).catch(''),
+  note: strTrim(200).catch(''),
+});
+export type DraftCard = z.infer<typeof draftCardSchema>;
+export const isDraftCard = (v: unknown): v is { format: 'synapse-draft-card' } => !!v && typeof v === 'object' && (v as { format?: unknown }).format === 'synapse-draft-card';
+
+export function parseDraftCard(input: unknown): DraftCard {
+  const r = draftCardSchema.safeParse(input);
+  if (!r.success) { const i = r.error.issues[0]; throw new Error(i ? `Not a Synapse draft card (${i.path.join('.') || 'root'}: ${i.message}).` : 'Not a Synapse draft card.'); }
+  if (RESERVED_MEMBER_ID.test(r.data.id)) throw new Error('This card uses a reserved identifier and cannot be imported.');
+  return r.data;
+}
+
+/** A draft becomes a team member that is clearly marked as unattested. */
+export function draftToMember(d: DraftCard): Member {
+  return memberSchema.parse({
+    id: d.id, name: d.name, synthetic: false, issued: d.issued, skills: d.skills, surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown', mentorIntro: '',
+    qualificationClaims: d.credentialNames, orgCode: d.orgCode, orgTitle: d.orgTitle, contribution: { stages: {}, source: '', detail: {} },
+    attested: false, draftNote: d.note || `Draft prepared${d.draftedBy ? ` by ${d.draftedBy}` : ''} on ${d.issued}; not confirmed by ${d.name}.`,
+  });
+}
 
 /** Ids the app uses for the local profile and the synthetic cohort. */
 const RESERVED_MEMBER_ID = /^(self-current|demo-\d+)$/;

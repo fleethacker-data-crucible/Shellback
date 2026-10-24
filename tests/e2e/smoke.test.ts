@@ -709,3 +709,52 @@ test('two-axis contribution: energy + fluency → quadrant, tags and example per
   assert.match(await page.locator('#workshopSheet').innerText({ timeout: 5000 }).catch(async () => page.evaluate(() => document.getElementById('workshopSheet')?.textContent ?? '')), /Grind: /);
   assert.deepEqual(errors, []);
 });
+
+test('draft teammates: build a team from résumés, drafts stay out of coverage until included, employee imports draft as suggestions', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team', 'roster');
+  await page.locator('#teamName').fill('Code 1513');
+  await page.locator('#createTeam').click();
+  // Draft from a PDF résumé
+  await page.locator('#draftFile').setInputFiles(path.join(root, 'examples/resumes/Jordan_Reyes_Data_Analyst.pdf'));
+  await page.locator('#draftPreview').waitFor();
+  assert.equal(await page.locator('#draftName').inputValue(), 'Jordan Reyes', 'name guessed from the first line');
+  assert.ok((await page.locator('[data-draft-skill="sql-pipelines"]').count()) === 1);
+  await page.locator('#draftOrg').fill('1513.2');
+  await page.locator('#draftAdd').click();
+  await page.locator('#teamMemberList [data-member-attested="false"]').waitFor();
+  assert.match(await page.locator('#teamMemberList').innerText(), /Jordan Reyes[\s\S]*Draft · not attested/i);
+  assert.match(await page.locator('#teamPeerDetail').innerText(), /Draft\./);
+  // Two more drafts from text so the team crosses the aggregate minimum
+  for (const [n, t] of [['Priya Natarajan', 'Built ETL pipelines in Python and SQL; Kubernetes and Terraform.'], ['Marcus Bell', 'TypeScript and React frontend engineering; code reviews; Git.']]) {
+    await page.locator('#draftName').fill(n!);
+    await page.locator('#draftTeammate details').evaluate((d) => { (d as HTMLDetailsElement).open = true; });
+    await page.locator('#draftText').fill(t!);
+    await page.locator('#draftScan').click();
+    await page.locator('#draftPreview').waitFor();
+    await page.locator('#draftAdd').click();
+    await page.locator(`#teamMemberList:has-text("${n}")`).waitFor();
+  }
+  // Coverage: drafts excluded by default, included on request and labelled
+  await page.locator('[data-testid="tab-coverage"]').click();
+  await page.locator('#draftToggle').waitFor();
+  assert.match(await page.locator('#teamBars').innerText(), /At least 3 opt-in profiles/);
+  await page.locator('#includeDrafts').check();
+  assert.match(await page.locator('#teamBars').innerText(), /Data Engineering/);
+  assert.match(await page.locator('#draftToggle').innerText(), /counted below and labelled as unattested/);
+  // Download the draft card, then import it as the employee → suggestions only
+  await page.locator('[data-testid="tab-roster"]').click();
+  await page.locator('[data-peerview]').first().click();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('[data-draft-download]').first().click()]);
+  const draftPath = await dl.path();
+  const draft = JSON.parse(readFileSync(draftPath!, 'utf8'));
+  assert.equal(draft.format, 'synapse-draft-card'); assert.equal(draft.attested, false);
+  await nav(page, 'profile', 'intake');
+  await page.locator('#importDraftFile').setInputFiles(draftPath!);
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('[data-confirm="sql-pipelines"]').waitFor();
+  assert.equal(await page.locator('#profileCount').innerText(), '0', 'nothing confirmed automatically');
+  const ws = await waitStored(page, (w) => w.profile.orgCode === '1513.2');
+  assert.equal(ws.profile.shareId, draft.id, 'the employee inherits the draft id so their real card replaces the draft');
+  assert.deepEqual(errors, []);
+});
