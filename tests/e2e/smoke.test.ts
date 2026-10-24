@@ -292,7 +292,7 @@ test('standalone edition: personas, v1 import, peer exchange, encrypted round tr
     page.waitForEvent('download'),
     (async () => {
       await page.locator('#exportBtn').click();
-      await confirmDialog(page); // encrypt
+      await page.locator('dialog [data-dialog="choice-encrypt"]').click();
       await page.locator('#dialog-input').fill('correct horse battery');
       await confirmDialog(page);
     })(),
@@ -339,4 +339,46 @@ test('phone width: no horizontal overflow on any view', async () => {
     assert.ok(w <= 390, `${v} overflows: ${w}px`);
   }
   await context.close();
+});
+
+test('Escape on the export dialog aborts — no plaintext download (independent review #2)', async () => {
+  const { page, errors } = await open(baseUrl);
+  let downloads = 0;
+  page.on('download', () => { downloads++; });
+  await page.locator('#exportBtn').click();
+  await page.locator('dialog[open] form').waitFor();
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  assert.equal(downloads, 0);
+  assert.equal(await page.locator('dialog[open]').count(), 0);
+  await page.locator('#exportBtn').click();
+  const [d] = await Promise.all([page.waitForEvent('download'), page.locator('dialog [data-dialog="choice-plain"]').click()]);
+  assert.match(d.suggestedFilename(), /^synapse-workspace-.*\.json$/);
+  assert.deepEqual(errors, []);
+});
+
+test('two tabs: a save in one tab is adopted by the other (independent review #4)', async () => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const a = await context.newPage(), b = await context.newPage();
+  for (const p of [a, b]) { await p.goto(baseUrl); await p.locator('#metricSkills').waitFor(); }
+  await a.locator('nav button[data-view="profile"]').click();
+  await a.locator('#manualSkill').selectOption('python-development');
+  await a.locator('#manualAdd').click();
+  await b.waitForFunction(() => document.querySelector('#metricMine')?.textContent === '1', undefined, { timeout: 5000 });
+  await b.locator('nav button[data-view="profile"]').click();
+  await b.locator('#manualSkill').selectOption('sql-pipelines');
+  await b.locator('#manualAdd').click();
+  await a.waitForFunction(() => document.querySelector('#profileCount')?.textContent === '2', undefined, { timeout: 5000 });
+  await context.close();
+});
+
+test('loopback server: malformed URL gets 400 and the server keeps running (independent review #1)', async () => {
+  const bad = await fetch(baseUrl + '%E0%A4%A');
+  assert.equal(bad.status, 400);
+  const traversal = await fetch(baseUrl + '..%2f..%2fpackage.json');
+  assert.ok([403, 404].includes(traversal.status));
+  const ok = await fetch(baseUrl);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers.get('x-content-type-options'), 'nosniff');
+  assert.match(ok.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
 });

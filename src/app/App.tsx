@@ -43,10 +43,12 @@ export function App() {
   useEffect(() => { setMenuOpen(false); }, [view]);
 
   async function exportWorkspace() {
-    const protect = await dialogs.confirm(
+    const mode = await dialogs.choose(
       <>Protect this backup with a passphrase? The file is encrypted in your browser (AES-256-GCM). Without the passphrase it cannot be opened — there is no recovery.</>,
-      { title: 'Export my workspace', confirmLabel: 'Encrypt with passphrase', cancelLabel: 'Export as plain JSON' },
+      { title: 'Export my workspace', choices: [{ value: 'plain', label: 'Plain JSON' }, { value: 'encrypt', label: 'Encrypt with passphrase', primary: true }] },
     );
+    if (mode === null) return;
+    const protect = mode === 'encrypt';
     const payload = buildWorkspaceExport(ws);
     const stamp = ws.meta.updated;
     if (protect) {
@@ -110,7 +112,7 @@ export function App() {
         <div className="mt-auto px-[13px] pt-6">
           <div className="text-[10px] font-extrabold tracking-[0.1em] text-mint">● &nbsp; OFFLINE DEMO · NO AUTHENTICATED ACCOUNT</div>
           <p className="mt-2 text-[11px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
-          <Button id="exportBtn" full className="mt-3" onClick={exportWorkspace}>↥ Export my workspace</Button>
+          <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}>↥ Export my workspace</Button>
         </div>
       </aside>
       {menuOpen && <button type="button" aria-label="Close navigation" className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)} />}

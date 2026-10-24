@@ -8,7 +8,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { newWorkspace, today, type Workspace } from '../../core/schema';
 import { defaultTeams } from '../../core/analytics';
-import { loadWorkspace, saveWorkspace, storageDescription, type LoadResult } from '../../storage/idb';
+import { loadWorkspace, onRemoteSave, saveWorkspace, storageDescription, type LoadResult } from '../../storage/idb';
 import { loadSettings, saveSettings, type Settings, type ViewId } from '../../storage/settings';
 
 export type Intent =
@@ -112,6 +112,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const draft = structuredClone(latest.current);
     const message = fn(draft);
     draft.meta.updated = today();
+    draft.meta.rev = latest.current.meta.rev + 1;
     latest.current = draft;
     setWs(draft);
     schedulePersist();
@@ -120,11 +121,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const replace = useCallback((next: Workspace, message?: string) => {
     const normalized = normalizeLoaded(structuredClone(next));
+    normalized.meta.rev = Math.max(latest.current.meta.rev, normalized.meta.rev) + 1;
     latest.current = normalized;
     setWs(normalized);
     schedulePersist();
     if (message) flash(message);
   }, [schedulePersist]);
+
+  // Another tab saved a newer revision: adopt it rather than overwrite it on our next save.
+  useEffect(() => onRemoteSave((rev) => {
+    if (rev <= latest.current.meta.rev) return;
+    void loadWorkspace().then((r) => {
+      if (r.workspace.meta.rev <= latest.current.meta.rev) return;
+      const hadLocal = dirty.current;
+      if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+      dirty.current = false;
+      const normalized = normalizeLoaded(r.workspace);
+      latest.current = normalized;
+      setWs(normalized);
+      flash(hadLocal ? 'Another Synapse tab saved newer changes; this tab switched to them and an unsaved edit here was discarded.' : 'Updated with changes saved in another Synapse tab.');
+    });
+  }), []);
 
   const setSettings = useCallback((patch: Partial<Settings>) => {
     setSettingsState((prev) => { const next = { ...prev, ...patch }; saveSettings(next); return next; });
