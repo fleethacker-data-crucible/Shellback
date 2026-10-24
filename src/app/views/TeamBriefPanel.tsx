@@ -15,7 +15,7 @@ import { TrustChip } from '../components/TrustChip';
 export function buildBriefInput(teamName: string, people: Participant[], agg: TeamAggregate, priorities: readonly string[]): TeamBriefInput {
   const thin = SKILLS.filter((s) => (agg.skillCounts[s.id] ?? 0) === 1).map((s) => s.name);
   const sharers = people.filter((p) => hasContribution(p.contribution));
-  const stages = sharers.length >= MIN_AGGREGATE ? stageCoverage(sharers).map((r) => ({ stage: r.stage.label, energized: r.energized.length, drained: r.drained.length })) : undefined;
+  const stages = sharers.length >= MIN_AGGREGATE ? stageCoverage(sharers).map((r) => ({ stage: r.stage.label, energized: r.energized.length, drained: r.drained.length, grind: r.quadrants.grind.length, growth: r.quadrants.growth.length })) : undefined;
   return {
     teamName, people: agg.n, domainCounts: [...agg.domainCounts], thinSkills: thin,
     priorities: priorities.map((id) => ({ skill: skillName(id), covered: agg.skillCounts[id] ?? 0 })),
@@ -59,7 +59,7 @@ export function TeamBriefPanel({ teamName, people, agg, priorities }: { teamName
               <dt className="text-quiet">People per domain</dt><dd>{DOMAINS.map((d, i) => `${d.name.split(' ')[0]} ${input.domainCounts[i]}`).join(' · ')}</dd>
               <dt className="text-quiet">Single-holder skills</dt><dd>{input.thinSkills.length ? input.thinSkills.join(', ') : 'none'}</dd>
               <dt className="text-quiet">Priorities</dt><dd>{input.priorities.length ? input.priorities.map((p) => `${p.skill} (${p.covered})`).join(', ') : 'none set'}</dd>
-              <dt className="text-quiet">Stages</dt><dd>{input.stages ? input.stages.map((s) => `${s.stage} +${s.energized}/−${s.drained}`).join(' · ') : `not included (fewer than ${MIN_AGGREGATE} shared preferences)`}</dd>
+              <dt className="text-quiet">Stages</dt><dd>{input.stages ? input.stages.map((s) => `${s.stage} +${s.energized}/−${s.drained}${s.grind ? ` grind ${s.grind}` : ''}`).join(' · ') : `not included (fewer than ${MIN_AGGREGATE} shared preferences)`}</dd>
               <dt className="text-quiet">Renewals ≤ 90 days</dt><dd>{input.renewalsSoon} (your own; peer cards carry no dates)</dd>
             </dl>
             {!provider.offline && <p className="note mt-2">Change the provider under <Button size="sm" variant="ghost" className="underline" onClick={() => navigate({ view: 'program', tab: 'intelligence' })}>Program → Intelligence</Button>.</p>}

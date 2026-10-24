@@ -10,7 +10,7 @@
  */
 import { z } from 'zod';
 import { isSkillId } from './taxonomy';
-import { ENERGY, STAGES, emptyContribution, type Contribution } from './contribution';
+import { CONTEXT_TAGS, ENERGY, ENERGY_SCALE, FLUENCY_SCALE, STAGES, emptyContribution, energyFromScore, type Contribution, type ContextTag, type EnergyScore, type Fluency } from './contribution';
 import { normalizeOrgCode } from './org';
 
 export const SCHEMA_VERSION = 2 as const;
@@ -60,6 +60,19 @@ export const contributionSchema = z.unknown().transform((value): Contribution =>
     }
   }
   out.source = typeof v.source === 'string' ? v.source.trim().slice(0, 160) : '';
+  const detail = (v as { detail?: unknown }).detail;
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    for (const [k, raw] of Object.entries(detail as Record<string, unknown>)) {
+      if (!(STAGES as readonly string[]).includes(k) || !raw || typeof raw !== 'object') continue;
+      const d = raw as { energy?: unknown; fluency?: unknown; tags?: unknown; example?: unknown };
+      if (!(ENERGY_SCALE as readonly unknown[]).includes(d.energy)) continue;
+      const fluency = (FLUENCY_SCALE as readonly unknown[]).includes(d.fluency) ? (d.fluency as Fluency) : null;
+      const tags = Array.isArray(d.tags) ? [...new Set(d.tags.filter((t): t is ContextTag => (CONTEXT_TAGS as readonly unknown[]).includes(t)))].slice(0, 7) : [];
+      const stage = k as (typeof STAGES)[number];
+      out.detail[stage] = { energy: d.energy as EnergyScore, fluency, tags, example: typeof d.example === 'string' ? d.example.trim().slice(0, 160) : '' };
+      out.stages[stage] = energyFromScore(d.energy as EnergyScore); // the summary always agrees with the detail
+    }
+  }
   return out;
 });
 const orgCodeSchema = z.unknown().transform((v) => normalizeOrgCode(v));

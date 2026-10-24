@@ -60,9 +60,9 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Light theme (system or manual) | ✅ | `data-theme` on `<html>` |
 | Printable capability summary | ✅ | Profile → Skills → Print summary |
 
-## Phase F — Contribution framework v2 (next)
+## Phase F — Contribution framework v2 ✅
 
-Replace the single energizing/neutral/draining answer per stage with two axes — **energy** (drains ↔ energizes) and **fluency** (how practiced) — giving four honest quadrants per stage: Flow, Growth edge, Grind (good at it, costs you), Avoid/pair. Optional context tags and a one-line recent example per stage. Team views read out quadrants, aggregate and consent-scoped. Today's answers map onto the energy axis, so nothing is lost.
+Replaced the single energizing/neutral/draining answer per stage with two axes — **energy** (drains ↔ energizes) and **fluency** (how practiced) — giving four honest quadrants per stage: Flow, Growth edge, Grind (good at it, costs you), Avoid/pair. Optional context tags and a one-line recent example per stage. Team views read out quadrants, aggregate and consent-scoped. Today's answers map onto the energy axis, so nothing is lost.
 
 ## Later
 

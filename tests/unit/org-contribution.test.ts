@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOrgTree, flattenOrg, isWithin, normalizeOrgCode, orgAncestors, orgLevelName } from '../../src/core/org';
-import { importContribution, parseEnergy, parseStage, stageCoverage, stageObservations, type Contribution } from '../../src/core/contribution';
+import { importContribution, parseEnergy, parseStage, quadrant, stageCoverage, stageDetail, stageObservations, type Contribution } from '../../src/core/contribution';
 import { newWorkspace, parsePeerCard, parseWorkspace } from '../../src/core/schema';
 import { buildPeerCard } from '../../src/core/share';
 import { defaultTeams, missionCoverage, participants, selfParticipant } from '../../src/core/analytics';
@@ -35,7 +35,7 @@ test('org tree is derived from the codes people carry, with roll-up counts', () 
 });
 
 test('stage coverage counts only people who shared preferences; observations stay about the team', () => {
-  const c = (e: Record<string, string>): Contribution => ({ stages: e as Contribution['stages'], source: '' });
+  const c = (e: Record<string, string>): Contribution => ({ stages: e as Contribution['stages'], source: '', detail: {} });
   const people = [
     { name: 'A', contribution: c({ question: 'energizing', finish: 'draining' }) },
     { name: 'B', contribution: c({ question: 'energizing', finish: 'draining' }) },
@@ -98,10 +98,45 @@ test('contribution import: CSV and JSON, vendor-neutral synonyms, unknown rows r
   const arr = importContribution(JSON.stringify([{ stage: 'Helping it happen', energy: '+' }, { stage: 'invention', energy: 'high' }]));
   assert.deepEqual(arr.contribution.stages, { support: 'energizing', ideate: 'energizing' });
   // Existing answers are kept unless overwritten
-  const merged = importContribution('finish,energizing', { stages: { rally: 'draining' }, source: 'me' });
+  const merged = importContribution('finish,energizing', { stages: { rally: 'draining' }, source: 'me', detail: {} });
   assert.deepEqual(merged.contribution.stages, { rally: 'draining', finish: 'energizing' });
   assert.equal(importContribution('{not json').skipped[0], 'File is not valid JSON.');
   assert.equal(parseStage('Tenacity'), 'finish');
   assert.equal(parseEnergy('Genius'), 'energizing');
   assert.equal(parseStage('something else'), null);
+});
+
+test('two-axis contribution: quadrants, summary stays in sync, schema round trip, team read-out', () => {
+  assert.equal(quadrant({ energy: 2, fluency: 3 }), 'flow');
+  assert.equal(quadrant({ energy: 1, fluency: 1 }), 'growth');
+  assert.equal(quadrant({ energy: -1, fluency: 2 }), 'grind');
+  assert.equal(quadrant({ energy: -2, fluency: 0 }), 'avoid');
+  assert.equal(quadrant({ energy: 0, fluency: 3 }), 'steady');
+  assert.equal(quadrant({ energy: 1, fluency: null }), 'unknown');
+  assert.equal(quadrant(undefined), 'unknown');
+  // Older one-axis data synthesises a detail; detail always wins and rewrites the summary
+  const legacy: Contribution = { stages: { rally: 'draining' }, source: '', detail: {} };
+  assert.deepEqual(stageDetail(legacy, 'rally'), { energy: -1, fluency: null, tags: [], example: '' });
+  const ws = newWorkspace();
+  ws.profile.contribution = { stages: { finish: 'energizing' }, source: '', detail: { finish: { energy: -2, fluency: 3, tags: ['under-deadline', 'under-deadline'], example: ' closed out the overhaul package ' } } };
+  const parsed = parseWorkspace(JSON.parse(JSON.stringify(ws))).workspace.profile.contribution;
+  assert.equal(parsed.stages.finish, 'draining', 'summary follows the detail');
+  assert.deepEqual(parsed.detail.finish, { energy: -2, fluency: 3, tags: ['under-deadline'], example: 'closed out the overhaul package' });
+  // Garbage detail is dropped, not guessed
+  const bad = parseWorkspace({ ...JSON.parse(JSON.stringify(ws)), profile: { ...ws.profile, contribution: { stages: {}, detail: { finish: { energy: 7, fluency: 'x' }, nope: { energy: 1 } } } } }).workspace.profile.contribution;
+  assert.deepEqual(bad.detail, {});
+  // Team read-out
+  const people = [
+    { name: 'A', contribution: { stages: {}, source: '', detail: { finish: { energy: -1, fluency: 3, tags: [], example: '' } } } as Contribution },
+    { name: 'B', contribution: { stages: {}, source: '', detail: { finish: { energy: -1, fluency: 2, tags: [], example: '' }, ideate: { energy: 2, fluency: 1, tags: [], example: '' } } } as Contribution },
+    { name: 'C', contribution: { stages: {}, source: '', detail: { ideate: { energy: 1, fluency: 3, tags: [], example: '' } } } as Contribution },
+  ].map((p) => ({ ...p, contribution: parseWorkspace({ ...JSON.parse(JSON.stringify(newWorkspace())), profile: { ...newWorkspace().profile, contribution: p.contribution } }).workspace.profile.contribution }));
+  const cov = stageCoverage(people);
+  const finish = cov.find((r) => r.stage.id === 'finish')!, ideate = cov.find((r) => r.stage.id === 'ideate')!;
+  assert.deepEqual(finish.quadrants.grind, ['A', 'B']);
+  assert.deepEqual(ideate.quadrants.growth, ['B']);
+  assert.deepEqual(ideate.quadrants.flow, ['C']);
+  const notes = stageObservations(cov, 3).join('\n');
+  assert.match(notes, /Good at it but drained by it.*finishing/i);
+  assert.match(notes, /mentoring pairs exist for: coming up with ideas/i);
 });
