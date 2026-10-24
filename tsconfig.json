@@ -18,5 +18,6 @@
     "noEmit": true,
     "types": []
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "tests/unit/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "exclude": ["src/types/react-shim.d.ts"]
 }

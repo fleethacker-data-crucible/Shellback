@@ -24,7 +24,7 @@ const skillId = z.string().refine(isSkillId, 'unknown skill id');
 export const today = (): string => new Date().toISOString().slice(0, 10);
 
 /** Parse an unknown array element-by-element; drops invalid items instead of failing. */
-function arrayOf<T>(schema: z.ZodType<T>, max: number, onDrop?: (issue: string) => void) {
+function arrayOf<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, max: number, onDrop?: (issue: string) => void) {
   return z.unknown().transform((value) => {
     if (!Array.isArray(value)) return [] as T[];
     const out: T[] = [];

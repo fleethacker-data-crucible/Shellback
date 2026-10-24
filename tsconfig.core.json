@@ -7,7 +7,6 @@
     "src/core/**/*.ts",
     "src/storage/**/*.ts",
     "src/workers/**/*.ts",
-    "src/types/**/*.d.ts",
-    "tests/unit/**/*.ts"
+    "src/types/**/*.d.ts"
   ]
 }

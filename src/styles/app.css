@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens (shadcn-style semantic palette, dark-first). Tailwind 4 reads
+   the @theme block and generates utilities such as bg-panel, text-mint, border-stroke.
+   --------------------------------------------------------------------------- */
+@theme {
+  --font-sans: Inter, "Segoe UI", system-ui, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --color-bg: #070e1c;
+  --color-side: #0b1424;
+  --color-panel: #111d30;
+  --color-panel2: #14243a;
+  --color-stroke: #29394f;
+  --color-text: #f1f6ff;
+  --color-muted: #96aabd;
+  --color-quiet: #72889e;
+  --color-mint: #5cf1cb;
+  --color-blue: #67abff;
+  --color-purple: #ac91fb;
+  --color-orange: #ffb06d;
+  --color-amber: #fac58e;
+  --color-danger: #ff7d8f;
+  --color-ok: #7de0a3;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --shadow-panel: 0 18px 50px -30px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 0 1px rgba(92, 241, 203, 0.25), 0 0 28px -6px rgba(92, 241, 203, 0.45);
+}
+
+@layer base {
+  :root { color-scheme: dark; }
+  html { scroll-behavior: smooth; }
+  body { @apply m-0 bg-bg text-text font-sans text-[14px] leading-[1.55] antialiased; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid #a0eeea; outline-offset: 3px; }
+  h1, h2, h3, h4 { @apply m-0 font-extrabold tracking-tight; }
+  p { @apply m-0; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+  [data-reduced-motion="true"] * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@layer components {
+  .eyebrow { @apply text-[10px] font-extrabold tracking-[0.16em] text-quiet uppercase; }
+  .field-label { @apply block text-[12px] font-bold text-muted mt-3 mb-1; }
+  .control {
+    @apply w-full rounded-sm border border-stroke bg-bg/70 px-3 py-2 text-[13px] text-text placeholder:text-quiet;
+    @apply focus:border-mint/70 focus:outline-none focus:ring-2 focus:ring-mint/25 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  select.control {
+    max-width: 100%; text-overflow: ellipsis;
+    appearance: none; padding-right: 2rem;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%2396aabd' stroke-width='1.6'/></svg>");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .note { @apply text-[12px] text-quiet leading-relaxed; }
+  .tiny-pill { @apply inline-flex items-center rounded-full border border-stroke bg-panel2 px-2 py-[2px] text-[10px] font-extrabold tracking-[0.08em] text-muted uppercase; }
+  .focus-pill { @apply inline-flex items-center gap-1 rounded-full border border-mint/40 bg-mint/10 px-3 py-1 text-[12px] font-bold text-mint; }
+  .row-card { @apply flex items-center justify-between gap-3 rounded-md border border-stroke bg-panel2/60 px-3 py-2; }
+  .bar-track { @apply relative h-2 flex-1 overflow-hidden rounded-full bg-bg/80; }
+  .bar-track i { @apply absolute inset-y-0 left-0 block rounded-full bg-gradient-to-r from-mint to-blue; }
+}
+
+/* ---------------------------------------------------------------------------
+   Visualization styles (attributes are set from data; classes carry the look).
+   --------------------------------------------------------------------------- */
+.radar-svg { width: 100%; height: auto; display: block; }
+.radar-ring { stroke: #2b4463; }
+.radar-ring-4 { stroke: #3c5c82; }
+.radar-axis { stroke: #243a56; stroke-width: 1; }
+.radar-label { fill: #c7d7ea; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; cursor: pointer; }
+.radar-label:hover, .radar-label:focus-visible { fill: #5cf1cb; }
+.radar-web { transition: d 0.4s ease, points 0.4s ease; }
+.radar-node { cursor: pointer; transition: r 0.25s ease; }
+.radar-node:hover { stroke: #ffffff; }
+.radar-center { fill: #dbe7f6; font-size: 20px; font-weight: 800; }
+.radar-subtitle { fill: #96aabd; font-size: 12px; }
+.radar-footnote { fill: #5f7690; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; }
+
+.galaxy-svg { width: 100%; height: auto; display: block; background: radial-gradient(ellipse at center, #0e1a33 0%, #070e1c 70%); border-radius: 18px; touch-action: none; user-select: none; }
+.sky-link { stroke: #6e8cb5; stroke-width: 1.1; transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease; }
+.sky-semantic { stroke: #e0ad79; stroke-dasharray: 4 4; }
+.sky-branch { stroke: #8fb4df; }
+.sky-confirmed { stroke: #8bd0be; stroke-width: 1.6; }
+.sky-skill-node { cursor: grab; outline: none; }
+.sky-skill-node:focus-visible circle:nth-child(2) { stroke: #ffffff; stroke-width: 2.4; }
+.galaxy-domain-label { fill: #9fb6d2; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; }
+.galaxy-domain-count { fill: #5cf1cb; font-size: 10px; font-weight: 700; pointer-events: none; }
+.sky-hover-tip { position: absolute; z-index: 5; max-width: 230px; pointer-events: none; border-radius: 10px; border: 1px solid #2d4664; background: rgba(9, 18, 33, 0.96); padding: 8px 10px; font-size: 12px; line-height: 1.4; box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.8); }
+.sky-hover-tip strong { display: block; color: #f1f6ff; }
+.sky-hover-tip span { display: block; color: #96aabd; font-size: 11px; }
+.sky-hover-tip small { display: block; color: #bcd0e6; margin-top: 3px; }
+
+/* Hero orbit decoration (pure CSS, honors reduced motion). */
+.orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(92, 241, 203, 0.25); animation: spin 28s linear infinite; }
+.orbit-b { animation-duration: 40s; animation-direction: reverse; border-color: rgba(103, 171, 255, 0.25); }
+.orbit-c { animation-duration: 56s; border-color: rgba(172, 145, 251, 0.25); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Flash message */
+.flash { transform: translateY(-8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }
+.flash.show { transform: translateY(0); opacity: 1; }
+
+/* Native dialog */
+dialog::backdrop { background: rgba(3, 8, 18, 0.72); backdrop-filter: blur(2px); }

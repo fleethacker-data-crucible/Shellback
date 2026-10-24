@@ -79,7 +79,9 @@ const appBuild = await esbuild.build({
   },
   loader: { '.json': 'json' },
   plugins: [inlineWorkerPlugin],
+  metafile: true,
 });
+if (process.argv.includes('--analyze')) console.log(await esbuild.analyzeMetafile(appBuild.metafile, { verbose: false }));
 const appJs = appBuild.outputFiles[0].text;
 
 // ---------------------------------------------------------------------------
@@ -126,7 +128,6 @@ const cspBase = [
   "manifest-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'none'",
 ];
 const buildId = sha256(appJs + appCss + template).slice(0, 12);
 
@@ -138,8 +139,9 @@ function renderHtml({ css, js, inline }) {
     .replaceAll('{{BUILD_ID}}', buildId)
     .replaceAll('{{VERSION}}', pkg.version)
     .replaceAll('{{EDITION}}', inline ? 'standalone' : 'served')
-    .replace('{{STYLES}}', inline ? `<style>${css}</style>` : '<link rel="stylesheet" href="./assets/app.css">')
-    .replace('{{SCRIPT}}', inline ? `<script type="module">${js}</script>` : '<script type="module" src="./assets/app.js"></script>');
+    .replace('{{STYLES}}', () => (inline ? `<style>${css}</style>` : '<link rel="stylesheet" href="./assets/app.css">'))
+    .replace('{{SCRIPT}}', () => (inline ? `<script type="module">${js}</script>` : '<script type="module" src="./assets/app.js"></script>'));
+  // NOTE: function replacers — minified JS contains `$&`/`$'` sequences that string replacers would expand.
 }
 
 const served = renderHtml({ css: appCss, js: appJs, inline: false });
@@ -147,8 +149,8 @@ const standalone = renderHtml({ css: appCss, js: appJs, inline: true });
 
 const precache = ['./', './index.html', './assets/app.js', './assets/app.css'];
 const sw = read('public/sw.js')
-  .replace('{{BUILD_ID}}', buildId)
-  .replace('{{PRECACHE}}', JSON.stringify(precache));
+  .replace('{{BUILD_ID}}', () => buildId)
+  .replace('{{PRECACHE}}', () => JSON.stringify(precache));
 
 const outputs = {
   'index.html': served,

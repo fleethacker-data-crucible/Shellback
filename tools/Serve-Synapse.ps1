@@ -13,7 +13,9 @@
   Folder to serve. Defaults to ..\dist relative to this script.
 
 .PARAMETER Port
-  TCP port on 127.0.0.1. 0 (default) lets Windows pick a free ephemeral port.
+  TCP port on 127.0.0.1. Default 8765. Keep it stable: the browser keys IndexedDB data by
+  origin (scheme + host + PORT), so a different port shows an empty workspace. If the port
+  is busy, the next 10 ports are tried and a warning explains the consequence.
 
 .PARAMETER NoBrowser
   Do not open the default browser after the server starts.
@@ -23,8 +25,8 @@
 #>
 [CmdletBinding()]
 param(
-  [string]$Root = (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) '..\dist'),
-  [ValidateRange(0, 65535)][int]$Port = 0,
+  [string]$Root = (Join-Path $PSScriptRoot '..\dist'),
+  [ValidateRange(1, 65535)][int]$Port = 8765,
   [switch]$NoBrowser
 )
 
@@ -64,6 +66,7 @@ function Send-Response {
   $lines.Add('Cross-Origin-Opener-Policy: same-origin')
   $lines.Add('Cross-Origin-Resource-Policy: same-origin')
   $lines.Add('Permissions-Policy: camera=(), microphone=(), geolocation=()')
+  $lines.Add("Content-Security-Policy: frame-ancestors 'none'")
   if ($Extra) { $lines.Add($Extra) }
   $lines.Add('')
   $lines.Add('')
@@ -79,9 +82,22 @@ function Send-Text {
   Send-Response -Stream $Stream -Status $Status -Reason $Reason -Body $bytes -ContentType 'text/plain; charset=utf-8' -HeadOnly $HeadOnly -Extra $null
 }
 
-$listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $Port)
-$listener.Start()
-$boundPort = ([System.Net.IPEndPoint]$listener.LocalEndpoint).Port
+$listener = $null
+$boundPort = 0
+for ($candidate = $Port; $candidate -le [Math]::Min(65535, $Port + 10); $candidate++) {
+  try {
+    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $candidate)
+    $listener.Start()
+    $boundPort = $candidate
+    break
+  } catch {
+    $listener = $null
+  }
+}
+if (-not $listener) { Write-Error "Ports $Port-$($Port + 10) on 127.0.0.1 are all in use. Close the other program or pass -Port."; exit 1 }
+if ($boundPort -ne $Port) {
+  Write-Warning "Port $Port is busy; using $boundPort. Browser data is stored per port, so this session will not show workspace data saved on port $Port."
+}
 $url = "http://127.0.0.1:$boundPort/"
 
 Write-Host ''
@@ -98,6 +114,8 @@ if (-not $NoBrowser) {
 
 try {
   while ($true) {
+    # Poll instead of blocking in AcceptTcpClient so Ctrl+C is handled promptly by PowerShell.
+    if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
     $client = $listener.AcceptTcpClient()
     try {
       $client.ReceiveTimeout = 5000
