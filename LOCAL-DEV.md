@@ -26,6 +26,17 @@ npm run serve        # Node loopback server equivalent to Serve-Synapse.ps1
 
 Commit the regenerated `dist\` together with the source change. CI rejects a PR whose `dist\` doesn't match its source.
 
+### Allowing a remote intelligence provider
+
+The default build is network-silent (`connect-src 'self'`). To let Program → Intelligence talk to an authorized AI platform, set the origin(s) before building; the browser blocks every other host no matter what is typed into the UI.
+
+```powershell
+$env:SYNAPSE_INTEL_HOST = "https://ai.example.mil"   # comma-separate several
+npm run build
+```
+
+The contract the platform must implement is in `docs/INTELLIGENCE_PROVIDERS.md`. Note that `npm run build:check` compares against the committed `dist\`, so a host-specific build should be produced on the deployment branch (or passed to CI as a secret) rather than committed to `main`.
+
 ## Release
 
 Ship `Launch-Synapse.bat`, `tools\Serve-Synapse.ps1` and `dist\`. Nothing else is needed on the workstation. Real deployments must keep requiring approved credentials and authorization.

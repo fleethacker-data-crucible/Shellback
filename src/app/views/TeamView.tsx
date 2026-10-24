@@ -11,6 +11,7 @@ import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
 import { ContributionMap, OrgRollup } from './TeamInsightPanels';
 import { TrustChips } from '../components/TrustChip';
+import { TeamBriefPanel } from './TeamBriefPanel';
 import { orgLevelName } from '../../core/org';
 import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
@@ -204,6 +205,7 @@ export function TeamView() {
           {agg.allowed ? (gaps.length ? gaps.map((sk) => <div key={sk.id} className="bench-row row-card py-1"><span>{prio.has(sk.id) ? '★ ' : ''}{sk.name} <small className="text-quiet">· {sk.domain}</small></span><strong>{agg.skillCounts[sk.id] === 0 ? 'No claims' : 'One contributor'}</strong></div>) : <Empty>No uncovered or single-contributor skills in the shared dataset.</Empty>) : <Empty>Suppressed until {MIN_AGGREGATE} shared profiles.</Empty>}
         </div>
       </Panel>
+      <TeamBriefPanel teamName={team?.name ?? 'Team'} people={people} agg={agg} priorities={team?.priorities ?? []} />
       <ContributionMap people={people} />
       <OrgRollup people={people} />
       </>)}

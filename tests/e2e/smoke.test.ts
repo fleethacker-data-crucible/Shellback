@@ -480,3 +480,83 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
   assert.equal(card.qualificationClaims, undefined);
   assert.deepEqual(errors, []);
 });
+
+test('intelligence: local by default, remote is explicit, CSP-blocked hosts are explained, token is sealed', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
+  assert.equal(await page.locator('[data-provider="remote-http"]').isDisabled(), true, 'remote cannot be chosen before it is configured');
+  await page.locator('#intelEndpoint').fill('http://ai.example.mil/v1');
+  assert.match(await page.locator('#intelRemote').innerText(), /https/);
+  await page.locator('#intelEndpoint').fill('https://ai.example.mil/v1');
+  assert.match(await page.locator('#intelRemote').innerText(), /This build does not allow connections to that host/);
+  await page.locator('#intelLabel').fill('Enterprise AI');
+  await page.locator('#intelSave').click();
+  // Connection test fails fast (CSP blocks the host) and says why — and no request reaches the network
+  await page.locator('#intelTest').click();
+  await page.locator('#intelTestResult').waitFor();
+  assert.match(await page.locator('#intelTestResult').innerText(), /Could not reach https:\/\/ai\.example\.mil/);
+  // Seal a token with a passphrase; it is stored encrypted only
+  await page.locator('#intelSaveToken').click();
+  await page.locator('#dialog-input').fill('tok_super_secret_123');
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#dialog-input').fill('correct horse battery');
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#intelRemote:has-text("token unlocked")').waitFor();
+  const stored = await page.evaluate(() => localStorage.getItem('synapse-intel-v1') ?? '');
+  assert.ok(stored.includes('synapse-encrypted') && !stored.includes('tok_super_secret_123'), 'token never stored in clear');
+  // Select the remote provider → Trust & data mirrors the disclosure; intake says where text goes
+  await page.locator('[data-provider="remote-http"]').check();
+  await page.locator('[data-testid="tab-governance"]').click();
+  assert.match(await page.locator('#trustIntel').innerText(), /Enterprise AI/);
+  await page.locator('#trustIntelDisclosure #intelDataTable').waitFor();
+  await nav(page, 'profile', 'intake');
+  assert.match(await page.locator('#intake').innerText(), /Enterprise AI/);
+  // A scan with the remote provider failing falls back to local rules, still producing suggestions
+  await page.locator('#loadResumeSample').click();
+  await page.locator('[data-confirm]').first().waitFor();
+  assert.match(await page.locator('#flash').innerText(), /Used local rules instead/);
+  // Back to local; nothing about the token is in a workspace export
+  await nav(page, 'program', 'intelligence');
+  await page.locator('[data-provider="local-rules"]').check();
+  await page.locator('#intelForgetToken').click();
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('#intelSaveToken').waitFor();
+  // The blocked request is expected noise; nothing else may error
+  const unexpected = errors.filter((e) => !/ai\.example\.mil|Content Security Policy|Failed to fetch|net::ERR/i.test(e));
+  assert.deepEqual(unexpected, []);
+});
+
+test('résumé intake reads .docx in the browser and maps free-text skill names', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'intake');
+  // Build a minimal .docx (zip with word/document.xml) in Node and upload it
+  const { deflateRawSync } = await import('node:zlib');
+  const docx = buildDocx(deflateRawSync, '<w:document xmlns:w="x"><w:body><w:p><w:r><w:t>Built SQL pipelines</w:t></w:r></w:p><w:p><w:r><w:t>Automated with PowerShell &amp; Terraform</w:t></w:r></w:p></w:body></w:document>');
+  await page.locator('#resumeFile').setInputFiles({ name: 'resume.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: docx });
+  await page.locator('[data-confirm]').first().waitFor();
+  assert.match(await page.locator('#resumeText').inputValue(), /Built SQL pipelines\nAutomated with PowerShell & Terraform/);
+  assert.ok((await page.locator('[data-confirm="sql-pipelines"]').count()) === 1);
+  assert.ok((await page.locator('[data-confirm="powershell-automation"]').count()) === 1);
+  // Free-text mapping in the Skills tab
+  await nav(page, 'profile', 'skills');
+  await page.locator('#manualFree').fill('k8s');
+  await page.locator('#manualFreeUse').click();
+  assert.equal(await page.locator('#manualSkill').inputValue(), 'container-platforms');
+  await page.locator('#manualFree').fill('underwater basket weaving');
+  assert.match(await page.locator('#skills').innerText(), /No close match/);
+  assert.deepEqual(errors, []);
+});
+
+function buildDocx(deflateRaw: (b: Buffer) => Buffer, xml: string): Buffer {
+  const name = Buffer.from('word/document.xml');
+  const data = Buffer.from(xml);
+  const comp = deflateRaw(data);
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  let crc = 0xffffffff; for (const b of data) crc = crcTable[(crc ^ b) & 0xff]! ^ (crc >>> 8); crc = (crc ^ 0xffffffff) >>> 0;
+  const local = Buffer.alloc(30); local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(20, 4); local.writeUInt16LE(8, 8); local.writeUInt32LE(crc, 14); local.writeUInt32LE(comp.length, 18); local.writeUInt32LE(data.length, 22); local.writeUInt16LE(name.length, 26);
+  const central = Buffer.alloc(46); central.writeUInt32LE(0x02014b50, 0); central.writeUInt16LE(20, 4); central.writeUInt16LE(20, 6); central.writeUInt16LE(8, 10); central.writeUInt32LE(crc, 16); central.writeUInt32LE(comp.length, 20); central.writeUInt32LE(data.length, 24); central.writeUInt16LE(name.length, 28); central.writeUInt32LE(0, 42);
+  const cdOffset = local.length + name.length + comp.length;
+  const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10); eocd.writeUInt32LE(central.length + name.length, 12); eocd.writeUInt32LE(cdOffset, 16);
+  return Buffer.concat([local, name, comp, central, name, eocd]);
+}
