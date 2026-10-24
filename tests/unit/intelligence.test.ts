@@ -4,6 +4,7 @@ import { createRemoteProvider, localRulesProvider, localTeamBrief, validateEndpo
 import { mapSkillName, mapSkillNames } from '../../src/core/mapping';
 import { DOMAINS } from '../../src/core/taxonomy';
 
+const rawJson = (obj: unknown) => new Response(JSON.stringify(obj), { status: 200, headers: { 'content-type': 'application/json' } });
 const okJson = (result: unknown) => new Response(JSON.stringify({ ok: true, result }), { status: 200, headers: { 'content-type': 'application/json' } });
 
 test('local rules provider answers every task offline', async () => {
@@ -105,3 +106,33 @@ function sampleBrief(): TeamBriefInput {
     renewalsSoon: 2,
   };
 }
+
+test('OpenAI-compatible provider: lists models, chats with the chosen model, validates and clamps', async () => {
+  const { createOpenAIProvider } = await import('../../src/core/intelligence');
+  const calls: Array<{ url: string; init: RequestInit }> = [];
+  const fetchMock = (async (url: string | URL | Request, init?: RequestInit) => {
+    calls.push({ url: String(url), init: init ?? {} });
+    const u = String(url);
+    if (u.endsWith('/models')) return rawJson({ data: [{ id: 'm-big' }, { id: 'm-small' }, { id: 'm-big' }] });
+    const body = JSON.parse(String(init?.body)) as { model: string; messages: Array<{ content: string }> };
+    const user = body.messages[1]!.content;
+    const content = user.includes('Résumé text') ? 'Sure:\n{"skills":["sql-pipelines","nope","power-bi"],"credentials":[{"name":"PMP"}]}' : user.includes('Map each') ? '{"mapped":[{"input":"k8s","skillId":"container-platforms","score":0.8}]}' : '{"text":"Brief."}';
+    return rawJson({ choices: [{ message: { content } }], model: body.model });
+  }) as typeof fetch;
+  const p = createOpenAIProvider({ kind: 'openai', label: 'GW', endpoint: 'https://gw.example.test/v1/', model: 'm-small' }, { fetch: fetchMock, token: () => 'sk-1' });
+  assert.deepEqual(await p.listModels!(), ['m-big', 'm-small']);
+  assert.equal(calls[0]!.url, 'https://gw.example.test/v1/models');
+  assert.equal((calls[0]!.init.headers as Record<string, string>).authorization, 'Bearer sk-1');
+  assert.equal((await p.ping()).ok, true);
+  const scan = await p.scanResume({ text: 'x', confirmed: ['power-bi'] });
+  assert.deepEqual(scan.skills, ['sql-pipelines']);
+  assert.equal(scan.credentials[0]?.name, 'PMP');
+  assert.equal(JSON.parse(String(calls.at(-1)!.init.body)).model, 'm-small');
+  assert.equal((await p.mapSkills(['k8s']))[0]?.skill?.id, 'container-platforms');
+  assert.equal((await p.teamBrief(sampleBrief())).text, 'Brief.');
+  // No key → clear error; wrong model → ping says so
+  const noKey = createOpenAIProvider({ kind: 'openai', label: 'GW', endpoint: 'https://gw.example.test/v1', model: 'm-small' }, { fetch: fetchMock, token: () => null });
+  await assert.rejects(noKey.scanResume({ text: 'x', confirmed: [] }), /No API key unlocked/);
+  const wrongModel = createOpenAIProvider({ kind: 'openai', label: 'GW', endpoint: 'https://gw.example.test/v1', model: 'ghost' }, { fetch: fetchMock, token: () => 'sk-1' });
+  assert.match((await wrongModel.ping()).detail, /not in the gateway's list/);
+});
