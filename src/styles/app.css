@@ -82,6 +82,7 @@
 .radar-node { cursor: pointer; transition: r 0.25s ease; }
 .radar-node:hover { stroke: #ffffff; }
 .radar-center { fill: #dbe7f6; font-size: 20px; font-weight: 800; }
+.radar-floor-label { fill: #6bf3dd; fill-opacity: .7; font-size: 8px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; pointer-events: none; }
 .radar-subtitle { fill: #96aabd; font-size: 12px; }
 .radar-footnote { fill: #5f7690; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; }
 
@@ -90,20 +91,20 @@
 .sky-semantic { stroke: #e0ad79; stroke-dasharray: 4 4; }
 .sky-branch { stroke: #8fb4df; }
 .sky-confirmed { stroke: #8bd0be; stroke-width: 1.6; }
-.sky-skill-node { cursor: grab; outline: none; }
-.sky-skill-node:focus-visible circle:nth-child(2) { stroke: #ffffff; stroke-width: 2.4; }
+.sky-skill-node, .sky-ghost-node { cursor: grab; outline: none; }
+.sky-skill-node:focus-visible .sky-ring, .sky-ghost-node:focus-visible circle:first-child { stroke: #ffffff; stroke-width: 2.4; stroke-opacity: 1; }
+.sky-ghost-node { cursor: pointer; }
+.sky-ghost-link { stroke-dasharray: 2 4; }
+.sky-star-label { fill: #c6d6ea; font-size: 10.5px; font-weight: 600; text-anchor: middle; pointer-events: none; paint-order: stroke fill; stroke: #070e1c; stroke-width: 3px; stroke-linejoin: round; }
+.sky-star-label.is-confirmed { fill: #eef5ff; font-weight: 700; }
+.sky-star-label.is-ghost { fill: #7f94ad; font-style: italic; }
+.sky-tip-related { color: #8fa6c0 !important; }
 .galaxy-domain-label { fill: #9fb6d2; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; pointer-events: none; }
 .galaxy-domain-count { fill: #5cf1cb; font-size: 10px; font-weight: 700; pointer-events: none; }
 .sky-hover-tip { position: absolute; z-index: 5; max-width: 230px; pointer-events: none; border-radius: 10px; border: 1px solid #2d4664; background: rgba(9, 18, 33, 0.96); padding: 8px 10px; font-size: 12px; line-height: 1.4; box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.8); }
 .sky-hover-tip strong { display: block; color: #f1f6ff; }
 .sky-hover-tip span { display: block; color: #96aabd; font-size: 11px; }
 .sky-hover-tip small { display: block; color: #bcd0e6; margin-top: 3px; }
-
-/* Hero orbit decoration (pure CSS, honors reduced motion). */
-.orbit { position: absolute; border-radius: 50%; border: 1px solid rgba(92, 241, 203, 0.25); animation: spin 28s linear infinite; }
-.orbit-b { animation-duration: 40s; animation-direction: reverse; border-color: rgba(103, 171, 255, 0.25); }
-.orbit-c { animation-duration: 56s; border-color: rgba(172, 145, 251, 0.25); }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Flash message */
 .flash { transform: translateY(8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }

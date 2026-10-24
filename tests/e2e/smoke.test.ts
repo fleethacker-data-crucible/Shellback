@@ -116,6 +116,25 @@ test('served edition: employee flow end to end', async () => {
   await nav(page, 'explore', 'galaxy');
   assert.equal(await page.locator('#graphSvg .sky-skill-node.is-confirmed').count(), 1);
   assert.equal(await page.locator('#graphSvg .galaxy-domain-hub').count(), 1);
+  // Galaxy v2: ghosts are opt-in and never counted as skill nodes; zoom/fit and arrow keys work
+  assert.equal(await page.locator('#graphSvg .sky-ghost-node').count(), 0);
+  await page.locator('#graphGhosts').check();
+  assert.ok((await page.locator('#graphSvg .sky-ghost-node').count()) > 0, 'nearby pathways appear when opted in');
+  assert.equal(await page.locator('#graphSvg .sky-skill-node').count(), 1, 'ghosts are not skill nodes');
+  const zoomBefore = await page.locator('[data-galaxy-view]').getAttribute('data-zoom');
+  await page.locator('#graphSurface').hover();
+  await page.mouse.wheel(0, -300);
+  await page.waitForFunction((z) => document.querySelector('[data-galaxy-view]')?.getAttribute('data-zoom') !== z, zoomBefore);
+  await page.locator('#graphFit').click();
+  await page.waitForFunction((z) => document.querySelector('[data-galaxy-view]')?.getAttribute('data-zoom') === z, zoomBefore);
+  await page.locator('#graphSvg .sky-skill-node').first().focus();
+  await page.keyboard.press('ArrowRight');
+  const focused = await page.evaluate(() => document.activeElement?.getAttribute('data-skill'));
+  assert.ok(focused, 'arrow key moves focus to another star');
+  await page.keyboard.press('Enter');
+  assert.match(await page.locator('#graphDetail').innerText(), /NEARBY PATHWAY|CONFIRMED CAPABILITY/);
+  await page.locator('#graphGhosts').uncheck();
+  assert.equal(await page.locator('#graphSvg .sky-ghost-node').count(), 0);
   // Confidence drawer opens from the skills list; only the one confirmed skill is offered
   await nav(page, 'profile', 'skills');
   await page.locator('#mySkills [data-pulse-skill]').first().click();
