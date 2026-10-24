@@ -2,6 +2,7 @@ import { DOMAINS, SKILLS } from '../../core/taxonomy';
 import { useStore } from '../state/store';
 import { journey, nextStep, type JourneyStep, type StepState } from '../state/journey';
 import { Button, Panel, PanelHeading, cn } from '../components/ui/primitives';
+import { SynapseMark } from '../components/SynapseMark';
 import { SpiderWeb } from '../viz/SpiderWeb';
 import { domainWebItems } from './SpiderWebView';
 
@@ -38,9 +39,8 @@ export function HomeView() {
               <Button id="homePersona" size="lg" onClick={() => navigate({ view: 'profile', tab: 'intake' }, undefined)}>Try a fictional employee</Button>
             </div>
           </div>
-          <div aria-hidden="true" className="pointer-events-none absolute -right-10 top-1/2 hidden h-[280px] w-[280px] -translate-y-1/2 md:block">
-            <div className="orbit inset-0" /><div className="orbit orbit-b inset-[36px]" /><div className="orbit orbit-c inset-[76px]" />
-            <div className="absolute inset-0 flex items-center justify-center text-[40px] font-extrabold text-mint/80">S</div>
+          <div aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 lg:block">
+            <SynapseMark size={200} glow className="opacity-70" />
           </div>
         </div>
       ) : next && (

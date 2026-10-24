@@ -10,6 +10,8 @@ import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, sele
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
 import { ContributionMap, OrgRollup } from './TeamInsightPanels';
+import { TrustChips } from '../components/TrustChip';
+import { TeamBriefPanel } from './TeamBriefPanel';
 import { orgLevelName } from '../../core/org';
 import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
@@ -203,7 +205,8 @@ export function TeamView() {
           {agg.allowed ? (gaps.length ? gaps.map((sk) => <div key={sk.id} className="bench-row row-card py-1"><span>{prio.has(sk.id) ? '★ ' : ''}{sk.name} <small className="text-quiet">· {sk.domain}</small></span><strong>{agg.skillCounts[sk.id] === 0 ? 'No claims' : 'One contributor'}</strong></div>) : <Empty>No uncovered or single-contributor skills in the shared dataset.</Empty>) : <Empty>Suppressed until {MIN_AGGREGATE} shared profiles.</Empty>}
         </div>
       </Panel>
-      <ContributionMap people={people} />
+      <TeamBriefPanel teamName={team?.name ?? 'Team'} people={people} agg={agg} priorities={team?.priorities ?? []} />
+      <ContributionMap people={people} teamName={team?.name ?? 'Team'} />
       <OrgRollup people={people} />
       </>)}
 
@@ -211,7 +214,7 @@ export function TeamView() {
       {tab === 'mentors' && <MentorsPanel />}
       {tab === 'knowledge' && <KnowledgePanel />}
 
-      <p className="note">Claims here are self-reported and unverified, never qualifications or readiness. This local view is not an access-control boundary.</p>
+      <p className="note flex flex-wrap items-center gap-2"><TrustChips kinds={['self-reported', 'aggregate', 'local-only']} /><span>This local view is not an access-control boundary.</span></p>
     </section>
   );
 }

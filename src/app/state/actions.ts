@@ -7,8 +7,8 @@ import { credentialKey } from '../../core/scanners';
 import { defaultTeams, DEMO_TEAM_ID, SELF_ID } from '../../core/analytics';
 import { newId, newShareId } from '../../core/ids';
 import { normalizeOrgCode } from '../../core/org';
-import { STAGES, type Energy, type Stage } from '../../core/contribution';
-import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate } from '../../core/schema';
+import { STAGES, type Contribution, type Energy, type Stage } from '../../core/contribution';
+import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate, type CredentialProvenance } from '../../core/schema';
 import type { ScanResponse } from '../../core/scanners';
 
 export class ActionError extends Error {}
@@ -79,7 +79,7 @@ export function loadSyntheticProfile(ws: Workspace): string {
   });
   ws.profile = {
     ...emptyProfile(), shareId: ws.profile.shareId, confirmed: [...ids], surveys,
-    credentials: [{ id: newId('cred'), name: 'Synthetic AWS credential', authority: 'Example authority — not verified', expiry: '2027-04-15', created: today(), source: 'self-entered' }],
+    credentials: [{ id: newId('cred'), name: 'Synthetic AWS credential', authority: 'Example authority — not verified', expiry: '2027-04-15', created: today(), source: 'self-entered', issued: '2024-04-15', verifier: '', provenance: 'claimed', note: '' }],
     displayName: 'Synthetic example', demoPersona: 'synthetic-example',
   };
   return 'Synthetic profile loaded. All skill claims and ratings are fictional.';
@@ -93,20 +93,46 @@ export function setContributionStage(ws: Workspace, stage: Stage, energy: Energy
   if (energy === null) delete ws.profile.contribution.stages[stage];
   else ws.profile.contribution.stages[stage] = energy;
 }
+export function setContribution(ws: Workspace, c: Contribution): void { ws.profile.contribution = { stages: { ...c.stages }, source: c.source.trim().slice(0, 160) }; }
 export function setContributionSource(ws: Workspace, source: string): void { ws.profile.contribution.source = source.trim().slice(0, 160); }
 export function clearContribution(ws: Workspace): string { ws.profile.contribution = { stages: {}, source: '' }; return 'Contribution preferences cleared.'; }
 
 // ---------------------------------------------------------------------------- Credentials
-export function addCredential(ws: Workspace, input: { name: string; authority: string; expiry: string }, fromCandidateKey: string | null): string {
-  const name = input.name.trim().slice(0, 160), authority = input.authority.trim().slice(0, 160), expiry = input.expiry;
-  if (!name) return fail('Enter a credential or qualification name.');
-  if (expiry && !/^\d{4}-\d{2}-\d{2}$/.test(expiry)) return fail('Choose a valid expiration date.');
-  const key = credentialKey(name);
+export interface CredentialInput { name: string; authority: string; expiry: string; issued?: string; verifier?: string; provenance?: CredentialProvenance; note?: string }
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+function normalizeCredentialInput(input: CredentialInput): { ok: true; v: Required<CredentialInput> } | { ok: false; msg: string } {
+  const name = input.name.trim().slice(0, 160), authority = input.authority.trim().slice(0, 160), expiry = input.expiry ?? '', issued = input.issued ?? '';
+  const verifier = (input.verifier ?? '').trim().slice(0, 160), note = (input.note ?? '').trim().slice(0, 300);
+  const provenance: CredentialProvenance = input.provenance ?? 'claimed';
+  if (!name) return { ok: false, msg: 'Enter a credential or qualification name.' };
+  if (expiry && !ISO.test(expiry)) return { ok: false, msg: 'Choose a valid expiration date.' };
+  if (issued && !ISO.test(issued)) return { ok: false, msg: 'Choose a valid issue date.' };
+  if (issued && expiry && issued > expiry) return { ok: false, msg: 'The issue date must be before the expiration date.' };
+  if (provenance === 'verified' && !verifier) return { ok: false, msg: 'Name who verified it (an authority, registrar or supervisor) to mark a credential verified.' };
+  return { ok: true, v: { name, authority, expiry, issued, verifier, provenance, note } };
+}
+
+export function addCredential(ws: Workspace, input: CredentialInput, fromCandidateKey: string | null): string {
+  const n = normalizeCredentialInput(input);
+  if (!n.ok) return fail(n.msg);
+  const key = credentialKey(n.v.name);
   if (ws.profile.credentials.some((c) => credentialKey(c.name) === key)) return fail('This credential is already in your inventory. Avoid duplicate claims.');
-  ws.profile.credentials.push({ id: newId('cred'), name, authority, expiry, created: today(), source: fromCandidateKey ? 'resume-reviewed' : 'self-entered' });
+  const provenance = fromCandidateKey && n.v.provenance === 'claimed' ? 'reviewed' : n.v.provenance;
+  ws.profile.credentials.push({ id: newId('cred'), ...n.v, provenance, created: today(), source: fromCandidateKey ? 'resume-reviewed' : 'self-entered' });
   if (fromCandidateKey) ws.profile.credentialCandidates = ws.profile.credentialCandidates.filter((c) => c.key !== fromCandidateKey);
   ws.profile.credentialCandidates = ws.profile.credentialCandidates.filter((c) => c.key !== key);
-  return 'Credential saved as your self-report. It has not been independently verified.';
+  return provenance === 'verified' ? 'Credential saved with the verifier you named. Synapse itself has not checked it.' : 'Credential saved as your self-report. It has not been independently verified.';
+}
+
+export function updateCredential(ws: Workspace, id: string, input: CredentialInput): string {
+  const cur = ws.profile.credentials.find((c) => c.id === id);
+  if (!cur) return fail('That credential no longer exists.');
+  const n = normalizeCredentialInput(input);
+  if (!n.ok) return fail(n.msg);
+  const key = credentialKey(n.v.name);
+  if (ws.profile.credentials.some((c) => c.id !== id && credentialKey(c.name) === key)) return fail('Another credential in your inventory already has this name.');
+  Object.assign(cur, n.v);
+  return 'Credential updated.';
 }
 
 export function deleteCredential(ws: Workspace, id: string): string {
