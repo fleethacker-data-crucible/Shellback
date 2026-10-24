@@ -5,7 +5,7 @@
  * exported, and never included in a workspace backup.
  */
 import { decryptJson, encryptJson, isEncryptedEnvelope, type EncryptedEnvelope } from '../core/crypto';
-import { createRemoteProvider, endpointOrigin, getProvider, localRulesProvider, registerProvider, unregisterProvider, type IntelligenceProvider, type RemoteProviderConfig } from '../core/intelligence';
+import { createConfiguredProvider, endpointOrigin, getProvider, localRulesProvider, registerProvider, unregisterProvider, type IntelligenceProvider, type RemoteProviderConfig } from '../core/intelligence';
 
 export const INTEL_KEY = 'synapse-intel-v1';
 export type ProviderChoice = 'local-rules' | 'remote-http';
@@ -16,7 +16,7 @@ export interface IntelSettings {
   tokenEnvelope: EncryptedEnvelope | null;
 }
 
-export const DEFAULT_INTEL: IntelSettings = { provider: 'local-rules', remote: { label: '', endpoint: '', model: '', dataHandling: '' }, tokenEnvelope: null };
+export const DEFAULT_INTEL: IntelSettings = { provider: 'local-rules', remote: { kind: 'openai', label: '', endpoint: '', model: '', dataHandling: '' }, tokenEnvelope: null };
 
 /** Origins the build allows in connect-src (besides 'self'). Injected by tools/build.mjs. */
 export const ALLOWED_INTEL_HOSTS: readonly string[] = typeof __SYNAPSE_INTEL_HOSTS__ !== 'undefined' ? __SYNAPSE_INTEL_HOSTS__ : [];
@@ -37,7 +37,7 @@ export function loadIntelSettings(): IntelSettings {
     const v = JSON.parse(raw) as Partial<IntelSettings> & { remote?: Partial<RemoteProviderConfig> };
     return {
       provider: v.provider === 'remote-http' ? 'remote-http' : 'local-rules',
-      remote: { label: str(v.remote?.label, 80), endpoint: str(v.remote?.endpoint, 500), model: str(v.remote?.model, 120), dataHandling: str(v.remote?.dataHandling, 600) },
+      remote: { kind: v.remote?.kind === 'synapse' ? 'synapse' : 'openai', label: str(v.remote?.label, 80), endpoint: str(v.remote?.endpoint, 500), model: str(v.remote?.model, 120), dataHandling: str(v.remote?.dataHandling, 600) },
       tokenEnvelope: isEncryptedEnvelope(v.tokenEnvelope) ? v.tokenEnvelope : null,
     };
   } catch { return structuredClone(DEFAULT_INTEL); }
@@ -75,13 +75,13 @@ export function applyIntelSettings(s: IntelSettings): IntelligenceProvider {
   current = s;
   saveIntelSettings(s);
   unregisterProvider('remote-http');
-  if (s.remote.endpoint) registerProvider(createRemoteProvider(s.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
+  if (s.remote.endpoint) registerProvider(createConfiguredProvider(s.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
   return activeProvider();
 }
 
 /** A provider for unsaved form values (connection test) that can still use the unlocked token. */
 export function previewProvider(cfg: RemoteProviderConfig): IntelligenceProvider {
-  return createRemoteProvider(cfg, { fetch: (...a) => fetch(...a), token: () => unlockedToken, timeoutMs: 15_000 });
+  return createConfiguredProvider(cfg, { fetch: (...a) => fetch(...a), token: () => unlockedToken, timeoutMs: 15_000 });
 }
 
 export function currentIntelSettings(): IntelSettings { return current; }
@@ -92,4 +92,4 @@ export function activeProvider(): IntelligenceProvider {
 }
 
 // register on load so views can use activeProvider() immediately
-if (typeof localStorage !== 'undefined' && current.remote.endpoint) registerProvider(createRemoteProvider(current.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
+if (typeof localStorage !== 'undefined' && current.remote.endpoint) registerProvider(createConfiguredProvider(current.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
