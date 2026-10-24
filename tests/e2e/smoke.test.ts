@@ -414,3 +414,50 @@ test('loopback server: malformed URL gets 400 and the server keeps running (inde
   assert.equal(ok.headers.get('x-content-type-options'), 'nosniff');
   assert.match(ok.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
 });
+
+test('org code and contribution preferences: opt-in, roll-up, mission stage', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'skills');
+  await page.locator('#manualSkill').selectOption('aws-architecture');
+  await page.locator('#manualAdd').click();
+  await page.locator('#orgCode').fill('Code 1513.7');
+  await page.locator('#orgTitle').fill('Engineer');
+  await page.locator('#orgSave').click();
+  assert.match(await page.locator('#orgChain').innerText(), /DEPARTMENT 1500.*DIVISION 1510.*BRANCH 1513.*SECTION 1513\.7/s);
+  await page.locator('[data-stage="rally"] [data-energy="energizing"]').click();
+  await page.locator('[data-stage="finish"] [data-energy="draining"]').click();
+  assert.equal(await page.locator('[data-stage="rally"] [data-energy="energizing"]').getAttribute('aria-checked'), 'true');
+  // Consent on, but org/contribution still private until their own boxes are ticked
+  await page.locator('#shareToggle').check({ force: true });
+  await nav(page, 'team', 'coverage');
+  assert.ok(!(await page.locator('#contributionMap').innerText()).includes('My local profile'));
+  assert.ok(!(await page.locator('#orgTree').innerText()).includes('1513.7'));
+  await nav(page, 'profile', 'skills');
+  await page.locator('#shareOrgLocally').check();
+  await page.locator('#shareContributionLocally').check();
+  await nav(page, 'team', 'coverage');
+  assert.ok((await page.locator('#contributionMap [data-stage-row="rally"]').innerText()).includes('My local profile'));
+  await page.locator('[data-org-unit="1513.7"]').click();
+  assert.match(await page.locator('#orgRollup').innerText(), /Fewer than 3 people here/);
+  await page.locator('[data-org-unit="1500"]').click();
+  assert.ok((await page.locator('#orgUnitBars').innerText()).includes('Cloud & Infrastructure'));
+  // Mission requirement with a stage
+  await page.locator('[data-testid="tab-missions"]').click();
+  await page.locator('#wfMissionSkill').selectOption('aws-architecture');
+  await page.locator('#wfMissionStage').selectOption('rally');
+  await page.locator('#wfMissionAdd').click();
+  assert.match(await page.locator('#wfMissionResults').innerText(), /rallying people/);
+  // Peer card carries org/contribution only when ticked
+  await page.locator('[data-testid="tab-roster"]').click();
+  await page.locator('#includeOrgShare').check();
+  await page.locator('#includeContributionShare').check();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    (async () => { await page.locator('#exportPeer').click(); await confirmDialog(page); await page.locator('dialog [data-dialog="choice-plain"]').click(); })(),
+  ]);
+  const card = JSON.parse(readFileSync((await download.path())!, 'utf8'));
+  assert.equal(card.orgCode, '1513.7');
+  assert.equal(card.contribution.stages.rally, 'energizing');
+  assert.equal(card.qualificationClaims, undefined);
+  assert.deepEqual(errors, []);
+});

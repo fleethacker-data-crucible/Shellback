@@ -2,7 +2,7 @@
 import { SKILL_BY_ID } from './taxonomy';
 import { METHODS, today, type PeerCard, type Workspace, type KnowledgePackage } from './schema';
 
-export interface Disclosure { confidence: boolean; mentoring: boolean; credentials: boolean }
+export interface Disclosure { confidence: boolean; mentoring: boolean; credentials: boolean; org: boolean; contribution: boolean }
 
 export function buildPeerCard(ws: Workspace, displayName: string, disclose: Disclosure, shareId: string): PeerCard {
   const name = displayName.trim().slice(0, 70);
@@ -21,6 +21,8 @@ export function buildPeerCard(ws: Workspace, displayName: string, disclose: Disc
     format: 'synapse-peer-card', version: 1, id: shareId, name, consent: true, issued: today(), skills, surveys,
     ...(disclose.mentoring ? { mentorOptIn: m.enabled, mentorTopics: m.topics.slice(0, 30), availability: m.availability, mentorIntro: m.intro.slice(0, 500) } : {}),
     ...(disclose.credentials ? { qualificationClaims: ws.profile.credentials.map((c) => c.name.slice(0, 160)).filter(Boolean).slice(0, 100), qualificationDisclaimer: 'employee-entered, unverified' } : {}),
+    ...(disclose.org && ws.profile.orgCode ? { orgCode: ws.profile.orgCode, orgTitle: ws.profile.orgTitle } : {}),
+    ...(disclose.contribution && Object.keys(ws.profile.contribution.stages).length ? { contribution: ws.profile.contribution } : {}),
   };
 }
 
@@ -30,6 +32,8 @@ export function describeCard(card: PeerCard): string {
   if (n) parts.push(`${n} self-reported task response(s)`);
   if ('mentorOptIn' in card) parts.push('mentoring/availability disclosures');
   if (card.qualificationClaims) parts.push(`${card.qualificationClaims.length} employee-entered credential name(s)`);
+  if (card.orgCode) parts.push(`org code ${card.orgCode}`);
+  if (card.contribution) parts.push('contribution preferences');
   return parts.join(', ');
 }
 
