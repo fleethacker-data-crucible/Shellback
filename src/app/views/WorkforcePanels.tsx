@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { skillName } from '../../core/taxonomy';
+import { STAGE_BY_ID, STAGE_DEFS, type Stage } from '../../core/contribution';
 import { activeTeam, mentorMatches, missionCoverage, participants, renewalLabel, renewalState } from '../../core/analytics';
 import { buildKnowledgePackage } from '../../core/share';
 import { useStore } from '../state/store';
@@ -146,7 +147,7 @@ export function MissionsPanel() {
   const team = activeTeam(ws);
   const people = useMemo(() => participants(ws, team), [ws, team]);
   const ids = people.map((p) => p.id);
-  const [req, setReq] = useState({ skill: 'aws-architecture', min: '2', credential: '' });
+  const [req, setReq] = useState({ skill: 'aws-architecture', min: '2', credential: '', stage: '' });
   const mission = ws.workforce.mission;
   const selected = mission.teamId === (team?.id ?? '') ? mission.selected.filter((id) => ids.includes(id)) : ids;
   const roster = people.filter((p) => selected.includes(p.id));
@@ -161,8 +162,9 @@ export function MissionsPanel() {
           <Field label="Needed capability" htmlFor="wfMissionSkill"><Select id="wfMissionSkill" value={req.skill} onChange={(v) => setReq({ ...req, skill: v })} options={SKILL_OPTIONS_SHORT} /></Field>
           <Field label="Minimum contributors" htmlFor="wfMissionMin"><Input id="wfMissionMin" type="number" inputMode="numeric" min={1} max={20} value={req.min} onChange={(v) => setReq({ ...req, min: v })} /></Field>
           <Field label="Qualification or certification text (optional; unverified matching)" htmlFor="wfMissionQualification"><Input id="wfMissionQualification" value={req.credential} onChange={(v) => setReq({ ...req, credential: v })} maxLength={100} placeholder="Example: synthetic certification category" /></Field>
-          <Button id="wfMissionAdd" variant="primary" className="mt-3" onClick={() => { if (act((d) => A.addRequirement(d, req)) !== undefined) setReq({ ...req, credential: '' }); }}>Add mission requirement</Button>
-          <div id="wfMissionRequirements" className="mt-3 space-y-1.5">{mission.requirements.length ? mission.requirements.map((r) => <div key={r.id} className="row-card"><div><strong className="block text-[13px]">{skillName(r.skill)}</strong><small className="text-quiet">{r.min} contributors · {r.credential ? `Qualification text: ${r.credential}` : 'No qualification requirement specified'}</small></div><Button size="icon" variant="danger" data-wfneeddelete={r.id} aria-label="Delete requirement" onClick={() => update((d) => A.deleteRequirement(d, r.id))}>×</Button></div>) : <p className="note">Add mission requirements to compare declared coverage and optional qualification claims.</p>}</div>
+          <Field label="Stage of work this needs (optional)" htmlFor="wfMissionStage"><Select id="wfMissionStage" value={req.stage} onChange={(v) => setReq({ ...req, stage: v })} placeholder="No particular stage" options={STAGE_DEFS.map((st) => ({ value: st.id, label: st.label }))} /></Field>
+          <Button id="wfMissionAdd" variant="primary" className="mt-3" onClick={() => { if (act((d) => A.addRequirement(d, req)) !== undefined) setReq({ ...req, credential: '', stage: '' }); }}>Add mission requirement</Button>
+          <div id="wfMissionRequirements" className="mt-3 space-y-1.5">{mission.requirements.length ? mission.requirements.map((r) => <div key={r.id} className="row-card"><div><strong className="block text-[13px]">{skillName(r.skill)}</strong><small className="text-quiet">{r.min} contributors · {r.credential ? `Qualification text: ${r.credential}` : 'No qualification requirement'}{r.stage ? ` · energized by ${STAGE_BY_ID.get(r.stage)?.label.toLowerCase()}` : ''}</small></div><Button size="icon" variant="danger" data-wfneeddelete={r.id} aria-label="Delete requirement" onClick={() => update((d) => A.deleteRequirement(d, r.id))}>×</Button></div>) : <p className="note">Add mission requirements to compare declared coverage and optional qualification claims.</p>}</div>
         </Panel>
         <Panel>
           <h3 className="text-[16px]">Considered opt-in contributors</h3>
@@ -177,6 +179,7 @@ export function MissionsPanel() {
             <div key={mission.requirements[i]!.id} className="rounded-md border border-stroke bg-panel2/60 p-3 text-[13px]">
               <div className="flex flex-wrap items-center justify-between gap-2"><strong>{skillName(r.skill)}</strong><Pill tone={r.gap ? 'amber' : 'mint'}>{r.covered.length}/{r.min} shared mentions</Pill></div>
               <p className="mt-1">{r.credential ? `${r.qualified.length} self-declared qualification match(es) (unverified)` : 'No formal qualification requirement entered'} · {r.available.length} explicitly available · {r.limited.length} limited · {r.unknown.length} unknown availability</p>
+              {r.stage && <p className="mt-1">{r.energized.length} of the {r.covered.length} covering people said <b>{STAGE_BY_ID.get(r.stage as Stage)?.label.toLowerCase()}</b> energizes them{r.energized.length ? `: ${r.energized.map((p) => p.name).join(', ')}` : ' (or did not share preferences)'}.</p>}
               <p className="note">{r.gap ? 'Potential coverage gap; consider cross-training or outreach.' : 'Declared skill mentions meet the requested count; operational eligibility remains unverified.'}</p>
             </div>
           )) : <Empty>Add a task requirement to generate a transparent team coverage comparison.</Empty>}

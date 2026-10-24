@@ -56,7 +56,7 @@ test('importing a card with an existing id reports the replacement', () => {
   const w = fresh();
   A.createTeam(w, 'Pilot');
   const t = w.teams.active;
-  const m = { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown' as const, mentorIntro: '', qualificationClaims: [] };
+  const m = { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown' as const, mentorIntro: '', qualificationClaims: [], orgCode: '', orgTitle: '', contribution: { stages: {}, source: '' } };
   assert.equal(A.importMember(w, t, m).replaced, false);
   const r = A.importMember(w, t, { ...m, name: 'Impostor' });
   assert.equal(r.replaced, true);
@@ -79,12 +79,12 @@ test('peer card disclosure is opt-in per field', () => {
   A.confirmSkill(w, 'sql-pipelines');
   A.saveSurvey(w, 'sql-pipelines', { confidence: '4', performed: 'recent', method: 'independent', note: 'private note' });
   w.profile.credentials.push({ id: 'c', name: 'Cert', authority: '', expiry: '', created: '2026-10-24', source: 'self-entered' });
-  const minimal = buildPeerCard(w, 'Pat', { confidence: false, mentoring: false, credentials: false }, 'sp-0123456789');
+  const minimal = buildPeerCard(w, 'Pat', { confidence: false, mentoring: false, credentials: false, org: false, contribution: false }, 'sp-0123456789');
   assert.deepEqual(minimal.surveys, {});
   assert.equal('qualificationClaims' in minimal, false);
   assert.equal('mentorOptIn' in minimal, false);
   assert.equal(JSON.stringify(minimal).includes('private note'), false);
-  const full = buildPeerCard(w, 'Pat', { confidence: true, mentoring: true, credentials: true }, 'sp-0123456789');
+  const full = buildPeerCard(w, 'Pat', { confidence: true, mentoring: true, credentials: true, org: true, contribution: true }, 'sp-0123456789');
   assert.equal(full.surveys['sql-pipelines']!.confidence, 4);
   assert.deepEqual(full.qualificationClaims, ['Cert']);
 });

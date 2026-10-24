@@ -6,6 +6,8 @@ import { SKILL_BY_ID, SYNTHETIC_PROFILE_CONFIDENCE, SYNTHETIC_PROFILE_SKILLS } f
 import { credentialKey } from '../../core/scanners';
 import { defaultTeams, DEMO_TEAM_ID, SELF_ID } from '../../core/analytics';
 import { newId, newShareId } from '../../core/ids';
+import { normalizeOrgCode } from '../../core/org';
+import { STAGES, type Energy, type Stage } from '../../core/contribution';
 import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate } from '../../core/schema';
 import type { ScanResponse } from '../../core/scanners';
 
@@ -82,6 +84,17 @@ export function loadSyntheticProfile(ws: Workspace): string {
   };
   return 'Synthetic profile loaded. All skill claims and ratings are fictional.';
 }
+
+export function setOrg(ws: Workspace, code: string, title: string): void {
+  ws.profile.orgCode = normalizeOrgCode(code);
+  ws.profile.orgTitle = title.trim().slice(0, 80);
+}
+export function setContributionStage(ws: Workspace, stage: Stage, energy: Energy | null): void {
+  if (energy === null) delete ws.profile.contribution.stages[stage];
+  else ws.profile.contribution.stages[stage] = energy;
+}
+export function setContributionSource(ws: Workspace, source: string): void { ws.profile.contribution.source = source.trim().slice(0, 160); }
+export function clearContribution(ws: Workspace): string { ws.profile.contribution = { stages: {}, source: '' }; return 'Contribution preferences cleared.'; }
 
 // ---------------------------------------------------------------------------- Credentials
 export function addCredential(ws: Workspace, input: { name: string; authority: string; expiry: string }, fromCandidateKey: string | null): string {
@@ -239,11 +252,12 @@ export function toggleGoal(ws: Workspace, id: string): void {
 }
 export function deleteGoal(ws: Workspace, id: string): void { ws.workforce.goals = ws.workforce.goals.filter((x) => x.id !== id); }
 
-export function addRequirement(ws: Workspace, input: { skill: string; min: string | number; credential: string }): string {
+export function addRequirement(ws: Workspace, input: { skill: string; min: string | number; credential: string; stage?: string }): string {
   if (!SKILL_BY_ID.has(input.skill)) return fail('Choose a needed capability.');
   if (ws.workforce.mission.requirements.length >= 40) return fail('Local limit: 40 mission requirements.');
   const min = Math.min(20, Math.max(1, Math.round(Number(input.min) || 1)));
-  ws.workforce.mission.requirements.push({ id: newId('req'), skill: input.skill, min, credential: input.credential.trim().slice(0, 100) });
+  const stage = (STAGES as readonly string[]).includes(input.stage ?? '') ? (input.stage as Stage) : '';
+  ws.workforce.mission.requirements.push({ id: newId('req'), skill: input.skill, min, credential: input.credential.trim().slice(0, 100), stage });
   return 'Mission requirement added.';
 }
 export function deleteRequirement(ws: Workspace, id: string): void { ws.workforce.mission.requirements = ws.workforce.mission.requirements.filter((r) => r.id !== id); }

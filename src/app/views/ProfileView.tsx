@@ -4,11 +4,13 @@ import { PERSONAS } from '../../core/personas';
 import { parseWorkspace } from '../../core/schema';
 import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
-import { applyScan, clearProfile, confirmSkill, dismissSkillCandidate, loadSyntheticProfile, pendingCredentialCandidates, removeSkill, setConsent } from '../state/actions';
+import { applyScan, clearProfile, confirmSkill, dismissSkillCandidate, loadSyntheticProfile, pendingCredentialCandidates, removeSkill, setConsent, setOrg } from '../state/actions';
+import { orgAncestors, orgLevelName } from '../../core/org';
+import { ContributionCard } from '../components/ContributionCard';
 import { scanResume, scanRunsInWorker } from '../../storage/scan-client';
 import type { ProfileTab } from '../../storage/settings';
 import { useDialogs } from '../components/ui/dialogs';
-import { Button, Checkbox, Empty, Field, Panel, PanelHeading, Pill, Select, SectionIntro, Switch, Tabs, Textarea } from '../components/ui/primitives';
+import { Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Switch, Tabs, Textarea } from '../components/ui/primitives';
 import { StatusChip } from '../components/SkillActions';
 import { SKILL_OPTIONS, modeLabel } from '../lib/options';
 import { readFileText } from '../lib/files';
@@ -207,6 +209,9 @@ function SkillsTab() {
         </div>
       </Panel>
 
+      <OrgCard />
+      <ContributionCard />
+
       <Panel>
         <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
           <div>
@@ -216,6 +221,8 @@ function SkillsTab() {
             <div className="space-y-1">
               <Checkbox id="shareMentoringLocally" checked={ws.profile.shareMentoringLocally} onChange={(v) => update((d) => { d.profile.shareMentoringLocally = v; })}>Also let local <b>mentor discovery</b> see my mentoring offer, topics and availability.</Checkbox>
               <Checkbox id="shareCredentialsLocally" checked={ws.profile.shareCredentialsLocally} onChange={(v) => update((d) => { d.profile.shareCredentialsLocally = v; })}>Also let local <b>mission planning</b> see my self-entered credential names (unverified).</Checkbox>
+              <Checkbox id="shareOrgLocally" checked={ws.profile.shareOrgLocally} onChange={(v) => update((d) => { d.profile.shareOrgLocally = v; })}>Also include my <b>org code and title</b> so coverage can roll up by unit.</Checkbox>
+              <Checkbox id="shareContributionLocally" checked={ws.profile.shareContributionLocally} onChange={(v) => update((d) => { d.profile.shareContributionLocally = v; })}>Also include my <b>contribution preferences</b> in the team's stage map.</Checkbox>
             </div>
           </div>
           <label className="toggle"><Switch id="shareToggle" checked={ws.profile.consent} onChange={(v) => act((d) => setConsent(d, v))} label="Contribute to team tools in this browser" /></label>
@@ -223,5 +230,33 @@ function SkillsTab() {
         {ws.profile.candidates.length > 0 && <p className="note mt-3"><Pill tone="amber">{ws.profile.candidates.length} suggestions</Pill> are still waiting in Intake and are never shared.</p>}
       </Panel>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------- Org code
+function OrgCard() {
+  const { ws, update } = useStore();
+  const [code, setCode] = useState(ws.profile.orgCode);
+  const [title, setTitle] = useState(ws.profile.orgTitle);
+  useEffect(() => { setCode(ws.profile.orgCode); setTitle(ws.profile.orgTitle); }, [ws.profile.orgCode, ws.profile.orgTitle]);
+  const dirty = code !== ws.profile.orgCode || title !== ws.profile.orgTitle;
+  const chain = ws.profile.orgCode ? [...orgAncestors(ws.profile.orgCode).reverse(), ws.profile.orgCode] : [];
+  return (
+    <Panel id="orgCard">
+      <PanelHeading eyebrow="WHERE I SIT" title="Organization code">
+        Optional. Codes nest by prefix (1500 → 1510 → 1513 → 1513.1), so Synapse can roll team coverage up through departments, divisions and branches without a fixed org chart.
+      </PanelHeading>
+      <div className="grid gap-3 md:grid-cols-[200px_1fr_auto] md:items-end">
+        <Field label="My code" htmlFor="orgCode"><Input id="orgCode" value={code} onChange={setCode} maxLength={24} placeholder="e.g. 1513" /></Field>
+        <Field label="Title (optional)" htmlFor="orgTitle"><Input id="orgTitle" value={title} onChange={setTitle} maxLength={80} placeholder="e.g. Branch Head, Engineer" /></Field>
+        <Button id="orgSave" variant={dirty ? 'primary' : 'secondary'} disabled={!dirty} onClick={() => update((d) => { setOrg(d, code, title); return 'Organization code saved.'; })}>Save</Button>
+      </div>
+      {chain.length > 0 && (
+        <p id="orgChain" className="note mt-3">
+          {chain.map((c, i) => <span key={c}>{i > 0 && <span className="mx-1 text-quiet">›</span>}<Pill tone={i === chain.length - 1 ? 'mint' : 'neutral'}>{orgLevelName(c)} {c}</Pill></span>)}
+          {ws.profile.orgTitle && <span className="ml-2 text-muted">· {ws.profile.orgTitle}</span>}
+        </p>
+      )}
+    </Panel>
   );
 }
