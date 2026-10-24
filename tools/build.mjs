@@ -41,7 +41,8 @@ const tailwindDir = path.dirname(path.dirname(tailwindEntry)); // …/tailwindcs
 const { compile: tailwindCompile } = await import(pathToFileURL(path.join(tailwindDir, 'dist/lib.mjs')).href);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+// Normalize line endings so a Windows checkout produces byte-identical output.
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8').replace(/\r\n/g, '\n');
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const sha256b64 = (buf) => crypto.createHash('sha256').update(buf).digest('base64');
 
@@ -79,7 +80,9 @@ const appBuild = await esbuild.build({
   },
   loader: { '.json': 'json' },
   plugins: [inlineWorkerPlugin],
+  metafile: true,
 });
+if (process.argv.includes('--analyze')) console.log(await esbuild.analyzeMetafile(appBuild.metafile, { verbose: false }));
 const appJs = appBuild.outputFiles[0].text;
 
 // ---------------------------------------------------------------------------
@@ -96,7 +99,7 @@ function listFiles(dir, exts, acc = []) {
 }
 const candidates = new Set();
 for (const file of listFiles(path.join(root, 'src'), ['.ts', '.tsx', '.html']).sort()) {
-  const text = fs.readFileSync(file, 'utf8');
+  const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
   for (const token of text.match(/[^\s"'`<>{}();,]+/g) || []) candidates.add(token);
 }
 const twCompiler = await tailwindCompile(read('src/styles/app.css'), {
@@ -126,7 +129,6 @@ const cspBase = [
   "manifest-src 'self'",
   "base-uri 'none'",
   "form-action 'none'",
-  "frame-ancestors 'none'",
 ];
 const buildId = sha256(appJs + appCss + template).slice(0, 12);
 
@@ -138,8 +140,9 @@ function renderHtml({ css, js, inline }) {
     .replaceAll('{{BUILD_ID}}', buildId)
     .replaceAll('{{VERSION}}', pkg.version)
     .replaceAll('{{EDITION}}', inline ? 'standalone' : 'served')
-    .replace('{{STYLES}}', inline ? `<style>${css}</style>` : '<link rel="stylesheet" href="./assets/app.css">')
-    .replace('{{SCRIPT}}', inline ? `<script type="module">${js}</script>` : '<script type="module" src="./assets/app.js"></script>');
+    .replace('{{STYLES}}', () => (inline ? `<style>${css}</style>` : '<link rel="stylesheet" href="./assets/app.css">'))
+    .replace('{{SCRIPT}}', () => (inline ? `<script type="module">${js}</script>` : '<script type="module" src="./assets/app.js"></script>'));
+  // NOTE: function replacers — minified JS contains `$&`/`$'` sequences that string replacers would expand.
 }
 
 const served = renderHtml({ css: appCss, js: appJs, inline: false });
@@ -147,8 +150,8 @@ const standalone = renderHtml({ css: appCss, js: appJs, inline: true });
 
 const precache = ['./', './index.html', './assets/app.js', './assets/app.css'];
 const sw = read('public/sw.js')
-  .replace('{{BUILD_ID}}', buildId)
-  .replace('{{PRECACHE}}', JSON.stringify(precache));
+  .replace('{{BUILD_ID}}', () => buildId)
+  .replace('{{PRECACHE}}', () => JSON.stringify(precache));
 
 const outputs = {
   'index.html': served,

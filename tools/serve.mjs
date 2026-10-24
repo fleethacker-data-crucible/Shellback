@@ -4,7 +4,7 @@
  * loopback only, no directory listing, no path traversal, correct MIME types,
  * and the security headers the PowerShell server sends.
  *
- *   node tools/serve.mjs [--port 8765] [--root dist] [--no-open]
+ *   node tools/serve.mjs [--port 8765] [--root dist]
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : fallback; };
-const port = Number(opt('port', process.env.PORT || 0));
+const port = Number(opt('port', process.env.PORT || 8765)); // stable port = stable origin = same IndexedDB data
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', opt('root', 'dist'));
 
 const MIME = {
@@ -25,7 +25,8 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
-  let rel = decodeURIComponent(url.pathname);
+  let rel;
+  try { rel = decodeURIComponent(url.pathname); } catch { res.writeHead(400); return res.end('Bad request'); }
   if (rel.endsWith('/')) rel += 'index.html';
   const file = path.normalize(path.join(rootDir, rel));
   const headers = {
@@ -35,6 +36,7 @@ const server = http.createServer((req, res) => {
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Resource-Policy': 'same-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': "frame-ancestors 'none'",
   };
   if (!file.startsWith(rootDir + path.sep) && file !== rootDir) { res.writeHead(403, headers); return res.end('Forbidden'); }
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, headers); return res.end('Method not allowed'); }
