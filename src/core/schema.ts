@@ -96,6 +96,10 @@ export const profileSchema = z.object({
   surveys: surveysSchema,
   credentials: arrayOf(credentialSchema, 100).transform(uniqueById),
   candidates: skillIdList(104),
+  /** Skill suggestions the employee dismissed; never suggested again by later scans. */
+  candidateDismissed: skillIdList(104),
+  /** Date of the last résumé scan (journey progress only; résumé text is never stored). */
+  lastScan: isoDate.or(z.literal('')).catch(''),
   credentialCandidates: arrayOf(credentialCandidateSchema, 100),
   credentialDismissed: z.unknown().transform((v) => (Array.isArray(v) ? [...new Set(v.filter((k): k is string => typeof k === 'string' && k.length <= 65))].slice(0, 100) : [])),
   consent: z.boolean().catch(false),
@@ -104,7 +108,7 @@ export const profileSchema = z.object({
   displayName: str(90),
   demoPersona: str(60),
   shareId: z.string().regex(/^[a-zA-Z0-9-]{8,70}$/).or(z.literal('')).catch(''),
-}).transform((p) => ({ ...p, candidates: p.candidates.filter((id) => !p.confirmed.includes(id)) }));
+}).transform((p) => ({ ...p, candidates: p.candidates.filter((id) => !p.confirmed.includes(id) && !p.candidateDismissed.includes(id)) }));
 export type Profile = z.infer<typeof profileSchema>;
 
 // ----------------------------------------------------------------------------
@@ -321,6 +325,7 @@ export function emptyProfile(): Profile {
   return {
     confirmed: [], surveys: {}, credentials: [], candidates: [], credentialCandidates: [], credentialDismissed: [],
     consent: false, shareMentoringLocally: false, shareCredentialsLocally: false, displayName: '', demoPersona: '', shareId: '',
+    candidateDismissed: [], lastScan: '',
   };
 }
 export function emptyWorkforce(): Workforce {

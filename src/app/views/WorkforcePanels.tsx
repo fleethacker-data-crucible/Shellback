@@ -1,49 +1,16 @@
 import { useMemo, useState } from 'react';
-import { DOMAINS, SKILL_BY_ID, skillName } from '../../core/taxonomy';
-import { activeTeam, mentorMatches, missionCoverage, participants, renewalLabel, renewalState, MIN_AGGREGATE } from '../../core/analytics';
+import { skillName } from '../../core/taxonomy';
+import { activeTeam, mentorMatches, missionCoverage, participants, renewalLabel, renewalState } from '../../core/analytics';
 import { buildKnowledgePackage } from '../../core/share';
 import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
 import * as A from '../state/actions';
 import { useDialogs } from '../components/ui/dialogs';
-import { BarRow, Button, Checkbox, Empty, Field, Input, Notice, Panel, Pill, Select, SectionIntro, Stat, Tabs, Textarea } from '../components/ui/primitives';
+import { Button, Checkbox, Empty, Field, Input, Notice, Panel, PanelHeading, Pill, Select, Stat, Textarea } from '../components/ui/primitives';
 import { SKILL_OPTIONS_SHORT } from '../lib/options';
 import { downloadJson } from '../lib/files';
 
-type Tab = 'qualforge' | 'skillfleet' | 'teamforge' | 'mentorlink' | 'relay';
-const ENTRIES: ReadonlyArray<{ id: Tab; kicker: string; title: string; text: string; tab: string }> = [
-  { id: 'qualforge', kicker: '01 / LEARN', title: 'Practice a qualification task', text: 'Create a study card or convert approved outline text into review-required drafts.', tab: 'QUALFORGE · Training' },
-  { id: 'skillfleet', kicker: '02 / DEVELOP', title: 'See capabilities & growth gaps', text: 'View team coverage and set development goals; no hidden people rankings.', tab: 'SKILLFLEET · Capability' },
-  { id: 'teamforge', kicker: '03 / PLAN', title: 'Build a mission-ready team plan', text: 'Compare voluntary skill mentions, availability and unverified qualification claims.', tab: 'TEAMFORGE · Missions' },
-  { id: 'mentorlink', kicker: '04 / CONNECT', title: 'Find a willing mentor', text: 'Browse explicit mentoring offers and write a respectful outreach request.', tab: 'MENTORLINK · Mentoring' },
-  { id: 'relay', kicker: '05 / RETAIN', title: 'Capture a lesson learned', text: 'Collect expert handoff practices, review them, and export approved records.', tab: 'KNOWLEDGE RELAY' },
-];
 const AVAIL = [['unknown', 'Not specified'], ['available', 'Available'], ['limited', 'Limited'], ['unavailable', 'Unavailable']].map(([value, label]) => ({ value: value!, label: label! }));
-
-export function WorkforceView() {
-  const { settings, setSettings } = useStore();
-  const tab = settings.workforceTab;
-  const setTab = (t: Tab) => setSettings({ workforceTab: t });
-  return (
-    <section id="workforce" className="space-y-5">
-      <SectionIntro eyebrow="FLEETHACKER 2026 / PRACTICAL WORKFLOWS" title="Choose what you want to accomplish.">FLEETHACKER isn't a sixth system or a separate login. It's a collection of five task-focused workflows built on your Synapse profile and opt-in team data. Select a goal below to open the matching tool.</SectionIntro>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {ENTRIES.map((e) => (
-          <button key={e.id} type="button" data-workforce-open={e.id} onClick={() => setTab(e.id)} className={`rounded-lg border p-4 text-left transition-colors hover:border-mint/60 ${tab === e.id ? 'border-mint/60 bg-mint/10' : 'border-stroke bg-panel'}`}>
-            <span className="eyebrow block">{e.kicker}</span><strong className="mt-1 block text-[14px]">{e.title}</strong><small className="mt-1 block text-[12px] text-muted">{e.text}</small>
-          </button>
-        ))}
-      </div>
-      <Notice><strong>Suggested first run:</strong> 1. Build or upload a résumé profile. 2. Create a team and import opt-in peer cards. 3. Pick a workforce tool based on your goal. — Synthetic and nonsensitive demonstration only. Employee claims, voluntary confidence, self-entered credentials and approved authoritative qualifications are not interchangeable.</Notice>
-      <Tabs label="FLEETHACKER workforce modules" value={tab} onChange={setTab} items={ENTRIES.map((e) => ({ id: e.id, label: e.tab }))} />
-      {tab === 'qualforge' && <QualForge />}
-      {tab === 'skillfleet' && <SkillFleet />}
-      {tab === 'teamforge' && <TeamForge />}
-      {tab === 'mentorlink' && <MentorLink />}
-      {tab === 'relay' && <KnowledgeRelay />}
-    </section>
-  );
-}
 
 // ---------------------------------------------------------------------------- QUALFORGE
 function QualForge() {
@@ -138,41 +105,42 @@ function QualForge() {
 }
 
 // ---------------------------------------------------------------------------- SKILLFLEET
-function SkillFleet() {
+function GoalsAndRenewals() {
   const { ws, update } = useStore();
   const act = useAction();
-  const people = useMemo(() => participants(ws), [ws]);
-  const n = people.length, avail = n >= MIN_AGGREGATE;
-  const counts = DOMAINS.map((d) => people.filter((x) => x.skills.some((id) => SKILL_BY_ID.get(id)?.di === d.index)).length);
   const [goal, setGoal] = useState({ skill: 'sql-pipelines', target: '', due: '' });
   return (
-    <div data-workforce-pane="skillfleet" className="space-y-5">
-      <div className="max-w-[78ch]"><div className="eyebrow">02 / SKILLFLEET</div><h3 className="text-[20px]">Coverage, credentials, and growth pathways.</h3><p className="text-[13px] text-muted">Compare team coverage at the domain level, inspect concentrations and maintain employee-driven development goals. Counts describe voluntary skill claims only.</p></div>
-      <div id="wfFleetSummary" className="grid gap-3 sm:grid-cols-3"><Stat label="Consented profiles" value={n} /><Stat label="Domains covered" value={avail ? counts.filter((v) => v > 0).length : '—'} /><Stat label="Active growth goals" value={ws.workforce.goals.filter((g) => g.status !== 'done').length} /></div>
-      <Panel><h3 className="text-[16px]">Shared capability coverage</h3><div id="wfSkillfleetHeatmap" className="mt-2">{avail ? DOMAINS.map((d) => <BarRow key={d.index} label={d.name} value={counts[d.index] ?? 0} max={n} caption={`${counts[d.index]}/${n} · ${counts[d.index] === 0 ? 'none' : counts[d.index] === 1 ? 'single' : 'multiple'}`} />) : <Empty>Team-level coverage requires at least three consenting profiles. Use the synthetic demo team or import voluntary peer cards.</Empty>}</div></Panel>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Panel>
-          <h3 className="text-[16px]">Professional growth plan</h3>
-          <Field label="Skill to develop" htmlFor="wfGoalSkill"><Select id="wfGoalSkill" value={goal.skill} onChange={(v) => setGoal({ ...goal, skill: v })} options={SKILL_OPTIONS_SHORT} /></Field>
-          <Field label="Learning outcome or cross-training intention" htmlFor="wfGoalTarget"><Input id="wfGoalTarget" value={goal.target} onChange={(v) => setGoal({ ...goal, target: v })} maxLength={250} placeholder="Pair with teammate to learn dashboard validation" /></Field>
-          <Field label="Voluntary target date" htmlFor="wfGoalDue"><Input id="wfGoalDue" type="date" value={goal.due} onChange={(v) => setGoal({ ...goal, due: v })} /></Field>
-          <Button id="wfGoalAdd" variant="primary" className="mt-3" onClick={() => { if (act((d) => A.addGoal(d, goal)) !== undefined) setGoal({ ...goal, target: '' }); }}>Add development goal</Button>
-          <div id="wfGoalRows" className="mt-3 space-y-1.5">
-            {ws.workforce.goals.length ? ws.workforce.goals.map((g) => <div key={g.id} className="row-card"><div><strong className="block text-[13px]">{skillName(g.skill)}</strong><small className="text-quiet">{g.target}{g.due ? ` · target ${g.due}` : ''}</small></div><div className="flex gap-1.5"><Button size="sm" data-wfgoal={g.id} onClick={() => update((d) => A.toggleGoal(d, g.id))}>{g.status === 'done' ? 'Reopen' : 'Mark reviewed'}</Button><Button size="icon" variant="danger" data-wfgoaldel={g.id} aria-label="Delete goal" onClick={() => update((d) => A.deleteGoal(d, g.id))}>×</Button></div></div>) : <p className="note">Add voluntary learning or cross-training goals to make capability development visible without rankings.</p>}
-          </div>
-        </Panel>
-        <Panel>
-          <h3 className="text-[16px]">Credential renewal signals</h3>
-          <div id="wfCredentialStatus" className="mt-2 space-y-1.5">{ws.profile.credentials.length ? ws.profile.credentials.map((c) => { const r = renewalState(c); return <div key={c.id} className="row-card"><strong className="text-[13px]">{c.name}</strong><small className={r.state === 'past' ? 'text-danger' : r.state === 'soon' ? 'text-amber' : 'text-quiet'}>{renewalLabel(r)} · Self-entered, NOT verified</small></div>; }) : <p className="note">No self-entered credentials yet. Use Credential desk for optional renewal reminders.</p>}</div>
-          <p className="note mt-2">Credentials here are entered by the employee and remain unverified.</p>
-        </Panel>
-      </div>
+    <div className="grid gap-5 lg:grid-cols-2" data-workforce-pane="skillfleet">
+      <Panel>
+        <PanelHeading eyebrow="GROWTH PLAN" title="Development goals">Voluntary learning or cross-training goals. Visible only to you unless you choose to share them.</PanelHeading>
+        <Field label="Skill to develop" htmlFor="wfGoalSkill"><Select id="wfGoalSkill" value={goal.skill} onChange={(v) => setGoal({ ...goal, skill: v })} options={SKILL_OPTIONS_SHORT} /></Field>
+        <Field label="Learning outcome or cross-training intention" htmlFor="wfGoalTarget"><Input id="wfGoalTarget" value={goal.target} onChange={(v) => setGoal({ ...goal, target: v })} maxLength={250} placeholder="Pair with teammate to learn dashboard validation" /></Field>
+        <Field label="Voluntary target date" htmlFor="wfGoalDue"><Input id="wfGoalDue" type="date" value={goal.due} onChange={(v) => setGoal({ ...goal, due: v })} /></Field>
+        <Button id="wfGoalAdd" variant="primary" className="mt-3" onClick={() => { if (act((d) => A.addGoal(d, goal)) !== undefined) setGoal({ ...goal, target: '' }); }}>Add development goal</Button>
+        <div id="wfGoalRows" className="mt-3 space-y-1.5">
+          {ws.workforce.goals.length ? ws.workforce.goals.map((g) => <div key={g.id} className="row-card"><div><strong className="block text-[13px]">{skillName(g.skill)}</strong><small className="text-quiet">{g.target}{g.due ? ` · target ${g.due}` : ''}</small></div><div className="flex gap-1.5"><Button size="sm" data-wfgoal={g.id} onClick={() => update((d) => A.toggleGoal(d, g.id))}>{g.status === 'done' ? 'Reopen' : 'Mark reviewed'}</Button><Button size="icon" variant="danger" data-wfgoaldel={g.id} aria-label="Delete goal" onClick={() => update((d) => A.deleteGoal(d, g.id))}>×</Button></div></div>) : <p className="note">No goals yet.</p>}
+        </div>
+      </Panel>
+      <Panel>
+        <PanelHeading eyebrow="RENEWALS" title="Credential renewal signals">From your self-entered renewal dates. Unverified.</PanelHeading>
+        <div id="wfCredentialStatus" className="space-y-1.5">{ws.profile.credentials.length ? ws.profile.credentials.map((c) => { const r = renewalState(c); return <div key={c.id} className="row-card"><strong className="text-[13px]">{c.name}</strong><small className={r.state === 'past' ? 'text-danger' : r.state === 'soon' ? 'text-amber' : 'text-quiet'}>{renewalLabel(r)}</small></div>; }) : <p className="note">No self-entered credentials yet.</p>}</div>
+      </Panel>
+    </div>
+  );
+}
+
+/** Profile → Growth: personal study guides plus goals and renewals. */
+export function GrowthPanel() {
+  return (
+    <div className="space-y-6">
+      <GoalsAndRenewals />
+      <QualForge />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------- TEAMFORGE
-function TeamForge() {
+export function MissionsPanel() {
   const { ws, update } = useStore();
   const act = useAction();
   const team = activeTeam(ws);
@@ -219,7 +187,7 @@ function TeamForge() {
 }
 
 // ---------------------------------------------------------------------------- MENTORLINK
-function MentorLink() {
+export function MentorsPanel() {
   const { ws, update } = useStore();
   const people = useMemo(() => participants(ws), [ws]);
   const m = ws.workforce.mentorship;
@@ -249,6 +217,15 @@ function MentorLink() {
           <h3 className="text-[16px]">Opt-in expert directory</h3>
           <Field label="Capability to learn" htmlFor="wfMentorSearch"><Select id="wfMentorSearch" value={search} onChange={setSearch} options={[{ value: 'all', label: 'All capabilities' }, ...SKILL_OPTIONS_SHORT]} /></Field>
           <div id="wfMentorMatches" className="mt-3 space-y-1.5">{matched.length ? matched.map((x) => <div key={x.id} className="row-card"><div><strong className="block text-[13px]">{x.name}</strong><small className="text-quiet">Opt-in · {x.availability === 'unknown' ? 'availability unknown' : x.availability}{x.mentorIntro ? ` · ${x.mentorIntro}` : ''} · {x.synthetic ? 'Synthetic example' : x.self ? 'Local' : 'Imported card'}</small></div><Pill>{x.mentorTopics.length} offered topic(s)</Pill></div>) : <Empty>No peers have shared mentoring opt-in for this topic. Self-reported skill mentions alone do not imply willingness to mentor.</Empty>}</div>
+          {search !== 'all' && (() => {
+            const others = people.filter((x) => x.skills.includes(search) && !matched.includes(x));
+            return others.length ? (
+              <div id="wfSkillPeers" className="mt-4">
+                <h4 className="text-[13px]">Also shared {skillName(search)} <span className="text-quiet">(not a mentoring offer)</span></h4>
+                <div className="mt-1.5 space-y-1">{others.map((x) => { const r = x.surveys[search]; return <div key={x.id} className="row-card py-1.5"><span className="text-[13px]">{x.name}{x.synthetic ? ' · synthetic' : ''}</span><Pill>{r ? `Shared self-report ${r.confidence}/4 · ${r.method}` : 'Confidence not shared'}</Pill></div>; })}</div>
+              </div>
+            ) : null;
+          })()}
           <h4 className="mt-4 text-[14px]">Voluntary outreach draft</h4>
           <Field label="Question or problem" htmlFor="wfMentorProblem"><Textarea id="wfMentorProblem" rows={2} value={problem} onChange={setProblem} placeholder="I want to learn how to validate data pipelines..." /></Field>
           <Textarea id="wfMentorDraft" className="mt-2" rows={5} readOnly value={draft} onChange={() => undefined} aria-label="Mentorship outreach draft" />
@@ -259,7 +236,7 @@ function MentorLink() {
 }
 
 // ---------------------------------------------------------------------------- KNOWLEDGE RELAY
-function KnowledgeRelay() {
+export function KnowledgePanel() {
   const { ws, update, flash } = useStore();
   const act = useAction();
   const dialogs = useDialogs();

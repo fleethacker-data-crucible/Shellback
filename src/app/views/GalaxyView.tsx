@@ -1,17 +1,19 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DOMAINS, SKILLS } from '../../core/taxonomy';
 import { useStore } from '../state/store';
-import { Button, Input, Panel, Select, SectionIntro } from '../components/ui/primitives';
+import { Button, Input, Panel, Select } from '../components/ui/primitives';
+import { SkillActions, StatusChip, skillStatus } from '../components/SkillActions';
 import { Galaxy } from '../viz/Galaxy';
 import { buildGalaxyModel } from '../viz/galaxy-model';
 import { modeLabel } from '../lib/options';
 
 export function GalaxyView() {
-  const { ws, settings, setSettings, navigate } = useStore();
+  const { ws, settings, setSettings, navigate, intent, consumeIntent } = useStore();
   const scope = settings.galaxyMode;
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => { if (intent?.type === 'galaxy-select') { setSelected(intent.skillId); consumeIntent(); } }, [intent, consumeIntent]);
 
   const model = useMemo(() => buildGalaxyModel({ profile: ws.profile, pending: ws.profile.candidates, scope, filter, query }), [ws.profile, scope, filter, query]);
   const pathways = scope === 'pathways';
@@ -21,10 +23,7 @@ export function GalaxyView() {
   const setScope = (mode: 'confirmed' | 'pathways') => { setSettings({ galaxyMode: mode }); setSelected(null); };
 
   return (
-    <section id="graph" className="space-y-5">
-      <SectionIntro eyebrow="EXPLORE / CAPABILITY GALAXY" title="Your skills galaxy, your choice.">
-        <strong>Confirmed Skills</strong> shows only capabilities you have personally attested to—three confirmed Data Engineering skills means three nodes. <strong>Pathways</strong> reveals all 104 skills and potential connections for learning and exploration. Neither view implies independent verification.
-      </SectionIntro>
+    <div id="graph" className="space-y-5">
       <Panel>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[11px] font-extrabold tracking-[0.12em] text-quiet">
           <span>YOUR SKILL UNIVERSE</span><span>Confirmed = your actual attestations · Pathways = possibilities</span>
@@ -56,14 +55,12 @@ export function GalaxyView() {
                 <p className="mt-1 text-muted">{chosen.s.task}</p>
                 <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[12px]">
                   <dt className="text-quiet">Discipline</dt><dd>{chosen.s.domain}</dd>
-                  <dt className="text-quiet">Profile signal</dt><dd>{chosen.confirmed ? 'Employee-attested' : chosen.pending ? 'Unreviewed résumé suggestion' : 'Not attested · possible pathway'}</dd>
+                  <dt className="text-quiet">Status</dt><dd><StatusChip status={skillStatus(ws.profile, chosen.s.id)} rated={!!answer} /></dd>
                   <dt className="text-quiet">Self-reported confidence</dt><dd>{answer ? `${answer.confidence}/4` : 'Not answered'}</dd>
                   <dt className="text-quiet">Execution mode</dt><dd>{answer ? modeLabel(answer.method) : 'Not reported'}</dd>
                   <dt className="text-quiet">Verification</dt><dd>Not independently verified</dd>
                 </dl>
-                <Button id="graphAction" size="sm" className="mt-3" onClick={() => chosen.confirmed ? navigate('radar', { type: 'pulse', skillId: chosen.s.id }) : navigate('profile', { type: 'manual-add', skillId: chosen.s.id })}>
-                  {chosen.confirmed ? 'Reflect on this task ↗' : 'Review in my profile ↗'}
-                </Button>
+                <div className="mt-3"><SkillActions skillId={chosen.s.id} idPrefix="graph" /></div>
                 {(() => {
                   const next = [...(model.adj.get(chosen.s.id) ?? [])].filter((x) => model.displayed.has(x)).slice(0, 12);
                   return next.length ? (
@@ -88,7 +85,7 @@ export function GalaxyView() {
                 <div className="eyebrow">BUILD YOUR GALAXY</div>
                 <h3 className="mt-1 text-[16px]">No confirmed capabilities yet</h3>
                 <p className="mt-1 text-muted">Attest to a skill in your profile to add its first star. Unreviewed résumé suggestions are not shown as confirmed skills.</p>
-                <div className="mt-3 flex flex-wrap gap-2"><Button id="graphProfileAction" variant="primary" size="sm" onClick={() => navigate('profile')}>Confirm skills in my profile ↗</Button><Button id="graphPathwayAction" size="sm" onClick={() => setScope('pathways')}>Explore possible pathways ↗</Button></div>
+                <div className="mt-3 flex flex-wrap gap-2"><Button id="graphProfileAction" variant="primary" size="sm" onClick={() => navigate({ view: 'profile', tab: ws.profile.candidates.length ? 'intake' : 'skills' })}>{ws.profile.candidates.length ? `Review ${ws.profile.candidates.length} suggestions` : 'Add skills'} ↗</Button><Button id="graphPathwayAction" size="sm" onClick={() => setScope('pathways')}>Explore possible pathways ↗</Button></div>
               </>
             )) : (
               <>
@@ -113,7 +110,7 @@ export function GalaxyView() {
             : `Confirmed Skills: exactly ${model.displayed.size} of your ${model.counts.confirmed} attested skills shown across ${model.activeDomains.size} disciplines${filter !== 'all' || query ? ' after filters' : ''}. Only connections between confirmed, displayed skills are drawn.`}
         </p>
       </Panel>
-    </section>
+    </div>
   );
 }
 
