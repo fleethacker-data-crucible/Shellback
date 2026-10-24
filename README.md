@@ -54,6 +54,8 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 - **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
 - **FLEETHACKER workflows** live where they belong: study guides, goals and renewals under My profile → Growth; missions, mentors and knowledge relay under Team. One implementation each, on a shared analytics module.
 - **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
+- **How I like to contribute:** six stages of work (asking the big questions → finishing and pushing through), each marked energizing, neutral or draining. Synapse's own neutral wording, not an assessment. Teams see energy by stage; missions can ask for a stage.
+- **Organization codes:** enter your code (e.g. `1513.1`) and Synapse derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
 

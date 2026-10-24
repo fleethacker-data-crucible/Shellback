@@ -10,6 +10,8 @@
  */
 import { z } from 'zod';
 import { isSkillId } from './taxonomy';
+import { ENERGY, STAGES, emptyContribution, type Contribution } from './contribution';
+import { normalizeOrgCode } from './org';
 
 export const SCHEMA_VERSION = 2 as const;
 
@@ -44,6 +46,23 @@ function arrayOf<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, max: number, on
 }
 const skillIdList = (max: number) =>
   z.unknown().transform((v) => (Array.isArray(v) ? [...new Set(v.filter(isSkillId))].slice(0, max) : []));
+
+// ----------------------------------------------------------------------------
+// Contribution preferences and organization code (shared by profile and peer cards)
+// ----------------------------------------------------------------------------
+export const contributionSchema = z.unknown().transform((value): Contribution => {
+  const out = emptyContribution();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+  const v = value as { stages?: unknown; source?: unknown };
+  if (v.stages && typeof v.stages === 'object' && !Array.isArray(v.stages)) {
+    for (const [k, e] of Object.entries(v.stages as Record<string, unknown>)) {
+      if ((STAGES as readonly string[]).includes(k) && (ENERGY as readonly string[]).includes(e as string)) out.stages[k as (typeof STAGES)[number]] = e as (typeof ENERGY)[number];
+    }
+  }
+  out.source = typeof v.source === 'string' ? v.source.trim().slice(0, 160) : '';
+  return out;
+});
+const orgCodeSchema = z.unknown().transform((v) => normalizeOrgCode(v));
 
 // ----------------------------------------------------------------------------
 // Profile
@@ -105,6 +124,12 @@ export const profileSchema = z.object({
   consent: z.boolean().catch(false),
   shareMentoringLocally: z.boolean().catch(false),
   shareCredentialsLocally: z.boolean().catch(false),
+  /** Include my org code/title and contribution preferences in this browser's team tools. */
+  shareOrgLocally: z.boolean().catch(false),
+  shareContributionLocally: z.boolean().catch(false),
+  orgCode: orgCodeSchema,
+  orgTitle: strTrim(80),
+  contribution: contributionSchema,
   displayName: str(90),
   demoPersona: str(60),
   shareId: z.string().regex(/^[a-zA-Z0-9-]{8,70}$/).or(z.literal('')).catch(''),
@@ -141,6 +166,9 @@ export const memberSchema = z.object({
   availability: z.enum(AVAILABILITY).catch('unknown'),
   mentorIntro: str(500),
   qualificationClaims: z.unknown().transform((v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((x) => x.slice(0, 160)).slice(0, 100) : [])),
+  orgCode: orgCodeSchema,
+  orgTitle: strTrim(80),
+  contribution: contributionSchema,
 }).transform((m) => ({ ...m, surveys: Object.fromEntries(Object.entries(m.surveys).filter(([id]) => m.skills.includes(id))) }));
 export type Member = z.infer<typeof memberSchema>;
 
@@ -170,12 +198,16 @@ export const peerCardSchema = z.object({
   availability: z.unknown().optional(),
   mentorIntro: z.unknown().optional(),
   qualificationClaims: z.unknown().optional(),
+  orgCode: z.unknown().optional(),
+  orgTitle: z.unknown().optional(),
+  contribution: z.unknown().optional(),
 });
 export type PeerCard = {
   format: 'synapse-peer-card'; version: 1; id: string; name: string; consent: true; issued: string;
   skills: string[]; surveys: Record<string, { confidence: number; method: Method }>;
   mentorOptIn?: boolean; mentorTopics?: string[]; availability?: Availability; mentorIntro?: string;
   qualificationClaims?: string[]; qualificationDisclaimer?: string;
+  orgCode?: string; orgTitle?: string; contribution?: Contribution;
 };
 
 /** Ids the app uses for the local profile and the synthetic cohort. */
@@ -250,6 +282,8 @@ export const requirementSchema = z.object({
   skill: skillId,
   min: z.coerce.number().int().min(1).max(20).catch(1),
   credential: strTrim(100),
+  /** Optional stage of work someone on the roster should be energized by. */
+  stage: z.enum(STAGES).or(z.literal('')).catch(''),
 });
 export type Requirement = z.infer<typeof requirementSchema>;
 
@@ -326,6 +360,7 @@ export function emptyProfile(): Profile {
     confirmed: [], surveys: {}, credentials: [], candidates: [], credentialCandidates: [], credentialDismissed: [],
     consent: false, shareMentoringLocally: false, shareCredentialsLocally: false, displayName: '', demoPersona: '', shareId: '',
     candidateDismissed: [], lastScan: '',
+    shareOrgLocally: false, shareContributionLocally: false, orgCode: '', orgTitle: '', contribution: emptyContribution(),
   };
 }
 export function emptyWorkforce(): Workforce {
