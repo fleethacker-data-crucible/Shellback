@@ -10,6 +10,8 @@ jobs:
   browser-smoke:
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 15
+    env:
+      PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Install Playwright and Chromium
