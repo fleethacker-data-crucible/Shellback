@@ -59,7 +59,7 @@ export function scanSkills(rawText: string, exclude: Iterable<string> = []): Ski
       re.lastIndex = 0;
       let m: RegExpExecArray | null;
       while ((m = re.exec(clause))) {
-        const start = m.index + m[1].length;
+        const start = m.index + (m[1] ?? '').length;
         const before = clause.slice(Math.max(0, start - 48), start);
         if (!NEGATION_BEFORE.test(before)) { found.add(id); break; }
       }
@@ -165,12 +165,13 @@ export function scanCredentials(rawText: string): CredentialCandidate[] {
         if (m && def.ambiguous && !hasContext) m = null;
       }
       if (!m) continue;
-      const start = m.index + m[1].length;
-      const end = start + m[2].length;
+      const start = m.index + (m[1] ?? '').length;
+      const matched = m[2] ?? '';
+      const end = start + matched.length;
       const before = clause.slice(Math.max(0, start - 70), start);
       const after = clause.slice(end, end + 48);
       if (FUTURE_BEFORE.test(before) || FUTURE_AFTER.test(after)) continue;
-      results.set(def.key, { key: def.key, name: def.name, authority: def.authority, matched: m[2].trim().slice(0, 100) });
+      results.set(def.key, { key: def.key, name: def.name, authority: def.authority, matched: matched.trim().slice(0, 100) });
     }
   }
   return [...results.values()].sort((a, b) => a.name.localeCompare(b.name));

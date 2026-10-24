@@ -7,17 +7,74 @@ on:
 permissions:
   contents: read
 jobs:
+  # Job name kept as "browser-smoke" so existing branch-protection rules keep matching.
+  # Runs on the self-hosted Windows workstation runner, which also lets CI exercise the
+  # real PowerShell 5.1 loopback server that ships to workstations.
   browser-smoke:
     runs-on: [self-hosted, Windows, X64]
-    timeout-minutes: 15
-    env:
-      PYTHONUTF8: '1'
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Install Playwright and Chromium
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install build and test dependencies (off-workstation build step)
+        run: npm install --no-audit --no-fund
+      - name: Typecheck (core, strict)
+        run: npm run typecheck:core
+      - name: Typecheck (whole app with React types)
+        run: npm run typecheck
+      - name: Typecheck (tests)
+        run: npm run typecheck:tests
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Committed dist/ matches a fresh build
+        run: npm run build:check
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+      - name: Browser smoke tests (served + standalone editions)
+        run: npm run test:e2e
+      - name: PowerShell 5.1 loopback server (Serve-Synapse.ps1)
+        shell: powershell
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install playwright
-          python -m playwright install --with-deps chromium
-      - name: Run offline browser smoke test
-        run: python tests/smoke_test.py
+          $ErrorActionPreference = 'Stop'
+          Write-Host "PowerShell $($PSVersionTable.PSVersion) / CLR $($PSVersionTable.CLRVersion)"
+          Write-Host "Execution policies:"; Get-ExecutionPolicy -List | Format-Table -AutoSize | Out-String | Write-Host
+          $port = 18765
+          $out = Join-Path $env:RUNNER_TEMP 'synapse-ps.out.txt'
+          $err = Join-Path $env:RUNNER_TEMP 'synapse-ps.err.txt'
+          $script = (Resolve-Path 'tools\Serve-Synapse.ps1').Path
+          $server = Start-Process powershell.exe -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err -ArgumentList @(
+            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', "`"$script`"", '-Port', "$port", '-NoBrowser')
+          function Get-Status([string]$path) {
+            try { return (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 -Uri "http://127.0.0.1:$port$path").StatusCode }
+            catch [System.Net.WebException] { if ($_.Exception.Response) { return [int]$_.Exception.Response.StatusCode } throw }
+          }
+          function Fail([string]$why) {
+            $o = if (Test-Path $out) { (Get-Content $out -Raw) } else { '' }
+            $e = if (Test-Path $err) { (Get-Content $err -Raw) } else { '' }
+            $exit = if ($server.HasExited) { "exited with code $($server.ExitCode)" } else { 'still running' }
+            $msg = "$why | server $exit | stdout: $o | stderr: $e"
+            Write-Host ("::error title=Serve-Synapse.ps1::" + ($msg -replace '%','%25' -replace "`r",'%0D' -replace "`n",'%0A'))
+            throw $why
+          }
+          try {
+            $up = $false
+            for ($i = 0; $i -lt 75 -and -not $up; $i++) {
+              if ($server.HasExited) { Fail 'server process exited during startup' }
+              try { $up = (Get-Status '/') -eq 200 } catch { }
+              if (-not $up) { Start-Sleep -Milliseconds 200 }
+            }
+            if (-not $up) { Fail 'server did not answer on / within 15 s' }
+            $page = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/"
+            if ($page.Headers['X-Content-Type-Options'] -ne 'nosniff') { Fail 'missing nosniff header' }
+            if ($page.Content -notmatch 'Content-Security-Policy') { Fail 'missing CSP meta' }
+            $s = Get-Status '/assets/app.js'; if ($s -ne 200) { Fail "app.js returned $s" }
+            $s = Get-Status '/sw.js'; if ($s -ne 200) { Fail "sw.js returned $s" }
+            $s = Get-Status '/nope.txt'; if ($s -ne 404) { Fail "missing file returned $s" }
+            $s = Get-Status '/..%2f..%2fpackage.json'; if ($s -ne 403 -and $s -ne 404) { Fail "traversal returned $s" }
+            Write-Host 'Serve-Synapse.ps1 OK'
+            Get-Content $out -Raw | Write-Host
+          } finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+          }

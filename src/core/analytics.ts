@@ -141,9 +141,11 @@ export function mentorMatches(people: Participant[], topic: string | 'all'): Par
 export type RenewalState = 'none' | 'past' | 'soon' | 'future';
 export function renewalState(c: Pick<Credential, 'expiry'>, now = new Date()): { state: RenewalState; days: number | null } {
   if (!c.expiry) return { state: 'none', days: null };
-  const due = Date.parse(c.expiry + 'T12:00:00');
+  // Whole calendar days between the local date today and the expiry date (DST-proof: both as UTC midnights).
+  const due = Date.parse(c.expiry + 'T00:00:00Z');
   if (!Number.isFinite(due)) return { state: 'none', days: null };
-  const days = Math.ceil((due - now.getTime()) / 86_400_000);
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((due - todayUtc) / 86_400_000);
   return { state: days < 0 ? 'past' : days <= 90 ? 'soon' : 'future', days };
 }
 export function renewalLabel(r: { state: RenewalState; days: number | null }): string {

@@ -23,8 +23,14 @@ const strTrim = (max: number) => z.string().transform((s) => s.trim().slice(0, m
 const skillId = z.string().refine(isSkillId, 'unknown skill id');
 export const today = (): string => new Date().toISOString().slice(0, 10);
 
+/** Keep the first element for each id (hand-edited files may repeat ids). */
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
+}
+
 /** Parse an unknown array element-by-element; drops invalid items instead of failing. */
-function arrayOf<T>(schema: z.ZodType<T>, max: number, onDrop?: (issue: string) => void) {
+function arrayOf<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, max: number, onDrop?: (issue: string) => void) {
   return z.unknown().transform((value) => {
     if (!Array.isArray(value)) return [] as T[];
     const out: T[] = [];
@@ -88,7 +94,7 @@ const surveysSchema = z.unknown().transform((value) => {
 export const profileSchema = z.object({
   confirmed: skillIdList(104),
   surveys: surveysSchema,
-  credentials: arrayOf(credentialSchema, 100),
+  credentials: arrayOf(credentialSchema, 100).transform(uniqueById),
   candidates: skillIdList(104),
   credentialCandidates: arrayOf(credentialCandidateSchema, 100),
   credentialDismissed: z.unknown().transform((v) => (Array.isArray(v) ? [...new Set(v.filter((k): k is string => typeof k === 'string' && k.length <= 65))].slice(0, 100) : [])),
@@ -137,12 +143,12 @@ export type Member = z.infer<typeof memberSchema>;
 export const teamSchema = z.object({
   id: z.string().min(1).max(80),
   name: strTrim(80).pipe(z.string().min(1)),
-  members: arrayOf(memberSchema, 100),
+  members: arrayOf(memberSchema, 100).transform(uniqueById),
   priorities: skillIdList(104),
 });
 export type Team = z.infer<typeof teamSchema>;
 
-export const teamsSchema = z.object({ active: str(80), items: arrayOf(teamSchema, 25) });
+export const teamsSchema = z.object({ active: str(80), items: arrayOf(teamSchema, 25).transform(uniqueById) }).catch({ active: '', items: [] });
 export type Teams = z.infer<typeof teamsSchema>;
 
 /** Wire format of an exported opt-in capability card (unchanged from v1). */
@@ -168,12 +174,16 @@ export type PeerCard = {
   qualificationClaims?: string[]; qualificationDisclaimer?: string;
 };
 
+/** Ids the app uses for the local profile and the synthetic cohort. */
+const RESERVED_MEMBER_ID = /^(self-current|demo-\d+)$/;
+
 export function parsePeerCard(input: unknown): Member {
   const base = peerCardSchema.safeParse(input);
   if (!base.success) {
     const msg = base.error.issues[0];
     throw new Error(msg ? `Not an opt-in Synapse peer card (${msg.path.join('.') || 'root'}: ${msg.message}).` : 'Not an opt-in Synapse peer card.');
   }
+  if (RESERVED_MEMBER_ID.test(base.data.id)) throw new Error('This card uses a reserved identifier and cannot be imported.');
   const member = memberSchema.parse({ ...(input as object), synthetic: false });
   return member;
 }
@@ -240,22 +250,22 @@ export const requirementSchema = z.object({
 export type Requirement = z.infer<typeof requirementSchema>;
 
 export const missionSchema = z.object({
-  requirements: arrayOf(requirementSchema, 40),
+  requirements: arrayOf(requirementSchema, 40).transform(uniqueById),
   selected: z.unknown().transform((v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.length <= 80).slice(0, 100) : [])),
   teamId: str(80),
 }).catch({ requirements: [], selected: [], teamId: '' });
 
 export const workforceSchema = z.object({
-  modules: arrayOf(studyModuleSchema, 100),
+  modules: arrayOf(studyModuleSchema, 100).transform(uniqueById),
   attempts: arrayOf(attemptSchema, 1000),
-  goals: arrayOf(goalSchema, 120),
+  goals: arrayOf(goalSchema, 120).transform(uniqueById),
   mentorship: mentorshipSchema,
-  knowledge: arrayOf(knowledgeSchema, 250),
+  knowledge: arrayOf(knowledgeSchema, 250).transform(uniqueById),
   mission: missionSchema,
 }).transform((w) => {
   const ids = new Set(w.modules.map((m) => m.id));
   return { ...w, attempts: w.attempts.filter((a) => ids.has(a.moduleId)) };
-});
+}).catch(() => emptyWorkforce());
 export type Workforce = z.infer<typeof workforceSchema>;
 
 export const fleetPlansSchema = z.unknown().transform((value) => {
@@ -303,7 +313,7 @@ export const workspaceSchema = z.object({
   fleetPlans: fleetPlansSchema,
   workforce: workforceSchema,
   roi: roiSchema,
-  meta: z.object({ created: dateOrToday, updated: dateOrToday }).catch({ created: today(), updated: today() }),
+  meta: z.object({ created: dateOrToday, updated: dateOrToday, rev: z.number().int().min(0).catch(0) }).catch({ created: today(), updated: today(), rev: 0 }),
 });
 export type Workspace = z.infer<typeof workspaceSchema>;
 
@@ -324,7 +334,7 @@ export function newWorkspace(): Workspace {
     fleetPlans: {},
     workforce: emptyWorkforce(),
     roi: { ...ROI_DEFAULTS },
-    meta: { created: today(), updated: today() },
+    meta: { created: today(), updated: today(), rev: 0 },
   };
 }
 
@@ -374,7 +384,7 @@ export function migrateV1(v1: Record<string, unknown>): Record<string, unknown> 
     fleetPlans: v1.fleetPlans ?? {},
     workforce: v1.workforce ?? {},
     roi: v1.roi ?? {},
-    meta: { created: today(), updated: today() },
+    meta: { created: today(), updated: today(), rev: 0 },
   };
 }
 
