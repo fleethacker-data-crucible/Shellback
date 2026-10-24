@@ -5,12 +5,12 @@ export const VIEW_IDS: readonly ViewId[] = ['home', 'profile', 'explore', 'team'
 export type ProfileTab = 'intake' | 'skills' | 'credentials' | 'growth';
 export type ExploreTab = 'web' | 'galaxy';
 export type TeamTab = 'roster' | 'coverage' | 'missions' | 'mentors' | 'knowledge';
-export type ProgramTab = 'governance' | 'roi';
+export type ProgramTab = 'governance' | 'intelligence' | 'roi';
 
 export const PROFILE_TABS: readonly ProfileTab[] = ['intake', 'skills', 'credentials', 'growth'];
 export const EXPLORE_TABS: readonly ExploreTab[] = ['web', 'galaxy'];
 export const TEAM_TABS: readonly TeamTab[] = ['roster', 'coverage', 'missions', 'mentors', 'knowledge'];
-export const PROGRAM_TABS: readonly ProgramTab[] = ['governance', 'roi'];
+export const PROGRAM_TABS: readonly ProgramTab[] = ['governance', 'intelligence', 'roi'];
 
 export interface Settings {
   view: ViewId;
