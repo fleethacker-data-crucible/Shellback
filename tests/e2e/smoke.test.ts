@@ -677,3 +677,35 @@ test('keyboard only: navigate, confirm a skill, rate it in the drawer, print sum
   await page.locator('[data-theme-choice="system"]').click();
   assert.deepEqual(errors, []);
 });
+
+test('two-axis contribution: energy + fluency → quadrant, tags and example persist, team quadrants and sheet', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'skills');
+  const finish = page.locator('[data-stage="finish"]');
+  await finish.locator('[data-energy="draining"]').click();
+  assert.equal(await finish.getAttribute('data-quadrant'), 'unknown', 'no fluency yet');
+  await finish.locator('[data-fluency="3"]').click();
+  assert.equal(await finish.getAttribute('data-quadrant'), 'grind');
+  await finish.locator('[data-energy="energizing-2"]').click();
+  assert.equal(await finish.getAttribute('data-quadrant'), 'flow');
+  await finish.locator('[data-fluency="0"]').click();
+  assert.equal(await finish.getAttribute('data-quadrant'), 'growth');
+  await finish.locator('summary').click();
+  await finish.locator('[data-context-tag="under-deadline"]').click();
+  await finish.locator('[data-stage-example="finish"]').fill('Closed out the dry-dock package');
+  const ws = await waitStored(page, (w) => w.profile.contribution.detail?.finish?.example === 'Closed out the dry-dock package');
+  assert.deepEqual(ws.profile.contribution.detail.finish, { energy: 2, fluency: 0, tags: ['under-deadline'], example: 'Closed out the dry-dock package' });
+  assert.equal(ws.profile.contribution.stages.finish, 'energizing', 'one-axis summary kept for peer cards');
+  // Clicking the selected energy again clears the stage entirely
+  await finish.locator('[data-energy="energizing-2"]').click();
+  assert.equal(await finish.getAttribute('data-quadrant'), 'unknown');
+  assert.equal(await finish.locator('[data-fluency]').count(), 0);
+  // Team: synthetic cohort carries detail → quadrant pills appear; sheet has the quadrant column
+  await page.locator('#shareToggle').check({ force: true });
+  await page.locator('#shareContributionLocally').check();
+  await nav(page, 'team', 'coverage');
+  assert.match(await page.locator('[data-quadrants="finish"]').innerText(), /grind 2/i);
+  assert.match(await page.locator('#contributionNotes').innerText(), /Good at it but drained by it/);
+  assert.match(await page.locator('#workshopSheet').innerText({ timeout: 5000 }).catch(async () => page.evaluate(() => document.getElementById('workshopSheet')?.textContent ?? '')), /Grind: /);
+  assert.deepEqual(errors, []);
+});
