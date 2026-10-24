@@ -41,7 +41,8 @@ const tailwindDir = path.dirname(path.dirname(tailwindEntry)); // …/tailwindcs
 const { compile: tailwindCompile } = await import(pathToFileURL(path.join(tailwindDir, 'dist/lib.mjs')).href);
 
 const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+// Normalize line endings so a Windows checkout produces byte-identical output.
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8').replace(/\r\n/g, '\n');
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const sha256b64 = (buf) => crypto.createHash('sha256').update(buf).digest('base64');
 
@@ -98,7 +99,7 @@ function listFiles(dir, exts, acc = []) {
 }
 const candidates = new Set();
 for (const file of listFiles(path.join(root, 'src'), ['.ts', '.tsx', '.html']).sort()) {
-  const text = fs.readFileSync(file, 'utf8');
+  const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
   for (const token of text.match(/[^\s"'`<>{}();,]+/g) || []) candidates.add(token);
 }
 const twCompiler = await tailwindCompile(read('src/styles/app.css'), {

@@ -8,15 +8,17 @@ permissions:
   contents: read
 jobs:
   # Job name kept as "browser-smoke" so existing branch-protection rules keep matching.
+  # Runs on the self-hosted Windows workstation runner, which also lets CI exercise the
+  # real PowerShell 5.1 loopback server that ships to workstations.
   browser-smoke:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install build and test dependencies (off-workstation build machine)
+      - name: Install build and test dependencies (off-workstation build step)
         run: npm install --no-audit --no-fund
       - name: Typecheck (core, strict)
         run: npm run typecheck:core
@@ -29,6 +31,33 @@ jobs:
       - name: Committed dist/ matches a fresh build
         run: npm run build:check
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Browser smoke tests (served + standalone editions)
         run: npm run test:e2e
+      - name: PowerShell 5.1 loopback server (Serve-Synapse.ps1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $port = 18765
+          $server = Start-Process powershell.exe -PassThru -WindowStyle Hidden -ArgumentList @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'tools\Serve-Synapse.ps1', '-Port', "$port", '-NoBrowser')
+          function Get-Status([string]$path) {
+            try { return (Invoke-WebRequest -UseBasicParsing -TimeoutSec 10 -Uri "http://127.0.0.1:$port$path").StatusCode }
+            catch [System.Net.WebException] { if ($_.Exception.Response) { return [int]$_.Exception.Response.StatusCode } throw }
+          }
+          try {
+            $up = $false
+            for ($i = 0; $i -lt 50 -and -not $up; $i++) { try { $up = (Get-Status '/') -eq 200 } catch { Start-Sleep -Milliseconds 200 } }
+            if (-not $up) { throw 'Serve-Synapse.ps1 did not start' }
+            $page = Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:$port/"
+            if ($page.Headers['X-Content-Type-Options'] -ne 'nosniff') { throw 'missing nosniff header' }
+            if ($page.Content -notmatch 'Content-Security-Policy') { throw 'missing CSP meta' }
+            if ((Get-Status '/assets/app.js') -ne 200) { throw 'app.js not served' }
+            if ((Get-Status '/sw.js') -ne 200) { throw 'sw.js not served' }
+            if ((Get-Status '/nope.txt') -ne 404) { throw 'expected 404' }
+            $trav = Get-Status '/..%2f..%2fpackage.json'
+            if ($trav -ne 403 -and $trav -ne 404) { throw "traversal returned $trav" }
+            Write-Host 'Serve-Synapse.ps1 OK'
+          } finally {
+            Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue
+          }
