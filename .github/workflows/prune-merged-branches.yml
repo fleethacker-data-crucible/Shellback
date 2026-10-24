@@ -49,7 +49,7 @@ jobs:
               if name in (default,'main','master') or branch.get('protected'):
                   continue
               sha=branch['commit']['sha']
-              if any(p['head']['ref']==name and p['head'].get('repo',{}).get('full_name')==repo for p in open_prs):
+              if any(p['head']['ref']==name and (p['head'].get('repo') or {}).get('full_name')==repo for p in open_prs):
                   print('KEEP open PR:',name)
                   continue
               matches=[p for p in merged if p.get('merged_at') and

@@ -1,158 +1,95 @@
 # SYNAPSE · Workforce Capability Intelligence
 
-**Feature proposal — credential review and contextual confidence pulse**
+Synapse is an employee-centered capability discovery and development prototype. It keeps résumé claims, confirmed skills, task-level confidence, execution mode, voluntary activity and self-entered credentials **separate**. It never creates a hidden proficiency rating.
 
-Synapse is an employee-centered capability discovery and development prototype. It separates résumé claims, confirmed skill interests, task-level confidence, execution mode, recent voluntary activity, and self-entered credentials. No single hidden proficiency rating is created.
+This version is a full rebuild on the project's [TechStack](TechStack): React 19 + TypeScript, Tailwind CSS 4, IndexedDB storage, a Web Worker for résumé scanning, a service worker for offline caching, Web Crypto export encryption, and a PowerShell 5.1 loopback server. It is compiled off the workstation and shipped as plain JS/CSS. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and for the places where this build differs from the TechStack table.
 
-## Run
+## Run it (workstation: no install, no admin)
 
-1. **Fastest:** download and double-click `Synapse-Standalone.html` (one file, all code embedded).
-2. **Development edition:** download/extract the repository or `Synapse-MVP.zip`, keeping `index.html` beside `src`. Open `index.html` in a recent Edge, Firefox, or Chrome browser.
-3. On **My capability profile**, use the synthetic example, explicitly confirm suggested skills and save an optional confidence pulse. Open **Workforce tools** to explore the complete five-module toolkit.
+| Option | How | Notes |
+| --- | --- | --- |
+| **Served (recommended)** | Double-click `Launch-Synapse.bat` | Runs `powershell.exe -File tools\Serve-Synapse.ps1`, which serves `dist\` on `http://127.0.0.1:8765/` and opens your browser. The port stays fixed because browser data is stored per origin. Loopback only; press Ctrl+C to stop. Enables offline caching through the service worker. |
+| **Single file** | Double-click `dist\Synapse-Standalone.html` | Everything is inlined in one file and runs from `file://`. No server and no service worker. Same features otherwise. |
 
-**No installation, package manager, internet, PowerShell, server, account, or admin privileges required.** All JavaScript and CSS are local. `index.html` should remain beside the `src` directory. If your browser policy blocks local scripts or localStorage from `file:` pages, serve the directory using an **approved** local hosting mechanism; do not bypass workstation restrictions.
+Both editions store data only in the current browser profile (IndexedDB) and make **no network requests**. A Content-Security-Policy blocks any connection other than the page's own origin.
+
+If you used the earlier MVP in the same browser, your `synapse-mvp-v1` data is detected and upgraded automatically, and the original copy is left untouched. Old JSON exports and peer cards still import.
+
+## Build it (off-workstation)
+
+Requires Node 22+. Run these on a build machine, not the target workstation:
+
+```shell
+npm install          # build/test dependencies
+npm run build        # → dist/ (served edition, standalone file, service worker, build manifest)
+npm test             # strict core typecheck, unit tests, dist freshness check, browser smoke tests
+npm run serve        # optional: Node loopback server with the same headers as the PowerShell one
+```
+
+`dist/` is committed so the workstation never needs Node. CI rebuilds on every PR and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`), so the shipped files always come from the reviewed source.
 
 ## Features
 
-- 13 capability domains and 104 task-oriented skills
-- **Attested-capability spider web:** confirming a capability adds a visible web spoke; attested breadth controls its extent, while an optional confidence pulse (0–4) increases glow and node prominence. Unanswered attested skills remain visibly unrated.
-- **Profile-focused galaxy:** 13 domains and 104 skills are available before onboarding or in Explore-all mode; after attestation, unrelated clusters are hidden by default. Hover only displays labels; click-hold-drag moves nodes and connected neighbors.
-- Radar with domain drill-down and unknown/missing-confidence behavior
-- 104-node SVG skill graph, domain/search filtering and task details; star luminosity encodes only self-reported confidence (0–4); unanswered tasks remain neutral
-- Plain-text résumé upload is scanned automatically. Amber skill candidates update the spider web and galaxy immediately; **common named credentials are also recognized as review-required suggestions**, not automatically added to employee inventory.
-- **Attested-only contextual confidence pulse:** the form now sits beside the spider web, opens directly from each confirmed skill, and can advance to another unrated skill. Prior responses to withdrawn attestations remain local but are hidden; independent, guided and approved-AI-assisted execution stay distinct.
-- Self-reported credential desk with conservative résumé keyword suggestions, matched-phrase review, employee correction, intentional approval/dismissal, duplicate prevention, and optional renewal dates (never automatically invented)
-- Multiple local team workspaces, manual consent-based peer-card JSON export/import, optional survey disclosure, named opt-in roster, priority skills, coverage gaps and self-reported independent bench signals
-- **Four fictional employee workspaces and peer cards** in [`examples/employees/`](examples/employees/README.md), plus a one-click persona selector to compare full local spider webs and galactic clusters
-- A distinct fictional six-person demonstration team and a minimum-three-person threshold for aggregate displays
-- **FLEETHACKER lab:** TEAMFORGE-inspired mission team composer, MENTORLINK opt-in mentor discovery, and KNOWLEDGE RELAY single-contributor knowledge watchlist
-- **FLEETHACKER workforce:** five modules with local training guides, study history, capability heatmaps, mission requirements, voluntary mentoring and owner-reviewed knowledge records
-- Adoption- and overlap-aware ROI calculator with cash vs noncash separation, cash-only net after cost, and three scenario sensitivity levels
-- Local state persistence, JSON export/import/validation, delete/reset controls, no network calls
+- **Taxonomy:** 13 capability domains and 104 task-oriented skills.
+- **Résumé intake:** plain-text upload or paste, scanned in a Web Worker. Skill suggestions skip negated phrases ("no Git experience"). Credential suggestions skip pursued or in-progress items ("Pursuing CISSP", "CISSP (in progress)"), and ambiguous acronyms (CISA, CSM, PSM, CKA) need certification context. Résumé text is never stored.
+- **Attested-capability spider web:** confirming a skill adds it to the web, and optional 0–4 confidence only changes its glow. Labels work with the keyboard.
+- **Skills galaxy:** *Confirmed Skills* shows exactly your attestations; *Pathways* shows all 104 skills with learning links. Hover to inspect, click or press Enter to select, hold and drag to rearrange.
+- **Confidence pulse:** only attested skills can be rated. A rating stays hidden in every view (including Pathways) once the skill is withdrawn.
+- **Credential desk:** review, edit and approve résumé suggestions; duplicates are prevented; dismissals persist; renewal dates are never invented.
+- **Teams & sharing:** local teams and opt-in JSON peer cards. Confidence, mentoring and credential names are each a separate opt-in. Re-importing a card with an existing id warns that it replaces that person's card. Aggregates appear only for 3+ people.
+- **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
+- **FLEETHACKER workforce tools:** QUALFORGE, SKILLFLEET, TEAMFORGE, MENTORLINK and KNOWLEDGE RELAY, all built on one shared analytics module.
+- **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
+- **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
+- **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
 
 ## Privacy and data semantics
 
-This is a synthetic demonstration. **Do not enter real Navy personnel records, qualification data, sensitive details, clearance information, or actual résumé PII into this pilot on a shared or unapproved workstation.** Browser `localStorage` is not a secure multi-user data store. A changeable navigation tab is not a role-based authorization boundary.
+This is a synthetic demonstration. **Do not enter real Navy personnel records, qualification data, sensitive details, clearance information, or actual résumé PII into this pilot on a shared or unapproved workstation.** Browser storage is not a secure multi-user data store, and the navigation is not an authorization boundary. There is no login; *Local demo · No login* is shown at all times.
 
-This prototype is NOT an authoritative readiness, competency, credential, personnel, or performance evaluation system. It does not crawl work activity, ingest email or code, track employees, or infer skill decay. Missing data is **unknown**, not low proficiency. It does not implement real external credential verification or automatic AI résumé parsing.
+Synapse is **not** an authoritative readiness, competency, credential, personnel or performance system. It does not crawl activity, ingest email or code, track employees, or infer skill decay. Missing data means **unknown**, not low proficiency.
 
-For production: seek sponsor and employee/labor/privacy consultation; define purpose limitations and retention; obtain security approvals/ATO where appropriate; implement identity federation, granular RBAC/ABAC, consent enforcement **server-side**, encrypted managed storage, structured evidence review, auditable corrections/exports/deletions, secure backups, minimum-size aggregation, abuse monitoring, and explicit trust metrics. Do not treat the synthetic cohort as actual workforce data.
+For production: sponsor, employee/labor and privacy consultation; purpose limits and retention; ATO where required; identity federation, RBAC/ABAC and consent enforcement **server-side**; encrypted managed storage; auditable corrections, exports and deletions; minimum-size aggregation; and trust metrics. See [the product audit](docs/PRODUCT_AUDIT_2026-10-22.md).
 
-## Data model
+## Data model (workspace v2)
 
-`localStorage['synapse-mvp-v1']` is a versioned object:
+Stored in IndexedDB (`synapse` → `workspace` → `current`); UI settings in `localStorage['synapse-settings-v2']`. Exports use the same shape.
 
-```json
+```jsonc
 {
-  "version": 1,
-  "profile": { "confirmed": [], "surveys": {}, "credentials": [], "consent": false },
-  "roi": { "employees": 100, "trainingCost": 2000, "trainingAvoidance": 15 }
+  "schemaVersion": 2,
+  "profile":   { "confirmed": [], "surveys": {}, "credentials": [], "candidates": [],
+                 "credentialCandidates": [], "credentialDismissed": [], "consent": false,
+                 "shareMentoringLocally": false, "shareCredentialsLocally": false,
+                 "displayName": "", "demoPersona": "", "shareId": "" },
+  "teams":     { "active": "", "items": [ { "id", "name", "members": [], "priorities": [] } ] },
+  "fleetPlans": { "<teamId>": { "mission": [], "selected": [] } },
+  "workforce": { "modules": [], "attempts": [], "goals": [], "mentorship": {}, "knowledge": [], "mission": {} },
+  "roi":       { "employees": 100, "...": "..." },
+  "meta":      { "created": "YYYY-MM-DD", "updated": "YYYY-MM-DD" }
 }
 ```
 
-- `confirmed`: employee-selected skill identifiers, not verified proficiency
-- `surveys[skillId]`: `{confidence:0..4, performed:'never|before|recent', method:'none|independent|guided|ai', note, updated}`
-- `credentials[]`: self-entered `{id,name,authority,expiry,created}`, no credential number
-- `consent`: whether the person's affirmed skills contribute to an aggregate demo
+The schema is defined once with zod in `src/core/schema.ts`; it handles validation, clamping, v1→v2 migration and tolerant import. Peer cards keep the `synapse-peer-card` v1 wire format. Encrypted files use the `synapse-encrypted` v1 envelope.
 
-## Credential detection and the new reflection flow
+## ROI calculation
 
-**Credential desk:** the same plain-text résumé analysis now checks common cloud/IT/project certifications and a limited set of named Navy warfare qualifications. The extractor uses explicit names and codes; it is intentionally conservative but not a verification service. Every match appears in a **pending review** list with only the matched phrase and canonical reference. The user must choose **Review & edit**, correct the name/authority and optional renewal date, then deliberately save to their unverified inventory. **Dismiss** retains a local suppression for future scans; identical credentials are not added twice. Résumé sentences indicating a qualification is being pursued or studied are heuristically filtered; false positives and omissions are still possible.
+Cash = adopting participants × training spend × avoidance % + outside specialist spend × external avoidance % × adoption. Capacity = training hours recovered + workflow minutes recovered (minus the overlap deduction). Benefit/cost uses **cash only**. Audit check: 55 min × 100 people × 46 weeks × $75 × 70% = $221,375 before adoption and overlap (a unit test asserts this figure).
 
-**Privacy:** neither the full résumé text nor surrounding personal details are retained in the workspace export by the new credential extractor. Only a short matched term, candidate identity and review/dismissal state persist. The existing résumé uploader remains **.txt only**; PDF/DOCX ingestion is a P1 roadmap item and is not advertised as implemented.
+## Repository layout
 
-**Confidence pulse:** the optional task reflection is now integrated into the **Skills spider web** sidebar. Each confirmed skill card includes a direct **Rate confidence / Update pulse** action; the spider-web detail and galaxy reflection shortcuts open the same panel. The panel has a progress count and **Next unrated skill** action. It remains disabled for skills the employee has not attested to.
-
-Read the detailed [2026-10-22 product audit](docs/PRODUCT_AUDIT_2026-10-22.md) for prioritized issues and development phases.
-
-## Spider web, confidence, and two galaxy views
-
-**Confirmation puts a skill on the spider web.** The web is a connected radial profile of **employee-attested capabilities**, not a confidence-only radar plot. Its spoke extent reflects how many relevant skills have been confirmed in that domain; confirmed skills that have not been rated still have a visible, neutral node. **Confidence makes a skill shine:** separately self-reported 0–4 task confidence increases a node's brightness, glow, stroke and modest radial prominence. Zero confidence stays visible but subdued, and missing confidence is unknown—not low proficiency.
-
-**Only attested skills may be rated.** Before confirming any capability, the confidence task selector and save button are disabled. The dropdown subsequently contains *only* skills in the employee's confirmed list. Removing a skill removes it from the spider web and hides its prior confidence from visualization, without silently deleting the locally retained response.
-
-**Résumé upload updates the visuals immediately.** Amber outlined suggestions show unreviewed keyword matches outside the attested web. Confirming a suggestion changes it to mint and updates spider shape automatically, as does manually adding a skill. The **Refresh spider web** button is a manual redraw for reassurance; no navigation or reload is required.
-
-**Two distinct galaxy views (explicitly chosen):**
-
-- **Confirmed Skills (default):** draws only the exact set of skills the employee personally attested to. Three confirmed Data Engineering capabilities produce **three nodes**, not all eight skills in that domain. Only clusters with confirmed capabilities appear, and relationship branches exist only between displayed, confirmed skills. A new profile shows an informative empty state with shortcuts to add skills or explore pathways. Résumé suggestions never silently become confirmed nodes.
-- **Pathways:** shows the entire 104-skill taxonomy across 13 domains, with original within-domain and curated cross-domain learning connections. Potential skills are shown neutrally; attested skills have mint rings and unreviewed résumé suggestions have amber rings. Viewing or clicking a potential pathway does not confer an attestation. It offers a way back to the employee profile for explicit confirmation.
-
-The mode selector is prominent above the galaxy. Domain and search filters operate within the selected view. Reset returns to Confirmed Skills; profile changes automatically update visible nodes. Both editions preserve stationary hover, click-to-inspect, and click-hold-drag only.
-
-
-**Compare fictional employees.** Under **My capability profile**, select Morgan Vale (shipyard planning), Riley Chen (cybersecurity), Jordan Brooks (data/cloud engineering), or Casey Rivera (training/knowledge transfer). They are synthetic, not real accounts. The repository ships full workspace and peer-card JSON for each, with a detailed [import/export guide](examples/employees/README.md). The preexisting generic synthetic profile remains available separately.
-
-## Login and local workspace boundaries
-
-The offline Synapse MVP never had an authenticated login. Local browser storage, employee-owned profile entries and opt-in peer-card exchange are not accounts. The interface explicitly says **Local demo · No login**. True enterprise login would require an approved identity provider (such as an authorized organizational SSO/CAC integration), backend account storage and server-enforced access controls. No fake PIN/password screen is presented as security.
-
-## FLEETHACKER workforce intelligence lab
-
-The earlier **FLEETHACKER 2026** project conversation surfaced several workforce ideas: SKILLFLEET, TEAMFORGE, MENTORLINK, KNOWLEDGE RELAY, and QUALFORGE. Synapse is the common capability-intelligence layer for those ideas, not five separate apps.
-
-The Team Intelligence screen now includes three offline, synthetic-first planning modules:
-
-1. **Team composer (TEAMFORGE):** choose a potential team from voluntarily imported peer cards; set mission-relevant capability needs and see declared coverage, single-source concentrations, and separately disclosed independent task reflections. No hidden individual fitness score.
-2. **Mentor discovery (MENTORLINK):** find peers who explicitly shared a relevant skill; show whether they *also* volunteered task-level confidence and execution mode. A match is only a lead for a voluntary mentoring conversation, not an assignment.
-3. **Knowledge relay:** review unrepresented and one-person-held priority skills as potential documentation, pairing and cross-training opportunities. No predictions about retirement, attrition, performance, or readiness.
-
-The existing credential desk is an initial QUALFORGE foundation and the team aggregate covers SKILLFLEET's high-level capability mapping. Verified qualifications, mentoring opt-in workflows, real-time team synchronization, and operational staffing eligibility require an approved authenticated enterprise deployment.
-
-## FLEETHACKER workforce suite (all five concepts)
-
-The **FLEETHACKER workforce** navigation section connects the five projects from the original FLEETHACKER 2026 ideas discussion into one local-first workspace:
-
-| Concept | Implemented offline workflow | Data boundaries |
-| --- | --- | --- |
-| **QUALFORGE** | Local conversion of approved nonsensitive numbered PQS-style outline excerpts into unreviewed draft study cards; employee-authored reference answers required before practice, plus interactive knowledge checks, scenario prompts, practice/review history and revisit counts | Does **not** read classified PQS files, validate practical demonstrations, create qualification sign-offs or use an AI endpoint. Guides must use explicitly authorized, nonsensitive material. |
-| **SKILLFLEET** | Aggregate 13-domain capability coverage, single-contributor indicators, voluntary growth goals, credential renewal horizon | Opt-in experience mentions are not verified skills; credential entries are self-declared. Aggregate coverage requires a minimum of three consenting profiles. |
-| **TEAMFORGE** | Requirements editor with minimum skill contributors and optional qualification text; mission roster checkboxes; compare coverage, disclosed availability and optional unverified credential claims | No assignment decisions or validated credential matching. Unknown availability remains unknown. A peer must expressly include qualification fields in their exported card. |
-| **MENTORLINK** | Mentor opt-in, topics, availability and introduction; searchable willing-mentor directory; contextual outreach draft | A shared skill is **not** mentoring consent. Mentoring fields require additional deliberate peer-card disclosure. |
-| **KNOWLEDGE RELAY** | Structured interview/capture (context, practice steps, next handoff and source), searchable drafts, owner-marked review status, knowledge-concentration watchlist and export of reviewed-only records | Owner-marked reviewed is **not** authoritative publication approval or document validation. No hidden scraping, AI interview or unrestricted collection. |
-
-Previous lightweight team-intelligence prototypes remain under **Team intelligence** for comparing candidate rosters, viewing potential mentors, and spotting single-contributor knowledge. The expanded workforce section provides persistence, editable training content, mission constraints, voluntary mentoring disclosures, and controlled transfer records.
-
-### Sharing across machines
-
-No server is needed: coworkers individually opt in, export Synapse peer JSON cards and hand them over through an approved medium. Every card shares only employee-reviewed skill mentions by default. Separate **unchecked** checkboxes allow additional disclosure of task confidence, mentoring offer/topics/availability, and self-entered credential names. These claims are clearly unverified; imports sanitize known fields and the sender cannot revoke already distributed copies.
-
-The workspace JSON backup also preserves guides, study history, mission needs, voluntary mentoring plans, growth goals, draft/owner-reviewed knowledge records, and the imported peer details with field-specific disclosure.
-
-## Create and exchange team profiles
-
-1. Confirm personal experience mentions in My capability profile, and optionally complete task-level confidence pulses.
-2. Open Team intelligence and **create a new team**. The default synthetic demonstration cohort is clearly labeled and distinct from new teams.
-3. Each peer deliberately exports their own JSON capability card with a chosen display name. Cards include employee-confirmed experience mentions by default; sharing confidence and execution method requires a separate unchecked opt-in and a confirmation prompt.
-4. Transfer files outside Synapse using an approved channel. Import each opt-in peer card into the chosen team. Matching peer identifiers refresh existing imported entries.
-5. Once a team contains at least three consenting contributors, view aggregate domain coverage, skill concentrations, priority gaps, and optional self-reported independent-execution bench signals (confidence at least 3 and method independent). These are planning prompts, not proof of qualifications.
-
-**Privacy caveat:** This MVP has no live multi-user service, authentication, file recall/revocation, secure sharing, or server-side permissions. Previously shared files remain with the recipients. Identity displayed on a card is self-declared and unverified. Do not use real Navy personnel data, sensitive resumes or CUI in this demonstration.
-
-## ROI calculation: separating cash from recovered capacity
-
-Modeled cash savings: adopting participants × annual duplicate training spend × training avoidance percentage, plus outside specialist spend × external spend avoidance percentage × adoption. Actual avoided expenditure must be independently established; training spend must exclude labor being counted elsewhere.
-
-Modeled training capacity: adopting participants × training hours × loaded hourly rate × training avoidance percentage. Modeled workflow capacity: adopting participants × weekly recovered minutes / 60 × weeks × loaded hourly rate × realized time percentage.
-
-The calculator deducts overlap percentage × the smaller of training and workflow capacity to avoid double-counting time. The **scenario economic potential** is cash plus adjusted noncash capacity; it is not all cash savings. **Cash-only net** = cash savings minus annual operating cost, and the benefit/cost ratio uses cash alone. A three-scenario adoption sensitivity displays cash-only net for lower, base and higher adoption.
-
-Prior proposal audit: 55 minutes × 100 people × 46 weeks × $75/hour × 70% = $221,375 (before adoption and overlap), not the $144,375 quoted in the old draft.
-
-## Development / testing
-
-Tests in `tests/smoke_test.py` exercise navigation, résumé skill/credential detection, approval/dismissal, duplicate prevention, contextual confidence pulses, survey persistence, attested spider web / profile-focused galaxy, galaxy focus and drag-only navigation, employee-persona loading, local team creation, peer-card exchange, credentials and ROI recalculation. If Python and Playwright are available **on a development workstation** (not required for the end users), run:
-
-```shell
-python -m pytest tests/smoke_test.py -v
+```
+src/core/       pure TypeScript domain logic (taxonomy, schema, scanners, analytics, ROI, crypto, sharing)
+src/storage/    IndexedDB persistence, settings, scan-worker client
+src/workers/    résumé scan Web Worker
+src/app/        React UI: state store + actions, UI kit, visualizations, nine views
+src/styles/     Tailwind 4 theme and visualization styles
+public/         HTML template and service worker template
+tools/          build.mjs, run-tests.mjs, serve.mjs, Serve-Synapse.ps1
+tests/unit/     node:test suites for core logic and actions
+tests/e2e/      Playwright smoke tests against the compiled served and standalone editions
+examples/       fictional employee workspaces and peer cards (also bundled as in-app personas)
+dist/           compiled, committed output shipped to workstations
 ```
 
-## Next steps for a production pilot
-
-1. Formal governance and data dictionary; opt-in/withdrawal semantics and safety review.
-2. Government-approved host, authentication, identity, permissions, encryption, retention, and audit.
-3. Reviewable evidence objects, authoritative credential integration, corrections, and stewardship workflow.
-4. Cohort-specific, minimum-size aggregation and privacy testing; outcome and trust metrics.
-5. Accessibility, reliability, threat modeling, and user acceptance with volunteer pilots.
-
-License: prototype source provided as-is for evaluation. Third-party assets: none.
+License: prototype source provided as-is for evaluation. Third-party code is bundled into `dist/` under each package's license (React, d3, zod, clsx, class-variance-authority, tailwind-merge, Tailwind CSS: all MIT or ISC).

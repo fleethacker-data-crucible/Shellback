@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  },
+  "include": [
+    "src/core/**/*.ts",
+    "src/storage/**/*.ts",
+    "src/app/state/actions.ts",
+    "src/app/viz/galaxy-model.ts",
+    "src/types/modules.d.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": []
+}

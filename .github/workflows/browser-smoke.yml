@@ -7,18 +7,28 @@ on:
 permissions:
   contents: read
 jobs:
+  # Job name kept as "browser-smoke" so existing branch-protection rules keep matching.
   browser-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
-      - name: Install Playwright and Chromium
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install playwright
-          python -m playwright install --with-deps chromium
-      - name: Run offline browser smoke test
-        run: python tests/smoke_test.py
+          node-version: '22'
+      - name: Install build and test dependencies (off-workstation build machine)
+        run: npm install --no-audit --no-fund
+      - name: Typecheck (core, strict)
+        run: npm run typecheck:core
+      - name: Typecheck (whole app with React types)
+        run: npm run typecheck
+      - name: Typecheck (tests)
+        run: npm run typecheck:tests
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Committed dist/ matches a fresh build
+        run: npm run build:check
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests (served + standalone editions)
+        run: npm run test:e2e

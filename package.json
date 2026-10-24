@@ -2,7 +2,7 @@
   "name": "synapse",
   "version": "1.0.0",
   "private": true,
-  "description": "Synapse — employee-centered workforce capability intelligence. Local-first React + TypeScript app served from 127.0.0.1 by PowerShell 5.1.",
+  "description": "Synapse \u2014 employee-centered workforce capability intelligence. Local-first React + TypeScript app served from 127.0.0.1 by PowerShell 5.1.",
   "type": "module",
   "license": "SEE LICENSE IN README.md",
   "engines": {
@@ -14,9 +14,11 @@
     "serve": "node tools/serve.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
-    "test:unit": "node --test tests/unit/",
-    "test:smoke": "python tests/smoke_test.py",
-    "test": "npm run typecheck:core && npm run test:unit && npm run build:check"
+    "typecheck:offline": "tsc -p tsconfig.offline.json --noEmit",
+    "test:unit": "node tools/run-tests.mjs unit",
+    "test:e2e": "node tools/run-tests.mjs e2e",
+    "test": "npm run typecheck:core && npm run typecheck:tests && npm run test:unit && npm run build:check && npm run test:e2e",
+    "typecheck:tests": "tsc -p tsconfig.test.json --noEmit"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
@@ -28,10 +30,12 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/d3": "7.4.3",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/d3": "^7.4.3",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "esbuild": "0.28.2",
+    "playwright": "1.63.0",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3"
   },
