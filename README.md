@@ -26,7 +26,7 @@ npm test             # strict core typecheck, unit tests, dist freshness check, 
 npm run serve        # optional: Node loopback server with the same headers as the PowerShell one
 ```
 
-`dist/` is committed so the workstation never needs Node. CI rebuilds on every PR and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`), so the shipped files always come from the reviewed source.
+`dist/` is committed so the workstation never needs Node. CI runs on the self-hosted Windows runner. It rebuilds on every PR, runs the browser tests, starts the real `Serve-Synapse.ps1` under Windows PowerShell 5.1, and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`; `.gitattributes` keeps line endings identical on Windows), so the shipped files always come from the reviewed source.
 
 ## Features
 

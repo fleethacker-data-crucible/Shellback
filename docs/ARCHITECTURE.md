@@ -54,7 +54,7 @@ Both editions are built from the same bundle in one build run. `build-manifest.j
 | TechStack item | Status | Reason / path forward |
 | --- | --- | --- |
 | Launcher `.bat` → `powershell.exe -File` | **Done** | `Launch-Synapse.bat` |
-| PowerShell 5.1 + `TcpListener` on 127.0.0.1 | **Done** | `tools/Serve-Synapse.ps1`. It was written for PS 5.1 but couldn't be run in the cloud build environment, so CI exercises the equivalent Node server instead. A Windows self-hosted runner job can be added to run the PS server directly. |
+| PowerShell 5.1 + `TcpListener` on 127.0.0.1 | **Done** | `tools/Serve-Synapse.ps1`. CI runs on the self-hosted Windows runner and starts the real script, then checks headers, the assets, a 404 and a path-traversal attempt. The Node twin (`tools/serve.mjs`) serves the browser tests. |
 | React 19 + TypeScript | **Done** | strict TS with `noUncheckedIndexedAccess` |
 | Tailwind CSS 4 + shadcn-style (CVA, Radix, Lucide) | **Partial** | Tailwind 4, CVA, clsx and tailwind-merge are used. **Radix** and **Lucide** weren't available in the offline build environment: dialogs use native `<dialog>` with focus handling, toggles use native inputs with ARIA, and icons are text glyphs. Adding them later is a drop-in change in `components/ui`. |
 | ECharts, React Flow, Motion | **Not used** | Unavailable offline. The two visualizations are purpose-built SVG on **d3** (bundled): the radial web uses `d3-shape`, and galaxy hit-testing uses `d3-quadtree`. Motion is CSS transitions that honor `prefers-reduced-motion` and an in-app setting. If ECharts or React Flow are adopted later, the pure `galaxy-model.ts` and `SpiderWeb` data builders keep the data layer independent of the renderer. |

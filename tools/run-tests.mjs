@@ -29,7 +29,8 @@ await esbuild.build({
   plugins: [{ name: 'worker-stub', setup(b) { b.onResolve({ filter: /^worker:scan$/ }, () => ({ path: 'worker:scan', namespace: 'stub' })); b.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({ contents: 'export default ""', loader: 'js' })); } }],
   outExtension: { '.js': '.mjs' },
 });
-fs.symlinkSync(path.join(root, 'examples'), path.join(outDir, 'examples'), 'dir');
+// 'junction' needs no admin rights on Windows; the type is ignored on other platforms.
+fs.symlinkSync(path.join(root, 'examples'), path.join(outDir, 'examples'), 'junction');
 
 const files = fs.readdirSync(outUnit).filter((f) => f.endsWith('.mjs')).map((f) => path.join(outUnit, f));
 // e2e bundles live in a temp dir, so let them resolve playwright from the repo / NODE_PATH.
