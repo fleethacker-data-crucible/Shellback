@@ -100,7 +100,9 @@ function listFiles(dir, exts, acc = []) {
 const candidates = new Set();
 for (const file of listFiles(path.join(root, 'src'), ['.ts', '.tsx', '.html']).sort()) {
   const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-  for (const token of text.match(/[^\s"'`<>{}();,]+/g) || []) candidates.add(token);
+  // Keep ( ) , inside tokens so arbitrary values such as grid-cols-[minmax(0,1fr)_auto] survive;
+  // Tailwind ignores tokens that are not valid candidates.
+  for (const token of text.match(/[^\s"'`<>{};]+/g) || []) candidates.add(token);
 }
 const twCompiler = await tailwindCompile(read('src/styles/app.css'), {
   base: path.join(root, 'src/styles'),

@@ -28,17 +28,31 @@ npm run serve        # optional: Node loopback server with the same headers as t
 
 `dist/` is committed so the workstation never needs Node. CI runs on the self-hosted Windows runner. It rebuilds on every PR, runs the browser tests, starts the real `Serve-Synapse.ps1` under Windows PowerShell 5.1, and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`; `.gitattributes` keeps line endings identical on Windows), so the shipped files always come from the reviewed source.
 
+## How it's organised
+
+Five destinations, following the employee journey from the product audit:
+
+| Destination | What's there |
+| --- | --- |
+| **Home** | Your journey checklist with one *next step*, plus a glance at your web. |
+| **My profile** | 1 Intake (scan a résumé, confirm or dismiss suggestions) · 2 Skills (confirmed list, consent switch) · 3 Credentials (review, inventory) · 4 Growth (study guides, goals, renewals). |
+| **Explore** | Spider web and galaxy. Click any skill to confirm, dismiss, add or rate it in place. |
+| **Team** | Roster & sharing · Coverage · Missions · Mentors · Knowledge, all over consented cards. |
+| **Program** | Trust & data (storage, recovery, reset) · ROI laboratory. |
+
+The confidence pulse is a side drawer that opens from any skill, anywhere.
+
 ## Features
 
 - **Taxonomy:** 13 capability domains and 104 task-oriented skills.
-- **Résumé intake:** plain-text upload or paste, scanned in a Web Worker. Skill suggestions skip negated phrases ("no Git experience"). Credential suggestions skip pursued or in-progress items ("Pursuing CISSP", "CISSP (in progress)"), and ambiguous acronyms (CISA, CSM, PSM, CKA) need certification context. Résumé text is never stored.
+- **Résumé intake:** plain-text upload or paste, scanned in a Web Worker. Suggestions can be confirmed or dismissed; dismissed ones never come back on later scans. Skill suggestions skip negated phrases ("no Git experience"). Credential suggestions skip pursued or in-progress items ("Pursuing CISSP", "CISSP (in progress)"), and ambiguous acronyms (CISA, CSM, PSM, CKA) need certification context. Résumé text is never stored.
 - **Attested-capability spider web:** confirming a skill adds it to the web, and optional 0–4 confidence only changes its glow. Labels work with the keyboard.
 - **Skills galaxy:** *Confirmed Skills* shows exactly your attestations; *Pathways* shows all 104 skills with learning links. Hover to inspect, click or press Enter to select, hold and drag to rearrange.
-- **Confidence pulse:** only attested skills can be rated. A rating stays hidden in every view (including Pathways) once the skill is withdrawn.
+- **Confidence pulse:** a side drawer, opened from any skill. Only attested skills can be rated, and a rating stays hidden in every view (including Pathways) once the skill is withdrawn.
 - **Credential desk:** review, edit and approve résumé suggestions; duplicates are prevented; dismissals persist; renewal dates are never invented.
 - **Teams & sharing:** local teams and opt-in JSON peer cards. Confidence, mentoring and credential names are each a separate opt-in. Re-importing a card with an existing id warns that it replaces that person's card. Aggregates appear only for 3+ people.
 - **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
-- **FLEETHACKER workforce tools:** QUALFORGE, SKILLFLEET, TEAMFORGE, MENTORLINK and KNOWLEDGE RELAY, all built on one shared analytics module.
+- **FLEETHACKER workflows** live where they belong: study guides, goals and renewals under My profile → Growth; missions, mentors and knowledge relay under Team. One implementation each, on a shared analytics module.
 - **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
@@ -58,7 +72,7 @@ Stored in IndexedDB (`synapse` → `workspace` → `current`); UI settings in `l
 ```jsonc
 {
   "schemaVersion": 2,
-  "profile":   { "confirmed": [], "surveys": {}, "credentials": [], "candidates": [],
+  "profile":   { "confirmed": [], "surveys": {}, "credentials": [], "candidates": [], "candidateDismissed": [], "lastScan": "",
                  "credentialCandidates": [], "credentialDismissed": [], "consent": false,
                  "shareMentoringLocally": false, "shareCredentialsLocally": false,
                  "displayName": "", "demoPersona": "", "shareId": "" },

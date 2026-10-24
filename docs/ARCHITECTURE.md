@@ -104,3 +104,13 @@ A separate reviewer (not the author) read the rebuilt code. It found no high-sev
 | Missing/null `teams` or `workforce` sections rejected a v2 import; duplicate ids allowed | section-level defaults; first-wins de-duplication by id (unit) |
 | Scan worker failure was an unhandled rejection | caught and shown to the user |
 | Export was clickable before the workspace loaded | disabled until ready |
+
+## Employee-journey release (v1.1)
+
+Implements audit items P1.3 (one guided onboarding flow) and P1.4 (simpler navigation, no duplicate FLEETHACKER tools):
+
+- **Navigation:** nine top-level destinations became five (Home, My profile, Explore, Team, Program) with sub-tabs. `settings.ts` stores the view and each section's tab; `navigate(route)` takes a `{ view, tab }` route. Settings moved to `synapse-settings-v3`.
+- **Home** renders `state/journey.ts`, a pure function of the workspace that reports each journey step's state and its next action; `nextStep()` picks what Home features. Unit-tested.
+- **In-context actions:** `components/SkillActions.tsx` is the one set of actions for a skill (confirm / dismiss / add / rate) and `StatusChip` the one evidence-level vocabulary. The spider web, galaxy and lists all use them. The confidence pulse is `components/PulseDrawer.tsx`, a `<dialog>` side sheet opened from the store (`openPulse`), so rating never leaves the current screen.
+- **Dismissed suggestions** persist in `profile.candidateDismissed` and are excluded from later scans, mirroring credential dismissals. `profile.lastScan` records the date only.
+- **Merged tools:** the Team capability lab (composer / mentors / relay) is gone; `views/WorkforcePanels.tsx` exports `MissionsPanel`, `MentorsPanel`, `KnowledgePanel` (under Team) and `GrowthPanel` (under My profile). The team-level SKILLFLEET heatmap was a duplicate of Team → Coverage and was removed.
