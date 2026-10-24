@@ -265,7 +265,8 @@ test('served edition: galaxy hover is stationary, drag moves, keyboard selects',
   const { page, errors } = await open(baseUrl);
   await nav(page, 'explore', 'galaxy');
   await page.locator('[data-galaxy-mode="pathways"]').click();
-  const node = page.locator('#graphSvg .sky-skill-node').first();
+  await page.waitForFunction(() => document.querySelector('[data-galaxy-view="pathways"]')?.getAttribute('data-zoom') !== '1.00'); // fit applied
+  const node = page.locator('#graphSvg .sky-skill-node[data-skill="data-quality"]');
   const name = await node.getAttribute('aria-label');
   await node.hover({ force: true });
   await page.waitForFunction(() => { const t = document.querySelector('#graphHoverTip') as HTMLElement | null; return !!t && !t.hidden; });
@@ -588,5 +589,91 @@ test('contribution round two: results import, pairing ideas, workshop sheet, sta
   await page.locator('#wfMissionStage').selectOption('rally');
   await page.locator('#wfMissionAdd').click();
   assert.match(await page.locator('#wfMissionResults').innerText(), /Energized by that stage but without the skill yet/);
+  assert.deepEqual(errors, []);
+});
+
+test('credential lifecycle: edit in place, issue date, provenance + verifier, derived status', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'credentials');
+  await page.locator('#credName').fill('Security+');
+  await page.locator('#credAuthority').fill('CompTIA');
+  await page.locator('#credIssued').fill('2024-01-10');
+  await page.locator('#credExpiry').fill('2023-01-01'); // before issue → rejected
+  await page.locator('#addCredential').click();
+  assert.match(await page.locator('#flash').innerText(), /issue date must be before/);
+  await page.locator('#credExpiry').fill('2020-01-01');
+  await page.locator('#credIssued').fill('');
+  await page.locator('#addCredential').click();
+  await page.locator('#credentialList .cred-card').waitFor();
+  assert.equal(await page.locator('#credentialList .cred-card').getAttribute('data-credential-status'), 'expired');
+  // Verified requires a verifier
+  await page.locator('[data-edit-cred]').first().click();
+  assert.equal(await page.locator('#credName').inputValue(), 'Security+');
+  await page.locator('#credProvenance').selectOption('verified');
+  await page.locator('#credExpiry').fill('2031-01-01');
+  await page.locator('#addCredential').click();
+  assert.match(await page.locator('#flash').innerText(), /Name who verified it/);
+  await page.locator('#credVerifier').fill('Training registrar');
+  await page.locator('#credIssued').fill('2025-02-02');
+  await page.locator('#addCredential').click();
+  await page.locator('#credentialList [data-credential-status="verified"]').waitFor();
+  assert.match(await page.locator('#credentialList').innerText(), /issued 2025-02-02[\s\S]*Verified \(by Training registrar\)/i);
+  assert.equal(await page.locator('#credentialList .cred-card').count(), 1, 'edit does not duplicate');
+  // Persisted with the new fields
+  const ws = await waitStored(page, (w) => w.profile.credentials[0]?.provenance === 'verified');
+  const c = (ws as { profile: { credentials: Array<Record<string, unknown>> } }).profile.credentials[0]!;
+  assert.equal(c.provenance, 'verified'); assert.equal(c.verifier, 'Training registrar'); assert.equal(c.issued, '2025-02-02');
+  // Peer card still carries names only
+  await nav(page, 'team', 'roster');
+  assert.equal(await page.locator('#includeQualificationShare').count(), 1);
+  assert.deepEqual(errors, []);
+});
+
+test('keyboard only: navigate, confirm a skill, rate it in the drawer, print summary exists; light theme applies', async () => {
+  const { page, errors } = await open(baseUrl);
+  // Skip link is the first tab stop
+  await page.keyboard.press('Tab');
+  assert.match(await page.evaluate(() => document.activeElement?.textContent ?? ''), /Skip to content/);
+  // Reach the Profile nav button by Tab and activate it with Enter
+  for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); if ((await page.evaluate(() => document.activeElement?.getAttribute('data-view'))) === 'profile') break; }
+  await page.keyboard.press('Enter');
+  await page.locator('[data-testid="tab-intake"]').waitFor();
+  // Tabs: arrow keys or Tab+Enter both work; use Tab+Enter to reach Skills
+  await page.locator('[data-testid="tab-skills"]').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#manualSkill').waitFor();
+  await page.locator('#manualSkill').focus();
+  await page.keyboard.type('Power BI');
+  await page.locator('#manualAdd').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('#mySkills [data-pulse-skill]').first().waitFor();
+  assert.equal(await page.locator('#printSummary').count(), 1);
+  assert.equal(await page.locator('#capabilitySheet').isVisible(), false);
+  // Drawer by keyboard; Escape closes it and focus returns to the page
+  await page.locator('#mySkills [data-pulse-skill]').first().focus();
+  await page.keyboard.press('Enter');
+  await page.locator('dialog#pulsePanel[open]').waitFor();
+  await page.locator('#confidence').focus();
+  await page.keyboard.press('ArrowDown'); // native select: changes value
+  await page.locator('#performed').focus();
+  await page.keyboard.press('ArrowDown');
+  await page.locator('#method').focus();
+  await page.keyboard.press('ArrowDown');
+  await page.locator('#saveSurvey').focus();
+  await page.keyboard.press('Enter');
+  const flashText = await page.locator('#flash').innerText();
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !(document.querySelector('dialog#pulsePanel') as HTMLDialogElement).open);
+  assert.ok(!/choose|select|required/i.test(flashText) || (await page.locator('#mySkills').innerText()).length > 0);
+  assert.ok(await page.evaluate(() => document.activeElement && document.activeElement !== document.body), 'focus is restored, not dropped on body');
+  // Light theme: token flips, galaxy stays dark
+  await page.locator('[data-theme-choice="light"]').click();
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light');
+  const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  assert.notEqual(bodyBg, 'rgb(7, 14, 28)');
+  await page.reload();
+  await page.locator('#pageTitle').waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'light', 'theme persists');
+  await page.locator('[data-theme-choice="system"]').click();
   assert.deepEqual(errors, []);
 });

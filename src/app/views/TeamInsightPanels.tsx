@@ -130,7 +130,7 @@ function OrgTreeNode({ node, depth, selected, onSelect }: { node: OrgNode<Partic
     <>
       <Button size="sm" variant={selected === node.code ? 'primary' : 'ghost'} full className={cn('justify-start border border-stroke', depth > 0 && 'border-l-0')} data-org-unit={node.code}
         onClick={() => onSelect(node.code)}>
-        <span style={{ paddingLeft: depth * 14 }} className="flex items-center gap-2"><span className="text-quiet">{depth > 0 ? '└' : '▸'}</span>{node.level} {node.code}<Pill>{node.all.length}</Pill>{node.all.length < MIN_AGGREGATE && <span className="text-[10px] text-quiet">rolls up</span>}</span>
+        <span style={{ paddingLeft: depth * 14 }} className="flex items-center gap-2"><span className="opacity-70">{depth > 0 ? "└" : "▸"}</span>{node.level} {node.code}<Pill>{node.all.length}</Pill>{node.all.length < MIN_AGGREGATE && <span className="text-[10px] text-quiet">rolls up</span>}</span>
       </Button>
       {node.children.map((c) => <OrgTreeNode key={c.code} node={c} depth={depth + 1} selected={selected} onSelect={onSelect} />)}
     </>

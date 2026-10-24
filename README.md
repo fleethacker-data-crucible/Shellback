@@ -38,23 +38,26 @@ Five destinations, following the employee journey from the product audit:
 | **My profile** | 1 Intake (scan a résumé, confirm or dismiss suggestions) · 2 Skills (confirmed list, consent switch) · 3 Credentials (review, inventory) · 4 Growth (study guides, goals, renewals). |
 | **Explore** | Spider web and galaxy. Click any skill to confirm, dismiss, add or rate it in place. |
 | **Team** | Roster & sharing · Coverage · Missions · Mentors · Knowledge, all over consented cards. |
-| **Program** | Trust & data (storage, recovery, reset) · ROI laboratory. |
+| **Program** | Trust & data (storage, recovery, reset) · Intelligence (where suggestions come from) · ROI laboratory. |
 
 The confidence pulse is a side drawer that opens from any skill, anywhere.
 
 ## Features
 
 - **Taxonomy:** 13 capability domains and 104 task-oriented skills.
-- **Résumé intake:** plain-text upload or paste, scanned in a Web Worker. Suggestions can be confirmed or dismissed; dismissed ones never come back on later scans. Skill suggestions skip negated phrases ("no Git experience"). Credential suggestions skip pursued or in-progress items ("Pursuing CISSP", "CISSP (in progress)"), and ambiguous acronyms (CISA, CSM, PSM, CKA) need certification context. Résumé text is never stored.
+- **Résumé intake:** paste, or upload `.txt`, `.docx` or `.pdf` (text layer) — read in the browser, no library. Scanned in a Web Worker. Suggestions can be confirmed or dismissed; dismissed ones never come back on later scans. Skill suggestions skip negated phrases ("no Git experience"). Credential suggestions skip pursued or in-progress items ("Pursuing CISSP", "CISSP (in progress)"), and ambiguous acronyms (CISA, CSM, PSM, CKA) need certification context. Résumé text is never stored.
 - **Attested-capability spider web:** confirming a skill adds it to the web, and optional 0–4 confidence only changes its glow. Labels work with the keyboard.
-- **Skills galaxy:** *Confirmed Skills* shows exactly your attestations; *Pathways* shows all 104 skills with learning links. Hover to inspect, click or press Enter to select, hold and drag to rearrange.
+- **Skills galaxy (v2):** a deterministic d3-force map that never drifts. *Confirmed Skills* shows exactly your attestations; *Pathways* shows all 104 skills with learning links; *Show nearby pathways* (off by default) adds faint one-hop neighbours. Wheel to zoom, drag space to pan, **Fit**, hover to inspect, click or Enter to select, hold and drag a star to rearrange, arrow keys to move between stars.
 - **Confidence pulse:** a side drawer, opened from any skill. Only attested skills can be rated, and a rating stays hidden in every view (including Pathways) once the skill is withdrawn.
-- **Credential desk:** review, edit and approve résumé suggestions; duplicates are prevented; dismissals persist; renewal dates are never invented.
+- **Credential desk:** review, edit and approve résumé suggestions; edit in place; issue and renewal dates; provenance (*claimed* / *reviewed* / *verified by …*) with status derived from dates, never from a judgement; duplicates prevented; dismissals persist.
 - **Teams & sharing:** local teams and opt-in JSON peer cards. Confidence, mentoring and credential names are each a separate opt-in. Re-importing a card with an existing id warns that it replaces that person's card. Aggregates appear only for 3+ people.
 - **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
 - **FLEETHACKER workflows** live where they belong: study guides, goals and renewals under My profile → Growth; missions, mentors and knowledge relay under Team. One implementation each, on a shared analytics module.
 - **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
-- **How I like to contribute:** six stages of work (asking the big questions → finishing and pushing through), each marked energizing, neutral or draining. Synapse's own neutral wording, not an assessment. Teams see energy by stage; missions can ask for a stage.
+- **How I like to contribute:** six stages of work (asking the big questions → finishing and pushing through), each marked energizing, neutral or draining. Synapse's own neutral wording, not an assessment. Import a results file (CSV `stage,energy` or JSON, plain-English synonyms accepted). Teams see energy by stage, pairing ideas and a printable workshop sheet; missions can ask for a stage and surface people energized by it.
+- **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SYNAPSE_INTEL_HOST`). Contract in `docs/INTELLIGENCE_PROVIDERS.md`.
+- **Supervisor brief:** Team → Coverage writes a plain-language summary from aggregate numbers only (shown before generation). Never names, ranks or scores a person.
+- **Themes & print:** Auto / dark / light; printable capability summary (Profile → Skills) and team workshop sheet.
 - **Organization codes:** enter your code (e.g. `1513.1`) and Synapse derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
