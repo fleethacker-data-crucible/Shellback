@@ -43,7 +43,7 @@ export interface TeamBriefInput {
   /** Mission priorities by skill name, with how many people cover each. */
   priorities: Array<{ skill: string; covered: number }>;
   /** Contribution stage → number energized / drained (only when ≥ MIN_AGGREGATE shared). */
-  stages?: Array<{ stage: string; energized: number; drained: number }>;
+  stages?: Array<{ stage: string; energized: number; drained: number; grind?: number; growth?: number }>;
   /** Credentials renewing within 90 days (count only). */
   renewalsSoon: number;
 }
@@ -80,6 +80,8 @@ export function localTeamBrief(input: TeamBriefInput): string {
     const drained = input.stages.filter((s) => s.drained >= Math.max(2, Math.ceil(input.people / 2))).map((s) => s.stage);
     if (nobody.length) lines.push(`Stages of work nobody said energizes them: ${nobody.join(', ')}. Work there still gets done; ask who carries it and whether that is sustainable.`);
     if (drained.length) lines.push(`Stages that drain most of the team: ${drained.join(', ')}.`);
+    const grind = input.stages.filter((s) => (s.grind ?? 0) >= 2).map((s) => s.stage);
+    if (grind.length) lines.push(`Two or more people are good at, but drained by: ${grind.join(', ')}. Competence is carrying that work; it is the first place to look for burnout.`);
   }
   if (input.renewalsSoon) lines.push(`${input.renewalsSoon} self-reported credential${input.renewalsSoon === 1 ? '' : 's'} renew within 90 days.`);
   lines.push('Suggested next step: share this brief with the team and ask what is missing, rather than acting on it alone.');
@@ -209,7 +211,7 @@ export function createRemoteProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
 }
 
 /** Everything the team brief task could ever carry, for the disclosure UI. */
-export const TEAM_BRIEF_FIELDS = ['team name', 'number of people', 'people per domain (13 numbers)', 'skills held by only one person (names of skills, not people)', 'mission priorities and coverage counts', `energized / drained counts per stage (${STAGE_DEFS.length} stages)`, 'count of credentials renewing within 90 days'] as const;
+export const TEAM_BRIEF_FIELDS = ['team name', 'number of people', 'people per domain (13 numbers)', 'skills held by only one person (names of skills, not people)', 'mission priorities and coverage counts', `energized / drained / grind / growth counts per stage (${STAGE_DEFS.length} stages)`, 'count of credentials renewing within 90 days'] as const;
 
 // ----------------------------------------------------------------------------- registry
 const registry = new Map<string, IntelligenceProvider>([[localRulesProvider.describe().id, localRulesProvider]]);

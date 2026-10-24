@@ -3,7 +3,7 @@
  * Rendered hidden; printSheet('capabilitySheet') shows only this. Self-reported throughout.
  */
 import { DOMAINS, SKILL_BY_ID } from '../../core/taxonomy';
-import { STAGE_DEFS, ENERGY_LABEL } from '../../core/contribution';
+import { STAGE_DEFS, ENERGY_LABEL, FLUENCY_LABEL, QUADRANT_LABEL, quadrant, stageDetail } from '../../core/contribution';
 import { orgLevelName } from '../../core/org';
 import { useStore } from '../state/store';
 import { Button } from './ui/primitives';
@@ -43,7 +43,7 @@ export function CapabilitySheet() {
       {stages.length > 0 && (
         <>
           <h2>How I like to contribute</h2>
-          <ul>{stages.map((s) => <li key={s.id}><b>{s.label}</b>: {ENERGY_LABEL[p.contribution.stages[s.id]!].toLowerCase()}</li>)}</ul>
+          <ul>{stages.map((s) => { const d = stageDetail(p.contribution, s.id)!; const q = quadrant(d); return <li key={s.id}><b>{s.label}</b>: {ENERGY_LABEL[p.contribution.stages[s.id]!].toLowerCase()}{d.fluency !== null ? `, ${FLUENCY_LABEL[d.fluency].toLowerCase()} → ${QUADRANT_LABEL[q]}` : ''}{d.example ? ` — e.g. ${d.example}` : ''}</li>; })}</ul>
           {p.contribution.source && <p className="sheet-mute">Based on: {p.contribution.source}</p>}
         </>
       )}

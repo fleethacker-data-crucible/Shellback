@@ -39,6 +39,11 @@ export function defaultTeams(): { active: string; items: Team[] } {
         support: (['neutral', 'neutral', 'energizing', 'draining', 'energizing', 'neutral'] as const)[i]!,
         finish: (['neutral', 'draining', 'neutral', 'energizing', 'neutral', 'energizing'] as const)[i]!,
       },
+      // Two-axis detail for a few people so the quadrant read-out has something to show.
+      detail: i === 1 ? { finish: { energy: -1, fluency: 3, tags: ['under-deadline'], example: '' }, rally: { energy: 2, fluency: 2, tags: [], example: '' } }
+        : i === 2 ? { finish: { energy: -1, fluency: 2, tags: [], example: '' }, evaluate: { energy: 1, fluency: 1, tags: ['new-people'], example: '' } }
+        : i === 3 ? { finish: { energy: 1, fluency: 3, tags: [], example: '' } }
+        : {},
     },
   }));
   return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning'] }] };
@@ -73,7 +78,7 @@ export function selfParticipant(ws: Workspace): Participant | null {
     qualificationClaims: p.shareCredentialsLocally ? p.credentials.map((c) => c.name) : [],
     orgCode: p.shareOrgLocally ? p.orgCode : '',
     orgTitle: p.shareOrgLocally ? p.orgTitle : '',
-    contribution: p.shareContributionLocally ? p.contribution : { stages: {}, source: '' },
+    contribution: p.shareContributionLocally ? p.contribution : { stages: {}, source: '', detail: {} },
   };
 }
 

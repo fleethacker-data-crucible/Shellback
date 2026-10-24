@@ -56,7 +56,7 @@ test('importing a card with an existing id reports the replacement', () => {
   const w = fresh();
   A.createTeam(w, 'Pilot');
   const t = w.teams.active;
-  const m = { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown' as const, mentorIntro: '', qualificationClaims: [], orgCode: '', orgTitle: '', contribution: { stages: {}, source: '' } };
+  const m = { id: 'peer-example-01', name: 'Pat', synthetic: false, issued: '2026-10-24', skills: ['sql-pipelines'], surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown' as const, mentorIntro: '', qualificationClaims: [], orgCode: '', orgTitle: '', contribution: { stages: {}, source: '', detail: {} } };
   assert.equal(A.importMember(w, t, m).replaced, false);
   const r = A.importMember(w, t, { ...m, name: 'Impostor' });
   assert.equal(r.replaced, true);
