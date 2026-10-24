@@ -19,7 +19,7 @@ const LANES = [
 export function TrustView() {
   const { ws, replace, storage, settings, setSettings, navigate } = useStore();
   const dialogs = useDialogs();
-  const [backups, setBackups] = useState<BackupEntry[]>([]);
+  const [backups, setBackups] = useState<BackupEntry[] | null>(null); // null = still checking
   useEffect(() => { void listBackups().then(setBackups); }, []);
   const edition = document.documentElement.dataset.edition ?? 'dev';
 
@@ -47,7 +47,7 @@ export function TrustView() {
       </Panel>
       <Panel id="recovery">
         <PanelHeading title="Recovery">If stored data ever fails validation it is set aside here instead of being discarded. Download a copy, fix it, and import it again.</PanelHeading>
-        {backups.length ? <div className="space-y-1.5">{backups.map((b) => <div key={b.key} className="row-card"><div><strong className="block text-[13px]">{b.key}</strong><small className="text-quiet">{b.reason}</small></div><Button size="sm" onClick={() => downloadJson(b.raw, `${b.key}.json`)}>Download raw</Button></div>)}</div> : <Empty>No recovered data. Workspace last updated {ws.meta.updated}.</Empty>}
+        {backups === null ? <p className="note" aria-live="polite">Checking for recovered data…</p> : backups.length ? <div className="space-y-1.5">{backups.map((b) => <div key={b.key} className="row-card"><div><strong className="block text-[13px]">{b.key}</strong><small className="text-quiet">{b.reason}</small></div><Button size="sm" onClick={() => downloadJson(b.raw, `${b.key}.json`)}>Download raw</Button></div>)}</div> : <Empty>No recovered data. Workspace last updated {ws.meta.updated}.</Empty>}
       </Panel>
     </section>
   );
