@@ -1,0 +1,42 @@
+{
+  "name": "synapse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Synapse — employee-centered workforce capability intelligence. Local-first React + TypeScript app served from 127.0.0.1 by PowerShell 5.1.",
+  "type": "module",
+  "license": "SEE LICENSE IN README.md",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:check": "node tools/build.mjs --check",
+    "serve": "node tools/serve.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:core": "tsc -p tsconfig.core.json --noEmit",
+    "test:unit": "node --test tests/unit/",
+    "test:smoke": "python tests/smoke_test.py",
+    "test": "npm run typecheck:core && npm run test:unit && npm run build:check"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "d3": "7.9.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "3.6.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/d3": "7.4.3",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3"
+  },
+  "techStackNotes": {
+    "echarts / @xyflow/react / motion / radix-ui / lucide-react": "Listed in TechStack as preferred libraries. Not bundled in this revision: the spider web and galaxy are purpose-built SVG components on d3 (see docs/ARCHITECTURE.md). Add them here when a networked build machine is available; the build script bundles whatever is installed.",
+    "wasm": "No Rust/WASM module is shipped. Browser compute runs in a Web Worker (src/workers/scan.worker.ts). docs/ARCHITECTURE.md describes the hook for a future WASM scanner."
+  }
+}
