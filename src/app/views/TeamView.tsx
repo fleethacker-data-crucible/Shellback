@@ -10,6 +10,7 @@ import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, sele
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
 import { ContributionMap, OrgRollup } from './TeamInsightPanels';
+import { TrustChips } from '../components/TrustChip';
 import { orgLevelName } from '../../core/org';
 import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
@@ -211,7 +212,7 @@ export function TeamView() {
       {tab === 'mentors' && <MentorsPanel />}
       {tab === 'knowledge' && <KnowledgePanel />}
 
-      <p className="note">Claims here are self-reported and unverified, never qualifications or readiness. This local view is not an access-control boundary.</p>
+      <p className="note flex flex-wrap items-center gap-2"><TrustChips kinds={['self-reported', 'aggregate', 'local-only']} /><span>This local view is not an access-control boundary.</span></p>
     </section>
   );
 }

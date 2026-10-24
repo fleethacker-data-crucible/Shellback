@@ -14,6 +14,7 @@ import { ExploreView } from './views/ExploreView';
 import { TeamView } from './views/TeamView';
 import { ProgramView } from './views/ProgramView';
 import { PulseDrawer } from './components/PulseDrawer';
+import { SynapseMark } from './components/SynapseMark';
 
 const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string; hint: string }> = [
   { id: 'home', icon: '⌂', label: 'Home', title: 'Home', hint: 'Your journey and next step' },
@@ -85,9 +86,7 @@ export function App() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">Skip to content</a>
       <aside aria-label="Main navigation" className={cn('fixed inset-y-0 left-0 z-40 flex w-[255px] flex-col border-r border-[#25334a] bg-gradient-to-br from-[#0d1729] to-[#0b1423] px-[15px] py-[26px] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex items-center gap-3 px-[13px] pb-9">
-          <div aria-hidden="true" className="relative h-[35px] w-[35px] drop-shadow-[0_0_14px_#5cf1cb50]">
-            {[[1, 13], [13, 0], [13, 26], [27, 8], [27, 19]].map(([t, l], i) => <span key={i} className="absolute h-2 w-2 rounded-full bg-mint" style={{ top: t, left: l }} />)}
-          </div>
+          <SynapseMark size={38} className="shrink-0 drop-shadow-[0_0_12px_#5cf1cb55]" />
           <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SYNAPSE</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-[#7d9bae]">CAPABILITY INTELLIGENCE</small></div>
         </div>
         <div className="px-[13px] pb-3 text-[10px] font-extrabold tracking-[0.1em] text-quiet">WORKSPACE <span className="mt-2 block text-mint">SYNTHETIC PILOT</span></div>
