@@ -238,12 +238,14 @@ test('served edition: employee flow end to end', async () => {
 
   // ROI
   await nav(page, 'program', 'roi');
-  const before = await page.locator('#roiTotal').innerText();
-  await page.locator('[data-roi="minutesSaved"]').fill('0');
-  assert.notEqual(await page.locator('#roiTotal').innerText(), before);
+  const before = await page.locator('#roiCapacity').innerText();
+  await page.locator('[data-roi="searchMinutes"]').fill('0');
+  assert.notEqual(await page.locator('#roiCapacity').innerText(), before);
+  await page.locator('[data-roi-basis="adoption"]').selectOption('measured');
+  assert.match(await page.locator('#roiBasisSummary').innerText(), /1 measured/);
   await page.locator('[data-roi="adoption"]').fill('0');
   assert.equal(await page.locator('#roiCash').innerText(), '$0');
-  assert.equal(await page.locator('#roiCapacity').innerText(), '$0');
+  assert.match(await page.locator('#roiBreakEven').innerText(), /\d+%|Not reached/);
 
   // Withdrawn skill hides its confidence in Pathways (review bug #2)
   await nav(page, 'profile', 'skills');
