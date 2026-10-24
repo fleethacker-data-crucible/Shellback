@@ -112,3 +112,19 @@
 
 /* Native dialog */
 dialog::backdrop { background: rgba(3, 8, 18, 0.72); backdrop-filter: blur(2px); }
+
+/* Printable sheets: when print-sheet-mode is on, only the active [data-print-sheet] is visible. */
+[data-print-sheet] { display: none; }
+@media print {
+  body.print-sheet-mode * { visibility: hidden !important; }
+  body.print-sheet-mode [data-print-active] { display: block !important; visibility: visible !important; position: absolute; inset: 0 auto auto 0; width: 100%; background: #fff; color: #111; padding: 0; }
+  body.print-sheet-mode [data-print-active] * { visibility: visible !important; color: #111; }
+  body.print-sheet-mode [data-print-active] .sheet-mute { color: #555 !important; }
+  [data-print-sheet] h1 { font-size: 20pt; margin: 0 0 4pt; }
+  [data-print-sheet] h2 { font-size: 13pt; margin: 14pt 0 4pt; border-bottom: 1px solid #999; padding-bottom: 2pt; }
+  [data-print-sheet] table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  [data-print-sheet] th, [data-print-sheet] td { border: 1px solid #bbb; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  [data-print-sheet] .sheet-box { border: 1px dashed #999; min-height: 48pt; margin-top: 4pt; }
+  [data-print-sheet] p, [data-print-sheet] li { font-size: 10.5pt; line-height: 1.4; }
+  @page { margin: 16mm; }
+}

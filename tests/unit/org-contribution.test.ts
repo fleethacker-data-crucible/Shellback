@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildOrgTree, flattenOrg, isWithin, normalizeOrgCode, orgAncestors, orgLevelName } from '../../src/core/org';
-import { stageCoverage, stageObservations, type Contribution } from '../../src/core/contribution';
+import { importContribution, parseEnergy, parseStage, stageCoverage, stageObservations, type Contribution } from '../../src/core/contribution';
 import { newWorkspace, parsePeerCard, parseWorkspace } from '../../src/core/schema';
 import { buildPeerCard } from '../../src/core/share';
 import { defaultTeams, missionCoverage, participants, selfParticipant } from '../../src/core/analytics';
@@ -84,4 +84,24 @@ test('a mission requirement can ask for a stage; coverage reports who is energiz
   assert.ok(res[0]!.energized.every((p) => p.contribution.stages.rally === 'energizing'));
   const again = parseWorkspace(JSON.parse(JSON.stringify(w))).workspace;
   assert.equal(again.workforce.mission.requirements[0]!.stage, 'rally');
+});
+
+test('contribution import: CSV and JSON, vendor-neutral synonyms, unknown rows reported', () => {
+  const csv = 'stage,energy\nRallying people,energizes\nfinish,drains\n3,neutral\nAsking the big questions,love it\nbogus,whatever\nno separator here';
+  const r = importContribution(csv);
+  assert.equal(r.applied, 4);
+  assert.deepEqual(r.contribution.stages, { rally: 'energizing', finish: 'draining', evaluate: 'neutral', question: 'energizing' });
+  assert.equal(r.skipped.length, 2);
+  const json = importContribution(JSON.stringify({ source: 'team workshop 2026-09', stages: { ideate: 'frustration', support: 'competency' } }));
+  assert.deepEqual(json.contribution.stages, { ideate: 'draining', support: 'neutral' });
+  assert.equal(json.contribution.source, 'team workshop 2026-09');
+  const arr = importContribution(JSON.stringify([{ stage: 'Helping it happen', energy: '+' }, { stage: 'invention', energy: 'high' }]));
+  assert.deepEqual(arr.contribution.stages, { support: 'energizing', ideate: 'energizing' });
+  // Existing answers are kept unless overwritten
+  const merged = importContribution('finish,energizing', { stages: { rally: 'draining' }, source: 'me' });
+  assert.deepEqual(merged.contribution.stages, { rally: 'draining', finish: 'energizing' });
+  assert.equal(importContribution('{not json').skipped[0], 'File is not valid JSON.');
+  assert.equal(parseStage('Tenacity'), 'finish');
+  assert.equal(parseEnergy('Genius'), 'energizing');
+  assert.equal(parseStage('something else'), null);
 });

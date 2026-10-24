@@ -7,7 +7,7 @@ import { credentialKey } from '../../core/scanners';
 import { defaultTeams, DEMO_TEAM_ID, SELF_ID } from '../../core/analytics';
 import { newId, newShareId } from '../../core/ids';
 import { normalizeOrgCode } from '../../core/org';
-import { STAGES, type Energy, type Stage } from '../../core/contribution';
+import { STAGES, type Contribution, type Energy, type Stage } from '../../core/contribution';
 import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate } from '../../core/schema';
 import type { ScanResponse } from '../../core/scanners';
 
@@ -93,6 +93,7 @@ export function setContributionStage(ws: Workspace, stage: Stage, energy: Energy
   if (energy === null) delete ws.profile.contribution.stages[stage];
   else ws.profile.contribution.stages[stage] = energy;
 }
+export function setContribution(ws: Workspace, c: Contribution): void { ws.profile.contribution = { stages: { ...c.stages }, source: c.source.trim().slice(0, 160) }; }
 export function setContributionSource(ws: Workspace, source: string): void { ws.profile.contribution.source = source.trim().slice(0, 160); }
 export function clearContribution(ws: Workspace): string { ws.profile.contribution = { stages: {}, source: '' }; return 'Contribution preferences cleared.'; }
 
