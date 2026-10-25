@@ -37,12 +37,16 @@ export function IntelligenceView() {
   const useProvider = (p: IntelSettings['provider']) => persist({ ...s, provider: p }, p === 'remote-http' ? `${s.remote.label || 'Remote provider'} selected. Suggestions will go through it from now on.` : 'Local rules selected. Nothing leaves this workstation.');
 
   async function addKey() {
-    const token = await dialogs.prompt(kind === 'openai' ? 'Paste the API key for this gateway. It is encrypted with a passphrase you choose, unlocked only in this browser session, and never exported.' : 'Paste the bearer token for this endpoint. It is encrypted with a passphrase you choose and never exported.', { title: kind === 'openai' ? 'API key' : 'Bearer token', label: kind === 'openai' ? 'API key' : 'Token', password: true, confirmLabel: 'Next' });
+    const token = await dialogs.prompt(kind === 'openai' ? 'Paste the API key for this gateway. Next you will choose a passphrase that encrypts it on this computer; the key is unlocked only in this browser session and never exported.' : 'Paste the bearer token for this endpoint. Next you will choose a passphrase that encrypts it; it is never exported.', { title: kind === 'openai' ? 'Step 1 of 2: API key' : 'Step 1 of 2: bearer token', label: kind === 'openai' ? 'API key' : 'Token', password: true, confirmLabel: 'Next: choose a passphrase' });
     if (!token) return;
-    const pass = await dialogs.prompt('Choose a passphrase (8+ characters). You will type it once per browser session to unlock the key.', { title: 'Seal the key', label: 'Passphrase', password: true, minLength: 8, confirmLabel: 'Encrypt & save' });
+    const pass = await dialogs.prompt(<>Key received. Now choose a <b>passphrase</b> (8+ characters) — not another token — that Shellback uses to encrypt the key on this computer. You will type it once per browser session to unlock the key.</>, { title: 'Step 2 of 2: protect the key with a passphrase', label: 'Passphrase (your choice)', password: true, minLength: 8, confirmLabel: 'Encrypt & save' });
     if (!pass) return;
     setBusy('token');
-    try { const env = await sealToken(token.trim(), pass); persist({ ...s, tokenEnvelope: env }, 'Key sealed and unlocked for this session.'); }
+    try {
+      const env = await sealToken(token.trim(), pass);
+      persist({ ...s, tokenEnvelope: env }, 'Key sealed and unlocked for this session.');
+      if (kind === 'openai' && endpointOk) void loadModels({ ...s, tokenEnvelope: env });
+    }
     catch (err) { flash(`Could not seal the key: ${err instanceof Error ? err.message : String(err)}`); }
     finally { setBusy(''); }
   }
@@ -62,13 +66,13 @@ export function IntelligenceView() {
     persist({ ...s, tokenEnvelope: null, provider: 'local-rules' }, 'Key removed. Local rules are active.');
     setModels(null);
   }
-  async function loadModels() {
+  async function loadModels(from: IntelSettings = s) {
     setBusy('models'); setModelsError(''); setModels(null);
     try {
-      const list = await previewProvider(s.remote).listModels!();
+      const list = await previewProvider(from.remote).listModels!();
       setModels(list);
       if (!list.length) setModelsError('The gateway returned no models for this key.');
-      else if (!s.remote.model || !list.includes(s.remote.model)) setRemote({ model: list[0] });
+      else if (!from.remote.model || !list.includes(from.remote.model)) setS((cur) => ({ ...cur, remote: { ...cur.remote, model: list[0] } }));
     } catch (err) { setModelsError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(''); }
   }
@@ -93,7 +97,7 @@ export function IntelligenceView() {
           </label>
           <label className={`cursor-pointer rounded-md border p-4 ${s.provider === 'remote-http' ? 'border-amber/60 bg-amber/5' : 'border-stroke'} ${!remoteReady ? 'opacity-70' : ''}`}>
             <input type="radio" name="intelProvider" value="remote-http" data-provider="remote-http" className="mr-2 accent-mint" disabled={!remoteReady || dirty} checked={s.provider === 'remote-http'} onChange={() => useProvider('remote-http')} />
-            <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">finish the steps below</Pill> : dirty ? <Pill className="ml-2">save first</Pill> : null}
+            <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">{!endpointOk ? 'step 1: enter the endpoint' : kind === 'openai' && !s.tokenEnvelope ? 'step 2: add the API key' : !modelReady ? 'step 3: choose a model' : 'finish the steps below'}</Pill> : dirty ? <Pill className="ml-2">step 4: save, then select</Pill> : null}
             <p className="note mt-1">An AI gateway your organization has authorized (for example an IL5-accredited service). You choose the model; Shellback sends only what the table at the bottom lists.</p>
           </label>
         </div>
@@ -141,7 +145,7 @@ export function IntelligenceView() {
             ) : (
               <>
                 <div className="flex flex-wrap items-end gap-2">
-                  <Button id="intelLoadModels" size="sm" onClick={loadModels} disabled={!endpointOk || !keyReady || busy === 'models'}>{busy === 'models' ? 'Loading…' : 'Load models'}</Button>
+                  <Button id="intelLoadModels" size="sm" onClick={() => loadModels()} disabled={!endpointOk || !keyReady || busy === 'models'}>{busy === 'models' ? 'Loading…' : 'Load models'}</Button>
                   {models && models.length > 0 && (
                     <Field label={`Model (${models.length} available)`} htmlFor="intelModelSelect">
                       <Select id="intelModelSelect" className="w-[320px]" value={models.includes(s.remote.model ?? '') ? s.remote.model! : ''} onChange={(v) => setRemote({ model: v })} options={models.map((m) => ({ value: m, label: m }))} placeholder="Choose a model" />
