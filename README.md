@@ -8,7 +8,7 @@ This version is a full rebuild on the project's [TechStack](TechStack): React 19
 
 | Option | How | Notes |
 | --- | --- | --- |
-| **Served (recommended)** | Double-click `Launch-Synapse.bat` | Runs `powershell.exe -File tools\Serve-Synapse.ps1`, which serves `dist\` on `http://127.0.0.1:8765/` and opens your browser. The port stays fixed because browser data is stored per origin. Loopback only; press Ctrl+C to stop. Enables offline caching through the service worker. |
+| **Served (recommended)** | Double-click `Launch-Synapse.bat` | Runs `powershell.exe -File tools\Serve-Synapse.ps1`, which serves `dist\` on `http://127.0.0.1:8765/` and opens your browser. The port stays fixed because browser data is stored per origin. Loopback only. Stops by itself when you close the tab; **End session** in the navigation, Ctrl+C, or `tools\Stop-Synapse.ps1` stop it at once. Enables offline caching through the service worker. |
 | **Single file** | Double-click `dist\Synapse-Standalone.html` | Everything is inlined in one file and runs from `file://`. No server and no service worker. Same features otherwise. |
 
 Both editions store data only in the current browser profile (IndexedDB) and make **no network requests**. A Content-Security-Policy blocks any connection other than the page's own origin.

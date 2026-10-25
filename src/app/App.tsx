@@ -15,6 +15,7 @@ import { TeamView } from './views/TeamView';
 import { ProgramView } from './views/ProgramView';
 import { PulseDrawer } from './components/PulseDrawer';
 import { SynapseMark } from './components/SynapseMark';
+import { endSession, hasLocalServer } from './lib/session';
 
 const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string; hint: string }> = [
   { id: 'home', icon: '⌂', label: 'Home', title: 'Home', hint: 'Your journey and next step' },
@@ -30,6 +31,7 @@ export function App() {
   const dialogs = useDialogs();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [ended, setEnded] = useState(false);
   const toReview = pendingCredentialCandidates(ws).length + ws.profile.candidates.length;
   const current = NAV.find((n) => n.id === view) ?? NAV[0]!;
 
@@ -64,6 +66,25 @@ export function App() {
     }
     downloadJson(payload, `synapse-workspace-${stamp}.json`);
     flash('Local JSON export created. Protect this file like other personal records.');
+  }
+
+  async function quit() {
+    const ok = await dialogs.confirm(
+      <>Stop the local Synapse server now? Your workspace is already saved in this browser. Open Synapse again later with <code>Launch-Synapse.bat</code>.</>,
+      { title: 'End this Synapse session?', confirmLabel: 'End session' },
+    );
+    if (!ok) return;
+    if (await endSession()) setEnded(true);
+    else flash('The local server did not answer. It may already be stopped; tools\\Stop-Synapse.ps1 stops any that are left.');
+  }
+
+  if (ended) {
+    return (
+      <main id="sessionEnded" className="mx-auto max-w-[60ch] px-6 py-16">
+        <h1 className="text-[22px]">Synapse session ended</h1>
+        <p className="mt-3 text-muted">The local server has stopped. Your workspace stays saved in this browser. You can close this tab; run <code>Launch-Synapse.bat</code> to start again.</p>
+      </main>
+    );
   }
 
   async function importWorkspace(e: ChangeEvent<HTMLInputElement>) {
@@ -113,6 +134,7 @@ export function App() {
           <div className="text-[10px] font-extrabold tracking-[0.1em] text-mint">● &nbsp; OFFLINE DEMO · NO AUTHENTICATED ACCOUNT</div>
           <p className="mt-2 text-[11px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
           <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}>↥ Export my workspace</Button>
+          {hasLocalServer() && <Button id="endSessionBtn" variant="ghost" size="sm" full className="mt-2" title="Stop the local Synapse server (it also stops by itself when this tab closes)" onClick={quit}>⏻ End session</Button>}
           <div role="radiogroup" aria-label="Theme" id="themeSwitch" className="mt-3 flex gap-1 rounded-md border border-stroke bg-bg/40 p-1">
             {(['system', 'dark', 'light'] as Theme[]).map((t) => <button key={t} type="button" role="radio" aria-checked={settings.theme === t} data-theme-choice={t} className={cn('flex-1 rounded-sm px-2 py-1 text-[11px] font-bold capitalize text-quiet hover:text-text', settings.theme === t && 'bg-panel2 text-text')} onClick={() => setSettings({ theme: t })}>{t === 'system' ? 'Auto' : t}</button>)}
           </div>
