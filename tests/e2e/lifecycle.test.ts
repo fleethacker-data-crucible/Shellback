@@ -44,7 +44,10 @@ test('closing the last tab stops the server; a reload does not', async () => {
     await page.locator('#metricSkills').waitFor();
     await sleep(1800); // longer than the leaving grace: the reload's fresh heartbeat kept it alive
     assert.equal(s.isRunning(), true, 'a reload must not stop the server');
-    await page.close({ runBeforeUnload: true });
+    // Leaving the page (navigation or tab close) fires pagehide → leaving beacon. Headless Chromium on
+    // Windows does not reliably run unload handlers on page.close(), so leave by navigation first.
+    await page.goto('about:blank');
+    await page.close();
     await within(s.exited, 15000, 'server should stop after the tab closed');
     await context.close();
   } finally { if (s.isRunning()) s.proc.kill(); }
@@ -56,10 +59,12 @@ test('two tabs: closing one keeps the server for the other', async () => {
     const context = await browser.newContext();
     const a = await context.newPage(), b = await context.newPage();
     for (const p of [a, b]) { await p.goto(s.url); await p.locator('#metricSkills').waitFor(); }
-    await a.close({ runBeforeUnload: true });
+    await a.goto('about:blank');
+    await a.close();
     await sleep(4000); // past the leaving grace; tab b keeps heartbeating
     assert.equal(s.isRunning(), true, 'the other tab is still open');
-    await b.close({ runBeforeUnload: true });
+    await b.goto('about:blank');
+    await b.close();
     await within(s.exited, 15000, 'server should stop after the last tab closed');
     await context.close();
   } finally { if (s.isRunning()) s.proc.kill(); }
