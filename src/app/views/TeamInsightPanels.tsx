@@ -69,7 +69,7 @@ function WorkshopSheet({ teamName, cov, sharers, total, notes }: { teamName: str
   return (
     <section id="workshopSheet" data-print-sheet aria-hidden="true">
       <h1>{teamName} · How we like to work</h1>
-      <p className="sheet-mute">Printed from Synapse on {new Date().toISOString().slice(0, 10)}. {sharers} of {total} people shared their preferences. Preference is not ability; this sheet is for a conversation, not an evaluation.</p>
+      <p className="sheet-mute">Printed from Shellback on {new Date().toISOString().slice(0, 10)}. {sharers} of {total} people shared their preferences. Preference is not ability; this sheet is for a conversation, not an evaluation.</p>
       <h2>Energy by stage</h2>
       <table>
         <thead><tr><th>Stage</th><th>Energizes</th><th>Neutral</th><th>Drains</th><th>Flow / Growth / Grind / Avoid</th></tr></thead>
@@ -86,7 +86,7 @@ function WorkshopSheet({ teamName, cov, sharers, total, notes }: { teamName: str
       </ol>
       <h2>Agreements</h2>
       <div className="sheet-box" />
-      <p className="sheet-mute">Synapse records only what each person chose to share. Nothing on this page is a score or a ranking.</p>
+      <p className="sheet-mute">Shellback records only what each person chose to share. Nothing on this page is a score or a ranking.</p>
     </section>
   );
 }

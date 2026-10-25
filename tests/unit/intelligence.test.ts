@@ -79,7 +79,7 @@ test('remote provider: errors are explained and never leak partial data', async 
 });
 
 test('endpoint validation', () => {
-  assert.equal(validateEndpoint('https://ai.example.mil/synapse'), null);
+  assert.equal(validateEndpoint('https://ai.example.mil/shellback'), null);
   assert.equal(validateEndpoint('http://127.0.0.1:8080/x'), null);
   assert.match(validateEndpoint('http://ai.example.mil/x')!, /https/);
   assert.match(validateEndpoint('https://user:pw@ai.example.mil/x')!, /credentials/);

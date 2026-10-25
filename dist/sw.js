@@ -1,9 +1,10 @@
-/* Synapse service worker — offline cache for the served edition.
+/* Shellback service worker — offline cache for the served edition.
  * Network-first: while the local server is running the newest build is always used (no
  * "one load behind" after an update); the cache answers only when the server is not reachable.
  * Successful responses refresh the cache so the offline copy tracks the latest build. */
-const BUILD_ID = '7a46a155b8cb';
-const CACHE = `synapse-${BUILD_ID}`;
+const BUILD_ID = '3dcc39f63861';
+const CACHE = `shellback-${BUILD_ID}`;
+// activate deletes every other cache of this origin, including the pre-rename `synapse-<build>` ones.
 const PRECACHE = ["./","./index.html","./assets/app.js","./assets/app.css"];
 
 self.addEventListener('install', (event) => {
