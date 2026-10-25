@@ -769,3 +769,30 @@ test('draft teammates: build a team from résumés, drafts stay out of coverage 
   assert.equal(ws.profile.shareId, draft.id, 'the employee inherits the draft id so their real card replaces the draft');
   assert.deepEqual(errors, []);
 });
+
+test('confidence pulse: validation is shown inside the drawer and the toast stays above modals', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'profile', 'skills');
+  for (const id of ['power-bi', 'sql-pipelines']) { await page.locator('#manualSkill').selectOption(id); await page.locator('#manualAdd').click(); }
+  await page.locator('#mySkills [data-pulse-skill]').first().click();
+  await page.locator('dialog#pulsePanel[open]').waitFor();
+  assert.match(await page.locator('#pulseMissing').innerText(), /confidence, experience, execution mode/);
+  await page.locator('#confidence').selectOption('3');
+  await page.locator('#performed').selectOption('never');          // auto-sets method = none
+  await page.locator('#performed').selectOption('before');         // clears method again → must be re-chosen
+  assert.match(await page.locator('#pulseMissing').innerText(), /execution mode/);
+  await page.locator('#saveSurveyNext').click();
+  await page.locator('#pulseNotice[role="alert"]').waitFor();
+  assert.match(await page.locator('#pulseNotice').innerText(), /Choose a task, confidence, experience, and execution mode/);
+  assert.match(await page.locator('#pulseProgress').innerText(), /0 of 2/, 'nothing saved yet');
+  await page.locator('#method').selectOption('independent');
+  await page.locator('#saveSurveyNext').click();
+  await page.locator('#pulseNotice[role="status"]').waitFor();
+  assert.match(await page.locator('#pulseProgress').innerText(), /1 of 2/);
+  // The global toast is promoted to the top layer while a modal is open
+  await page.locator('#saveSurvey').click();
+  assert.match(await page.locator('#pulseNotice').innerText(), /needed|Choose|Saved/);
+  const toastVisible = await page.evaluate(() => { const el = document.getElementById('flash')!; return el.matches(':popover-open') || !el.hasAttribute('popover'); });
+  assert.ok(toastVisible);
+  assert.deepEqual(errors, []);
+});

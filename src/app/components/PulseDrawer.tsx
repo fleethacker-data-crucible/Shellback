@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SKILLS, SKILL_BY_ID } from '../../core/taxonomy';
 import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
-import { saveSurvey } from '../state/actions';
+import { ActionError, saveSurvey } from '../state/actions';
 import { Button, Field, Select, Textarea, Pill } from './ui/primitives';
 
 const CONFIDENCE = [['0', '0 — Not yet confident'], ['1', '1 — With substantial support'], ['2', '2 — With some support'], ['3', '3 — Confident with references'], ['4', '4 — Confident independently']].map(([value, label]) => ({ value: value!, label: label! }));
@@ -14,8 +14,11 @@ const PERFORMED = [['never', 'Not yet'], ['before', 'Previously'], ['recent', 'W
 const METHOD = [['none', 'Not yet performed'], ['independent', 'Independently'], ['ai', 'With approved AI assistance'], ['guided', 'With guidance / collaboration']].map(([value, label]) => ({ value: value!, label: label! }));
 
 export function PulseDrawer() {
-  const { ws, pulseFor, closePulse, flash } = useStore();
+  const { ws, pulseFor, closePulse, flash, update } = useStore();
   const act = useAction();
+  // The drawer is a modal <dialog> in the browser's top layer, which covers the global flash toast, so
+  // every message the user needs while the drawer is open is shown inside it.
+  const [notice, setNotice] = useState<{ tone: 'error' | 'ok'; text: string } | null>(null);
   const ref = useRef<HTMLDialogElement | null>(null);
   const [skill, setSkillState] = useState('');
   const [form, setForm] = useState({ confidence: '', performed: '', method: '', note: '' });
@@ -24,6 +27,7 @@ export function PulseDrawer() {
   const setSkill = (id: string) => {
     const v = ws.profile.surveys[id];
     setSkillState(id);
+    setNotice(null);
     setForm({ confidence: v ? String(v.confidence) : '', performed: v?.performed ?? '', method: v?.method ?? '', note: v?.note ?? '' });
   };
 
@@ -51,14 +55,17 @@ export function PulseDrawer() {
     return [...order.slice(ix + 1), ...order.slice(0, ix + 1)].find((x) => x !== id && !ws.profile.surveys[x]);
   };
   function save(andNext: boolean) {
-    const ok = act((d) => saveSurvey(d, skill, form));
-    if (ok === undefined) return;
+    let msg = '';
+    try { update((d) => { msg = saveSurvey(d, skill, form); return undefined; }); }
+    catch (err) { if (err instanceof ActionError) { setNotice({ tone: 'error', text: err.message }); return; } throw err; }
+    void act; // kept for parity with other components
     if (andNext) {
       const n = nextAfter(skill);
-      if (n) setSkill(n);
+      if (n) { setSkill(n); setNotice({ tone: 'ok', text: `Saved ${s?.name ?? 'skill'}. Next unrated skill loaded.` }); }
       else { flash('All confirmed skills now have a confidence reflection.'); closePulse(); }
-    }
+    } else setNotice({ tone: 'ok', text: msg || 'Saved.' });
   }
+  const missing = [!form.confidence && 'confidence', !form.performed && 'experience', !form.method && 'execution mode'].filter(Boolean) as string[];
 
   return (
     <dialog ref={ref} id="pulsePanel" aria-labelledby="pulse-title"
@@ -89,8 +96,10 @@ export function PulseDrawer() {
             <Field label="How was it performed?" htmlFor="method"><Select id="method" value={form.method} onChange={(v) => setForm({ ...form, method: v })} placeholder="Choose execution mode" options={METHOD} /></Field>
             <Field label="Optional context (stays in this browser)" htmlFor="surveyNote"><Textarea id="surveyNote" rows={3} value={form.note} onChange={(v) => setForm({ ...form, note: v })} placeholder="What did you work on? Avoid sensitive details." /></Field>
             <p className="note mt-3">Confidence changes how brightly a skill shines on your web. It is a self-report, not a qualification, credential, or access decision.</p>
+            {notice && <p id="pulseNotice" role={notice.tone === 'error' ? 'alert' : 'status'} className={`mt-3 rounded-md border px-3 py-2 text-[13px] ${notice.tone === 'error' ? 'border-danger/50 bg-danger/10 text-danger' : 'border-mint/40 bg-mint/10 text-mint'}`}>{notice.text}</p>}
           </div>
           <footer className="flex flex-wrap justify-end gap-2 border-t border-stroke p-4">
+            {missing.length > 0 && <span id="pulseMissing" className="mr-auto self-center text-[12px] text-quiet">Still needed: {missing.join(', ')}</span>}
             <Button id="saveSurvey" onClick={() => save(false)}>Save</Button>
             <Button id="saveSurveyNext" variant="primary" onClick={() => save(true)}>{unrated.filter((x) => x !== skill).length ? 'Save & next unrated' : 'Save & finish'}</Button>
           </footer>
