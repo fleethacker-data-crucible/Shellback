@@ -25,7 +25,7 @@ export function CapabilitySheet() {
   return (
     <section id="capabilitySheet" data-print-sheet aria-hidden="true">
       <h1>{p.displayName || 'My'} capability summary</h1>
-      <p className="sheet-mute">Printed from Synapse on {new Date().toISOString().slice(0, 10)}. Everything here is self-reported by the employee; nothing is a score, a qualification or an assessment.{p.orgCode ? ` ${orgLevelName(p.orgCode)} ${p.orgCode}${p.orgTitle ? ` · ${p.orgTitle}` : ''}.` : ''}</p>
+      <p className="sheet-mute">Printed from Shellback on {new Date().toISOString().slice(0, 10)}. Everything here is self-reported by the employee; nothing is a score, a qualification or an assessment.{p.orgCode ? ` ${orgLevelName(p.orgCode)} ${p.orgCode}${p.orgTitle ? ` · ${p.orgTitle}` : ''}.` : ''}</p>
       <h2>Confirmed skills ({p.confirmed.length})</h2>
       <table>
         <thead><tr><th>Domain</th><th>Skill</th><th>Confidence (0–4)</th><th>How I usually do it</th></tr></thead>

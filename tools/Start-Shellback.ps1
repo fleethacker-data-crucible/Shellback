@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Serves the compiled Synapse app (dist/) to a local browser from 127.0.0.1.
+  Serves the compiled Shellback app (dist/) to a local browser from 127.0.0.1.
 
 .DESCRIPTION
   Windows PowerShell 5.1 + System.Net.Sockets.TcpListener. No admin rights, no
@@ -11,7 +11,7 @@
   sendBeacon "leaving" signal on pagehide; the server stops itself 20 s after the last heartbeat
   from any tab, or 5 s after a leaving signal with no new heartbeat. POST /api/session/stop is
   "End session". Both routes accept only this server's own Origin and Host (there is no session
-  token). While running it writes logs\synapse-server-<pid>.json and deletes it on stop.
+  token). While running it writes logs\shellback-server-<pid>.json and deletes it on stop.
 
   TechStack: Launcher .bat -> powershell.exe -File ; Local server PowerShell 5.1 + TcpListener on 127.0.0.1
 
@@ -29,16 +29,16 @@
 .PARAMETER Stay
   Keep the server running after the browser tab closes. By default the tab owns the server: it
   stops itself about 20 s after the last tab closes (5 s after the tab says it is leaving).
-  Also: Launch-Synapse.bat --stay, or set SYNAPSE_AUTO_STOP=0.
+  Also: Launch-Shellback.bat --stay, or set SHELLBACK_AUTO_STOP=0 (SYNAPSE_AUTO_STOP=0 still works).
 
 .PARAMETER Replace
-  If a Synapse server is already running, stop it and start fresh without asking. Also: --replace
+  If a Shellback server is already running, stop it and start fresh without asking. Also: --replace
 
 .EXAMPLE
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\Serve-Synapse.ps1
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\Start-Shellback.ps1
 
 .EXAMPLE
-  Launch-Synapse.bat --replace --stay
+  Launch-Shellback.bat --replace --stay
 #>
 [CmdletBinding(PositionalBinding = $false)]
 param(
@@ -53,7 +53,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-# Launch-Synapse.bat passes its arguments through; accept the --long spellings too.
+# Launch-Shellback.bat passes its arguments through; accept the --long spellings too.
 foreach ($a in @($Rest)) {
   switch -Regex ($a) {
     '^--?stay$' { $Stay = $true }
@@ -68,11 +68,14 @@ $scriptDir = $PSScriptRoot
 if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition }
 $appRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptDir '..')).TrimEnd('\', '/')
 if (-not $Root) { $Root = Join-Path $scriptDir '..\dist' }
-. (Join-Path $scriptDir 'Synapse-Process.ps1')
+. (Join-Path $scriptDir 'Shellback-Process.ps1')
 
-# Lifecycle (TechStack "Lifecycle rules"): the browser tab owns this server unless -Stay or SYNAPSE_AUTO_STOP=0.
+# Lifecycle (TechStack "Lifecycle rules"): the browser tab owns this server unless -Stay or SHELLBACK_AUTO_STOP=0.
 $autoStop = -not $Stay
-if ($env:SYNAPSE_AUTO_STOP -match '^(0|false|off|no)$') { $autoStop = $false }
+# SHELLBACK_AUTO_STOP first; SYNAPSE_AUTO_STOP (the former name) is still read as a fallback.
+$autoStopEnv = $env:SHELLBACK_AUTO_STOP
+if ($null -eq $autoStopEnv) { $autoStopEnv = $env:SYNAPSE_AUTO_STOP }
+if ($autoStopEnv -match '^(0|false|off|no)$') { $autoStop = $false }
 
 $Root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
 if (-not (Test-Path -LiteralPath (Join-Path $Root 'index.html'))) {
@@ -124,10 +127,10 @@ function Send-Text {
 }
 
 # One instance: a second server on the next port would show an empty workspace (data is per port).
-$running = @(Get-SynapseProcesses -Root $appRoot)
+$running = @(Get-ShellbackProcesses -Root $appRoot)
 if ($running.Count -gt 0) {
   $where = ($running | ForEach-Object { if ($_.Url) { $_.Url + ' (PID ' + $_.Pid + ')' } else { 'PID ' + $_.Pid } }) -join ', '
-  Write-Host ('Synapse is already running: ' + $where) -ForegroundColor Yellow
+  Write-Host ('Shellback is already running: ' + $where) -ForegroundColor Yellow
   $answer = 'y'
   if (-not $Replace) {
     try { $answer = Read-Host 'Stop it and start fresh? [Y/n]' } catch { $answer = $null }
@@ -135,9 +138,9 @@ if ($running.Count -gt 0) {
   if ($null -eq $answer) {
     Write-Warning 'No console to ask in (non-interactive), so the running server is left alone and another one starts. Pass -Replace to stop it first.'
   } elseif ($answer -eq '' -or $answer -match '^[Yy]') {
-    foreach ($p in Stop-SynapseProcesses -Root $appRoot) { Write-Host ('  stopped Synapse server PID ' + $p) -ForegroundColor DarkGray }
+    foreach ($p in Stop-ShellbackProcesses -Root $appRoot) { Write-Host ('  stopped Shellback server PID ' + $p) -ForegroundColor DarkGray }
   } else {
-    Write-Host 'Leaving the running server alone. Use "End session" in its browser tab, or tools\Stop-Synapse.ps1.' -ForegroundColor DarkGray
+    Write-Host 'Leaving the running server alone. Use "End session" in its browser tab, or tools\Stop-Shellback.ps1.' -ForegroundColor DarkGray
     $existing = @($running | Where-Object { $_.Url })
     if (-not $NoBrowser -and $existing.Count -gt 0) { try { Start-Process $existing[0].Url | Out-Null } catch { } }
     exit 0
@@ -162,22 +165,22 @@ if ($boundPort -ne $Port) {
 }
 $url = "http://127.0.0.1:$boundPort/"
 # Only this page may call the lifecycle routes: another site (or a DNS-rebinding name) must not stop the app.
-# Synapse has no session token, so the Origin and Host headers are the check.
+# Shellback has no session token, so the Origin and Host headers are the check.
 $allowedOrigins = @("http://127.0.0.1:$boundPort", "http://localhost:$boundPort")
 $allowedHosts = @("127.0.0.1:$boundPort", "localhost:$boundPort")
-$presence = New-SynapsePresence -AutoStop $autoStop
+$presence = New-ShellbackPresence -AutoStop $autoStop
 $runtimeFile = $null
 $stopReason = ''
 
 Write-Host ''
-Write-Host '  SYNAPSE  offline synthetic pilot' -ForegroundColor Cyan
+Write-Host '  SHELLBACK  offline synthetic pilot' -ForegroundColor Cyan
 Write-Host "  Serving $Root"
 Write-Host "  Open    $url" -ForegroundColor Green
 Write-Host '  Loopback only. No login, no telemetry. Do not enter real personnel data.' -ForegroundColor DarkYellow
 if ($autoStop) {
   Write-Host '  Closing the browser tab stops this server (about 20 s later). End session in the app, or Ctrl+C here, stops it now.'
 } else {
-  Write-Host '  Auto-stop is off (-Stay or SYNAPSE_AUTO_STOP=0). Press Ctrl+C in this window, or run tools\Stop-Synapse.ps1, to stop.'
+  Write-Host '  Auto-stop is off (-Stay or SHELLBACK_AUTO_STOP=0). Press Ctrl+C in this window, or run tools\Stop-Shellback.ps1, to stop.'
 }
 Write-Host ''
 
@@ -187,12 +190,12 @@ if (-not $NoBrowser) {
 
 $lastTick = [DateTime]::UtcNow
 try {
-  $runtimeFile = Write-SynapseRuntimeFile -Root $appRoot -Port $boundPort -Url $url
+  $runtimeFile = Write-ShellbackRuntimeFile -Root $appRoot -Port $boundPort -Url $url
   while (-not $stopReason) {
     $now = [DateTime]::UtcNow
     if (($now - $lastTick).TotalMilliseconds -ge 1000) {
       $lastTick = $now
-      if (Test-SynapseBrowserGone -State $presence -Now $now) { $stopReason = 'The browser tab closed; stopping (SYNAPSE_AUTO_STOP=0 or -Stay keeps the server running).'; break }
+      if (Test-ShellbackBrowserGone -State $presence -Now $now) { $stopReason = 'The browser tab closed; stopping (SHELLBACK_AUTO_STOP=0 or -Stay keeps the server running).'; break }
     }
     # Poll instead of blocking in AcceptTcpClient so Ctrl+C is handled promptly by PowerShell.
     if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
@@ -231,7 +234,7 @@ try {
         if (-not $origin -or $allowedOrigins -notcontains $origin -or -not $hostHeader -or $allowedHosts -notcontains $hostHeader) {
           Send-Text -Stream $stream -Status 403 -Reason 'Forbidden' -Text 'Forbidden' -HeadOnly $false; continue
         }
-        # Small JSON body; never logged. Synapse has no session token, so there is nothing secret in it.
+        # Small JSON body; never logged. Shellback has no session token, so there is nothing secret in it.
         $length = 0
         if ($headers['content-length']) { [void][int]::TryParse($headers['content-length'], [ref]$length) }
         if ($length -lt 0 -or $length -gt 4096) { Send-Text -Stream $stream -Status 413 -Reason 'Payload Too Large' -Text 'Too large' -HeadOnly $false; continue }
@@ -247,11 +250,14 @@ try {
           if ($body -and $body.PSObject.Properties['tab']) { $tab = [string]$body.tab }
           if ($body -and $body.PSObject.Properties['leaving']) { $leaving = [bool]$body.leaving }
           if ($tab.Length -gt 64) { $tab = $tab.Substring(0, 64) }
-          Update-SynapsePresence -State $presence -TabId $tab -Leaving:$leaving
+          Update-ShellbackPresence -State $presence -TabId $tab -Leaving:$leaving
           Send-Response -Stream $stream -Status 204 -Reason 'No Content' -Body ([byte[]]@()) -ContentType 'text/plain; charset=utf-8' -HeadOnly $false -Extra $null
         } else {
           # End session: a custom header, so a cross-site form or beacon cannot trigger it.
-          if ($headers['x-synapse-intent'] -ne 'end-session') { Send-Text -Stream $stream -Status 403 -Reason 'Forbidden' -Text 'Forbidden' -HeadOnly $false; continue }
+          # X-Synapse-Intent is the former header name, still accepted so an older open tab can end its session.
+          $intent = $headers['x-shellback-intent']
+          if (-not $intent) { $intent = $headers['x-synapse-intent'] }
+          if ($intent -ne 'end-session') { Send-Text -Stream $stream -Status 403 -Reason 'Forbidden' -Text 'Forbidden' -HeadOnly $false; continue }
           Send-Text -Stream $stream -Status 200 -Reason 'OK' -Text 'Stopping' -HeadOnly $false
           $stopReason = 'End session was chosen in the browser; stopping.'
         }
@@ -287,7 +293,7 @@ try {
   }
 } finally {
   $listener.Stop()
-  Remove-SynapseRuntimeFile -Path $runtimeFile
+  Remove-ShellbackRuntimeFile -Path $runtimeFile
   if ($stopReason) { Write-Host $stopReason -ForegroundColor DarkGray }
-  Write-Host 'Synapse server stopped.'
+  Write-Host 'Shellback server stopped.'
 }

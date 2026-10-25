@@ -1,19 +1,19 @@
 # Intelligence providers
 
-Synapse works completely without a model. **Local rules** (deterministic keyword and certification matching in the browser) is the default provider and the fallback for everything. An organization that runs an authorized AI platform can expose it to Synapse as a **remote HTTP provider** by implementing the small contract below. Synapse does not ship, and will not ship, any vendor-specific adapter: the platform team owns the server side.
+Shellback works completely without a model. **Local rules** (deterministic keyword and certification matching in the browser) is the default provider and the fallback for everything. An organization that runs an authorized AI platform can expose it to Shellback as a **remote HTTP provider** by implementing the small contract below. Shellback does not ship, and will not ship, any vendor-specific adapter: the platform team owns the server side.
 
 ## What the user sees
 
 Program → **Intelligence** — Local rules (default) or a remote provider set up in four steps:
 
-1. **Where is it?** Kind of endpoint — *OpenAI-compatible gateway* (the API base, usually `…/v1`; Synapse calls `/models` and `/chat/completions` itself) or *Synapse contract endpoint* (a platform-side implementation of the contract below) — plus display name and URL.
+1. **Where is it?** Kind of endpoint — *OpenAI-compatible gateway* (the API base, usually `…/v1`; Shellback calls `/models` and `/chat/completions` itself) or *Shellback contract endpoint* (a platform-side implementation of the contract below) — plus display name and URL.
 2. **Which key?** The API key / bearer token, sealed with a passphrase (AES-256-GCM), unlocked per browser session, never exported.
 3. **Which model?** *Load models* lists what the key can use; pick one (or type it).
 4. **Does it work?** *Test connection*, then *Save connection* and select the provider at the top.
 
 Advanced: an optional **data-handling notice** — the one-sentence statement employees see wherever the provider is used (intake, team brief, Trust & data). Generated from host + model by default; an approved platform statement (retention, ATO, PII approval) can replace it verbatim.
 
-For an OpenAI-compatible gateway the browser talks to it directly, so the gateway must allow CORS from the Synapse origin **and** the build must allow the host. If either is missing, run the loopback adapter below instead (it also implements `list-models`).
+For an OpenAI-compatible gateway the browser talks to it directly, so the gateway must allow CORS from the Shellback origin **and** the build must allow the host. If either is missing, run the loopback adapter below instead (it also implements `list-models`).
 
 - A provider choice: Local rules (default) or Remote provider.
 - Connection settings: display name, endpoint (HTTPS, POST), optional model/deployment string, optional disclosure text.
@@ -26,11 +26,11 @@ For an OpenAI-compatible gateway the browser talks to it directly, so the gatewa
 The shipped build's Content-Security-Policy is `connect-src 'self'`. A browser will refuse any request to another origin regardless of what is configured in the UI. To allow a provider host, build with:
 
 ```powershell
-$env:SYNAPSE_INTEL_HOST = "https://ai.example.mil"   # comma-separate several origins
+$env:SHELLBACK_INTEL_HOST = "https://ai.example.mil"   # comma-separate several origins
 npm run build
 ```
 
-The origins are written into `dist/build-manifest.json` (`intelHosts`) and shown in the Intelligence tab ("Allowed by this build"). A build with no `SYNAPSE_INTEL_HOST` is network-silent by construction.
+The origins are written into `dist/build-manifest.json` (`intelHosts`) and shown in the Intelligence tab ("Allowed by this build"). A build with no `SHELLBACK_INTEL_HOST` is network-silent by construction.
 
 ## Quickest way to try it: the loopback adapter
 
@@ -38,20 +38,20 @@ The origins are written into `dist/build-manifest.json` (`intelHosts`) and shown
 
 ```powershell
 # 1. Build an edition that is allowed to talk to the adapter (not the committed dist/)
-$env:SYNAPSE_INTEL_HOST = "http://127.0.0.1:8790"
+$env:SHELLBACK_INTEL_HOST = "http://127.0.0.1:8790"
 npm run build:intel                      # → dist-intel
 # 2. Start the adapter (keep this window open)
 $env:INTEL_UPSTREAM_URL = "https://<your-gateway>/v1/chat/completions"
 $env:INTEL_API_KEY      = "<your key>"
 $env:INTEL_MODEL        = "<model or deployment name>"   # optional
-$env:INTEL_TOKEN        = "pick-a-shared-secret"         # optional; Synapse presents it as the bearer token
+$env:INTEL_TOKEN        = "pick-a-shared-secret"         # optional; Shellback presents it as the bearer token
 npm run intel:adapter
 
 # 3. Serve that edition in a second window
-npm run serve:intel                      # or: .	ools\Serve-Synapse.ps1 -Root .\dist-intel
+npm run serve:intel                      # or: .	ools\Start-Shellback.ps1 -Root .\dist-intel
 ```
 
-Then in Synapse: Program → Intelligence → endpoint `http://127.0.0.1:8790`, *Add bearer token…* = the `INTEL_TOKEN` you chose, *Test connection*, select *Remote provider*. If the gateway is not OpenAI-shaped, the adapter is ~80 lines; change `upstream()` and the three prompts.
+Then in Shellback: Program → Intelligence → endpoint `http://127.0.0.1:8790`, *Add bearer token…* = the `INTEL_TOKEN` you chose, *Test connection*, select *Remote provider*. If the gateway is not OpenAI-shaped, the adapter is ~80 lines; change `upstream()` and the three prompts.
 
 The adapter is a development convenience. For production the platform team should implement the contract server-side so the browser talks to the accredited service directly over HTTPS.
 
@@ -68,7 +68,7 @@ One endpoint, `POST`, JSON in and out, `Authorization: Bearer <token>` when a to
 { "ok": false, "error": "human-readable reason (≤ 400 chars)" }
 ```
 
-Synapse times out after 30 s (15 s for the connection test) and treats a non-2xx status, non-JSON body, or a `result` that fails validation as a failure. Failures fall back to local rules and are reported to the user; partial results are never used.
+Shellback times out after 30 s (15 s for the connection test) and treats a non-2xx status, non-JSON body, or a `result` that fails validation as a failure. Failures fall back to local rules and are reported to the user; partial results are never used.
 
 ### `ping`
 
@@ -134,15 +134,15 @@ The input is **aggregate-only by construction**: it has no names, no per-person 
 ## Rules a provider must keep
 
 1. Outputs are suggestions for the employee to confirm or dismiss, never conclusions.
-2. No provider scores, ranks or profiles a person. Synapse never sends enough to do so, and a brief that tries is still shown with the "self-reported, aggregate, not an assessment" footer.
-3. State what you retain, for how long, and under which authority in the disclosure text; Synapse shows it verbatim wherever the provider is used.
-4. Idempotent, stateless requests. Synapse keeps no conversation and sends no identifiers.
+2. No provider scores, ranks or profiles a person. Shellback never sends enough to do so, and a brief that tries is still shown with the "self-reported, aggregate, not an assessment" footer.
+3. State what you retain, for how long, and under which authority in the disclosure text; Shellback shows it verbatim wherever the provider is used.
+4. Idempotent, stateless requests. Shellback keeps no conversation and sends no identifiers.
 
 ## Authoritative sources (design note, not implemented)
 
 Credential truth ultimately lives in systems of record (for example an enterprise analytics platform fed by training and certification systems). The planned shape is a **read-only credential adapter**:
 
 - `GET /credentials?subject=<opaque id the user pastes>` → `[{ name, authority, issued, expiry, verifier, verifiedOn }]`
-- Synapse would import rows as credentials with provenance `verified` and show the verifier; the user can still hide or annotate them but not edit verified fields.
-- Same network boundary (`SYNAPSE_INTEL_HOST`), same token handling, same disclosure table row.
-- Until such an adapter exists, every credential in Synapse is `claimed` or `reviewed` (employee-reviewed résumé suggestion), and the UI says so.
+- Shellback would import rows as credentials with provenance `verified` and show the verifier; the user can still hide or annotate them but not edit verified fields.
+- Same network boundary (`SHELLBACK_INTEL_HOST`), same token handling, same disclosure table row.
+- Until such an adapter exists, every credential in Shellback is `claimed` or `reviewed` (employee-reviewed résumé suggestion), and the UI says so.

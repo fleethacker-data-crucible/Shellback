@@ -1,4 +1,4 @@
-name: Synapse browser smoke
+name: Shellback browser smoke
 on:
   push:
     branches: [main]
@@ -34,16 +34,16 @@ jobs:
         run: npx playwright install chromium
       - name: Browser smoke tests (served + standalone editions)
         run: npm run test:e2e
-      - name: PowerShell 5.1 loopback server (Serve-Synapse.ps1)
+      - name: PowerShell 5.1 loopback server (Start-Shellback.ps1)
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
           Write-Host "PowerShell $($PSVersionTable.PSVersion) / CLR $($PSVersionTable.CLRVersion)"
           Write-Host "Execution policies:"; Get-ExecutionPolicy -List | Format-Table -AutoSize | Out-String | Write-Host
           $port = 18765
-          $out = Join-Path $env:RUNNER_TEMP 'synapse-ps.out.txt'
-          $err = Join-Path $env:RUNNER_TEMP 'synapse-ps.err.txt'
-          $script = (Resolve-Path 'tools\Serve-Synapse.ps1').Path
+          $out = Join-Path $env:RUNNER_TEMP 'shellback-ps.out.txt'
+          $err = Join-Path $env:RUNNER_TEMP 'shellback-ps.err.txt'
+          $script = (Resolve-Path 'tools\Start-Shellback.ps1').Path
           $server = Start-Process powershell.exe -PassThru -NoNewWindow -RedirectStandardOutput $out -RedirectStandardError $err -ArgumentList @(
             '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', "`"$script`"", '-Port', "$port", '-NoBrowser')
           function Get-Status([string]$path) {
@@ -55,7 +55,7 @@ jobs:
             $e = if (Test-Path $err) { (Get-Content $err -Raw) } else { '' }
             $exit = if ($server.HasExited) { "exited with code $($server.ExitCode)" } else { 'still running' }
             $msg = "$why | server $exit | stdout: $o | stderr: $e"
-            Write-Host ("::error title=Serve-Synapse.ps1::" + ($msg -replace '%','%25' -replace "`r",'%0D' -replace "`n",'%0A'))
+            Write-Host ("::error title=Start-Shellback.ps1::" + ($msg -replace '%','%25' -replace "`r",'%0D' -replace "`n",'%0A'))
             throw $why
           }
           try {
@@ -73,11 +73,11 @@ jobs:
             $s = Get-Status '/sw.js'; if ($s -ne 200) { Fail "sw.js returned $s" }
             $s = Get-Status '/nope.txt'; if ($s -ne 404) { Fail "missing file returned $s" }
             $s = Get-Status '/..%2f..%2fpackage.json'; if ($s -ne 403 -and $s -ne 404) { Fail "traversal returned $s" }
-            Write-Host 'Serve-Synapse.ps1 OK'
+            Write-Host 'Start-Shellback.ps1 OK'
             Get-Content $out -Raw | Write-Host
           } finally {
             if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
           }
-      - name: PowerShell 5.1 lifecycle (auto-stop, runtime file, End session, -Replace, Stop-Synapse.ps1)
+      - name: PowerShell 5.1 lifecycle (auto-stop, runtime file, End session, -Replace, Stop-Shellback.ps1)
         shell: powershell
         run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests\ps\Lifecycle.Tests.ps1

@@ -1,6 +1,6 @@
 /**
  * "How I like to contribute": six stages of work, each marked energizing / neutral / draining.
- * Synapse's own neutral vocabulary; not an assessment. See core/contribution.ts.
+ * Shellback's own neutral vocabulary; not an assessment. See core/contribution.ts.
  */
 import { useRef, useState, type ChangeEvent } from 'react';
 import { CONTEXT_TAGS, CONTEXT_TAG_LABEL, ENERGY_SCALE, ENERGY_SCORE_LABEL, FLUENCY_LABEL, FLUENCY_SCALE, PHASE_LABEL, QUADRANT_DETAIL, QUADRANT_LABEL, STAGE_DEFS, STAGE_PHASES, importContribution, quadrant, stageDetail, type EnergyScore, type Quadrant } from '../../core/contribution';

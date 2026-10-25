@@ -39,7 +39,7 @@ export function IntelligenceView() {
   async function addKey() {
     const token = await dialogs.prompt(kind === 'openai' ? 'Paste the API key for this gateway. Next you will choose a passphrase that encrypts it on this computer; the key is unlocked only in this browser session and never exported.' : 'Paste the bearer token for this endpoint. Next you will choose a passphrase that encrypts it; it is never exported.', { title: kind === 'openai' ? 'Step 1 of 2: API key' : 'Step 1 of 2: bearer token', label: kind === 'openai' ? 'API key' : 'Token', password: true, confirmLabel: 'Next: choose a passphrase' });
     if (!token) return;
-    const pass = await dialogs.prompt(<>Key received. Now choose a <b>passphrase</b> (8+ characters) — not another token — that Synapse uses to encrypt the key on this computer. You will type it once per browser session to unlock the key.</>, { title: 'Step 2 of 2: protect the key with a passphrase', label: 'Passphrase (your choice)', password: true, minLength: 8, confirmLabel: 'Encrypt & save' });
+    const pass = await dialogs.prompt(<>Key received. Now choose a <b>passphrase</b> (8+ characters) — not another token — that Shellback uses to encrypt the key on this computer. You will type it once per browser session to unlock the key.</>, { title: 'Step 2 of 2: protect the key with a passphrase', label: 'Passphrase (your choice)', password: true, minLength: 8, confirmLabel: 'Encrypt & save' });
     if (!pass) return;
     setBusy('token');
     try {
@@ -84,7 +84,7 @@ export function IntelligenceView() {
   return (
     <section id="intelligence" className="space-y-5">
       <SectionIntro eyebrow="PROGRAM / INTELLIGENCE" title="Where suggestions come from.">
-        Synapse never needs a model to work. Local rules match keywords in this browser. If your organization runs an authorized AI gateway, set it up below in four steps; the page tells you exactly what would be sent before anything is.
+        Shellback never needs a model to work. Local rules match keywords in this browser. If your organization runs an authorized AI gateway, set it up below in four steps; the page tells you exactly what would be sent before anything is.
       </SectionIntro>
 
       <Panel id="intelProvider">
@@ -98,7 +98,7 @@ export function IntelligenceView() {
           <label className={`cursor-pointer rounded-md border p-4 ${s.provider === 'remote-http' ? 'border-amber/60 bg-amber/5' : 'border-stroke'} ${!remoteReady ? 'opacity-70' : ''}`}>
             <input type="radio" name="intelProvider" value="remote-http" data-provider="remote-http" className="mr-2 accent-mint" disabled={!remoteReady || dirty} checked={s.provider === 'remote-http'} onChange={() => useProvider('remote-http')} />
             <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">{!endpointOk ? 'step 1: enter the endpoint' : kind === 'openai' && !s.tokenEnvelope ? 'step 2: add the API key' : !modelReady ? 'step 3: choose a model' : 'finish the steps below'}</Pill> : dirty ? <Pill className="ml-2">step 4: save, then select</Pill> : null}
-            <p className="note mt-1">An AI gateway your organization has authorized (for example an IL5-accredited service). You choose the model; Synapse sends only what the table at the bottom lists.</p>
+            <p className="note mt-1">An AI gateway your organization has authorized (for example an IL5-accredited service). You choose the model; Shellback sends only what the table at the bottom lists.</p>
           </label>
         </div>
       </Panel>
@@ -115,12 +115,12 @@ export function IntelligenceView() {
               </Field>
               <Field label="Display name" htmlFor="intelLabel"><Input id="intelLabel" value={s.remote.label} onChange={(v) => setRemote({ label: v })} placeholder="e.g. GenAI (accredited)" maxLength={80} /></Field>
             </div>
-            <Field label={kind === 'openai' ? 'API base URL (usually ends in /v1)' : 'Endpoint URL (accepts the Synapse contract POST)'} htmlFor="intelEndpoint" hint={endpointError ?? (kind === 'openai' ? 'Synapse will call <base>/models and <base>/chat/completions.' : 'See docs/INTELLIGENCE_PROVIDERS.md for the contract.')}>
-              <Input id="intelEndpoint" value={s.remote.endpoint} onChange={(v) => { setRemote({ endpoint: v.trim() }); setModels(null); }} placeholder={kind === 'openai' ? 'https://ai.example.mil/v1' : 'https://ai.example.mil/synapse'} maxLength={500} />
+            <Field label={kind === 'openai' ? 'API base URL (usually ends in /v1)' : 'Endpoint URL (accepts the Shellback contract POST)'} htmlFor="intelEndpoint" hint={endpointError ?? (kind === 'openai' ? 'Shellback will call <base>/models and <base>/chat/completions.' : 'See docs/INTELLIGENCE_PROVIDERS.md for the contract.')}>
+              <Input id="intelEndpoint" value={s.remote.endpoint} onChange={(v) => { setRemote({ endpoint: v.trim() }); setModels(null); }} placeholder={kind === 'openai' ? 'https://ai.example.mil/v1' : 'https://ai.example.mil/shellback'} maxLength={500} />
             </Field>
             {endpointOk && !hostAllowed && (
               <Notice tone="warn" className="mt-2">
-                <b>This build does not allow connections to that host.</b> Synapse ships with a Content-Security-Policy that blocks every origin except its own, so the browser will refuse the request no matter what is configured here. Rebuild with <code>SYNAPSE_INTEL_HOST={new URL(s.remote.endpoint).origin}</code> (<code>npm run build:intel</code>), or run the loopback adapter on <code>http://127.0.0.1:8790</code> — see LOCAL-DEV.md. {ALLOWED_INTEL_HOSTS.length ? <>Allowed by this build: {ALLOWED_INTEL_HOSTS.join(', ')}.</> : 'This build allows no remote hosts.'}
+                <b>This build does not allow connections to that host.</b> Shellback ships with a Content-Security-Policy that blocks every origin except its own, so the browser will refuse the request no matter what is configured here. Rebuild with <code>SHELLBACK_INTEL_HOST={new URL(s.remote.endpoint).origin}</code> (<code>npm run build:intel</code>), or run the loopback adapter on <code>http://127.0.0.1:8790</code> — see LOCAL-DEV.md. {ALLOWED_INTEL_HOSTS.length ? <>Allowed by this build: {ALLOWED_INTEL_HOSTS.join(', ')}.</> : 'This build allows no remote hosts.'}
               </Notice>
             )}
           </Step>

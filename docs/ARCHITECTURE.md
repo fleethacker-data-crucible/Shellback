@@ -1,4 +1,4 @@
-# Synapse architecture (v1.0 rebuild)
+# Shellback architecture (v1.0 rebuild)
 
 ## Goals
 
@@ -26,7 +26,7 @@
 │ src/workers        scan.worker.ts                                        │
 └──────────────────────────────────────────────────────────────────────────┘
 tools/build.mjs     esbuild + Tailwind 4 compile() → dist/ (served + standalone + sw + manifest)
-tools/Serve-Synapse.ps1   PowerShell 5.1 TcpListener on 127.0.0.1 (workstation runtime)
+tools/Start-Shellback.ps1   PowerShell 5.1 TcpListener on 127.0.0.1 (workstation runtime)
 tools/serve.mjs     the same server in Node (CI / build machine)
 ```
 
@@ -39,7 +39,7 @@ tools/serve.mjs     the same server in Node (CI / build machine)
 
 ### Editions
 
-| | Served (`dist/index.html`) | Standalone (`dist/Synapse-Standalone.html`) |
+| | Served (`dist/index.html`) | Standalone (`dist/Shellback-Standalone.html`) |
 | --- | --- | --- |
 | Transport | `http://127.0.0.1:<port>` via PowerShell or Node | `file://` |
 | JS/CSS | `assets/app.js`, `assets/app.css` | inlined (`<script type="module">`, `<style>`) |
@@ -53,8 +53,8 @@ Both editions are built from the same bundle in one build run. `build-manifest.j
 
 | TechStack item | Status | Reason / path forward |
 | --- | --- | --- |
-| Launcher `.bat` → `powershell.exe -File` | **Done** | `Launch-Synapse.bat` |
-| PowerShell 5.1 + `TcpListener` on 127.0.0.1 | **Done** | `tools/Serve-Synapse.ps1`. CI runs on the self-hosted Windows runner and starts the real script, then checks headers, the assets, a 404 and a path-traversal attempt. The Node twin (`tools/serve.mjs`) serves the browser tests. |
+| Launcher `.bat` → `powershell.exe -File` | **Done** | `Launch-Shellback.bat` |
+| PowerShell 5.1 + `TcpListener` on 127.0.0.1 | **Done** | `tools/Start-Shellback.ps1`. CI runs on the self-hosted Windows runner and starts the real script, then checks headers, the assets, a 404 and a path-traversal attempt. The Node twin (`tools/serve.mjs`) serves the browser tests. |
 | React 19 + TypeScript | **Done** | strict TS with `noUncheckedIndexedAccess` |
 | Tailwind CSS 4 + shadcn-style (CVA, Radix, Lucide) | **Partial** | Tailwind 4, CVA, clsx and tailwind-merge are used. **Radix** and **Lucide** weren't available in the offline build environment: dialogs use native `<dialog>` with focus handling, toggles use native inputs with ARIA, and icons are text glyphs. Adding them later is a drop-in change in `components/ui`. |
 | ECharts, React Flow, Motion | **Not used** | Unavailable offline. The two visualizations are purpose-built SVG on **d3** (bundled): the radial web uses `d3-shape`, and galaxy hit-testing uses `d3-quadtree`. Motion is CSS transitions that honor `prefers-reduced-motion` and an in-app setting. If ECharts or React Flow are adopted later, the pure `galaxy-model.ts` and `SpiderWeb` data builders keep the data layer independent of the renderer. |
@@ -117,7 +117,7 @@ Implements audit items P1.3 (one guided onboarding flow) and P1.4 (simpler navig
 
 ## Contribution preferences and organization codes (v1.2)
 
-- **"How I like to contribute"** (`core/contribution.ts`): six generic stages of work grouped into ideation / activation / implementation; each marked energizing, neutral or draining. This is Synapse's own neutral vocabulary and is not an assessment; it reproduces no vendor instrument and uses no vendor name. A free-text `source` lets people note where their answers came from in their own words. Team view: `stageCoverage()` and `stageObservations()` (team-level only, never about an individual). Missions can require a stage.
+- **"How I like to contribute"** (`core/contribution.ts`): six generic stages of work grouped into ideation / activation / implementation; each marked energizing, neutral or draining. This is Shellback's own neutral vocabulary and is not an assessment; it reproduces no vendor instrument and uses no vendor name. A free-text `source` lets people note where their answers came from in their own words. Team view: `stageCoverage()` and `stageObservations()` (team-level only, never about an individual). Missions can require a stage.
 - **Organization codes** (`core/org.ts`): the hierarchy is derived from the codes people enter, by prefix (`1500 → 1510 → 1513 → 1513.1`; three-digit yards nest `200 → 240 → 246`). No org chart ships; `buildOrgTree()` builds it from shared codes and Team → Coverage rolls skills up through it. Units below the three-person minimum show no numbers of their own.
 - **Consent:** both fields are private by default. They join this browser's team tools only via `shareOrgLocally` / `shareContributionLocally`, and go on a peer card only via their own export checkboxes. Peer-card format stays v1 with two optional fields.
 - **Intelligence seam** (`core/intelligence.ts`): an `IntelligenceProvider` interface with one registered implementation, `local-rules` (today's offline scanner). A model-backed provider hosted on an authorized platform can be registered against the same interface later; until one is selected nothing leaves the workstation.
@@ -125,7 +125,7 @@ Implements audit items P1.3 (one guided onboarding flow) and P1.4 (simpler navig
 ## Galaxy v2, intelligence, lifecycle (v1.3)
 
 - **Galaxy** (`app/viz/galaxy-model.ts`, `Galaxy.tsx`): the base layout is a one-time d3-force settle (seeded positions, fixed tick count, cached per session) so every profile sees the same map and nothing moves on its own. The view uses d3-zoom for wheel/pan with a Fit that frames whatever is visible; star drags are handled separately and nudge linked neighbours. Labels are counter-scaled by 1/√k so zooming in separates them. Ghost neighbours render as `.sky-ghost-node` (never `.sky-skill-node`) so "Confirmed shows exactly your attestations" stays literally true.
-- **Intelligence** (`core/intelligence.ts`, `storage/intel-settings.ts`, `views/IntelligenceView.tsx`): one built-in provider (`local-rules`) and one configurable remote HTTP provider that speaks contract v1 (`ping`, `scan-resume`, `map-skills`, `team-brief`). Every remote response is validated with zod and clamped (unknown skill ids dropped, lengths bounded); any failure falls back to local rules and is reported. Non-secret settings live in `localStorage['synapse-intel-v1']`; the bearer token is stored only as an AES-GCM envelope sealed with a user passphrase and decrypted into memory per session. The build's CSP `connect-src` is `'self'` plus whatever `SYNAPSE_INTEL_HOST` lists; the UI reads the same list (`__SYNAPSE_INTEL_HOSTS__`) and warns when a configured host is not allowed.
+- **Intelligence** (`core/intelligence.ts`, `storage/intel-settings.ts`, `views/IntelligenceView.tsx`): one built-in provider (`local-rules`) and one configurable remote HTTP provider that speaks contract v1 (`ping`, `scan-resume`, `map-skills`, `team-brief`). Every remote response is validated with zod and clamped (unknown skill ids dropped, lengths bounded); any failure falls back to local rules and is reported. Non-secret settings live in `localStorage['synapse-intel-v1']`; the bearer token is stored only as an AES-GCM envelope sealed with a user passphrase and decrypted into memory per session. The build's CSP `connect-src` is `'self'` plus whatever `SHELLBACK_INTEL_HOST` lists; the UI reads the same list (`__SHELLBACK_INTEL_HOSTS__`) and warns when a configured host is not allowed.
 - **Team brief** (`views/TeamBriefPanel.tsx`): `TeamBriefInput` is aggregate-only by type (counts and skill names, no people). The panel shows the exact input before generating. Local rules produce a deterministic brief (`localTeamBrief`).
 - **Document text** (`app/lib/document-text.ts`): `.docx` via a minimal zip reader + `DecompressionStream('deflate-raw')`; `.pdf` text layer via content-stream parsing (Tj/TJ) with FlateDecode. No OCR; scanned PDFs are reported as such.
 - **Skill mapping** (`core/mapping.ts`): exact → alias → token-Jaccard with a 0.5 floor. Used by manual add, imports and as the local half of `map-skills`.

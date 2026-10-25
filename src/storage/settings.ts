@@ -25,6 +25,7 @@ export interface Settings {
 export type Theme = 'system' | 'dark' | 'light';
 export const THEMES: readonly Theme[] = ['system', 'dark', 'light'];
 
+// Former-name key, kept so existing users keep their settings (see storage/idb.ts).
 const KEY = 'synapse-settings-v3';
 export const DEFAULT_SETTINGS: Settings = {
   view: 'home', profileTab: 'intake', exploreTab: 'web', teamTab: 'roster', programTab: 'governance', galaxyMode: 'confirmed', reducedMotion: false, theme: 'system',

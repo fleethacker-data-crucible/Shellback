@@ -151,7 +151,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const normalized = normalizeLoaded(r.workspace);
       latest.current = normalized;
       setWs(normalized);
-      flash(hadLocal ? 'Another Synapse tab saved newer changes; this tab switched to them and an unsaved edit here was discarded.' : 'Updated with changes saved in another Synapse tab.');
+      flash(hadLocal ? 'Another Shellback tab saved newer changes; this tab switched to them and an unsaved edit here was discarded.' : 'Updated with changes saved in another Shellback tab.');
     });
   }), []);
 

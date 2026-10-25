@@ -131,7 +131,7 @@ export function addCredential(ws: Workspace, input: CredentialInput, fromCandida
   ws.profile.credentials.push({ id: newId('cred'), ...n.v, provenance, created: today(), source: fromCandidateKey ? 'resume-reviewed' : 'self-entered' });
   if (fromCandidateKey) ws.profile.credentialCandidates = ws.profile.credentialCandidates.filter((c) => c.key !== fromCandidateKey);
   ws.profile.credentialCandidates = ws.profile.credentialCandidates.filter((c) => c.key !== key);
-  return provenance === 'verified' ? 'Credential saved with the verifier you named. Synapse itself has not checked it.' : 'Credential saved as your self-report. It has not been independently verified.';
+  return provenance === 'verified' ? 'Credential saved with the verifier you named. Shellback itself has not checked it.' : 'Credential saved as your self-report. It has not been independently verified.';
 }
 
 export function updateCredential(ws: Workspace, id: string, input: CredentialInput): string {
