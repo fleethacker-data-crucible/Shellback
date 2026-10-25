@@ -99,14 +99,38 @@ async function pdfText(bytes: Uint8Array): Promise<string> {
     const dictStart = latin.lastIndexOf('<<', m.index);
     const dict = dictStart >= 0 ? latin.slice(dictStart, m.index) : '';
     if (/\/Subtype\s*\/Image/.test(dict) || /\/FontFile/.test(dict)) { re.lastIndex = end; continue; }
-    let raw = bytes.subarray(start, end);
-    if (/\/FlateDecode/.test(dict)) { try { raw = await inflateZlib(raw); } catch { re.lastIndex = end; continue; } }
-    else if (/\/Filter/.test(dict)) { re.lastIndex = end; continue; }
+    let raw: Uint8Array = bytes.subarray(start, end);
+    // Filters apply in order; we support ASCII85 (ReportLab, some print drivers) and Flate, alone or chained.
+    const filters = [...dict.matchAll(/\/(ASCII85Decode|FlateDecode|ASCIIHexDecode|LZWDecode|DCTDecode|RunLengthDecode|CCITTFaxDecode|JBIG2Decode|JPXDecode)/g)].map((m) => m[1]!);
+    let unsupported = false;
+    for (const f of filters) {
+      if (f === 'ASCII85Decode') raw = ascii85(raw);
+      else if (f === 'FlateDecode') { try { raw = await inflateZlib(raw); } catch { unsupported = true; break; } }
+      else { unsupported = true; break; }
+    }
+    if (unsupported) { re.lastIndex = end; continue; }
     const content = new TextDecoder('latin1').decode(raw);
     if (/\b(?:Tj|TJ)\b/.test(content)) parts.push(contentText(content));
     re.lastIndex = end;
   }
   return parts.join('\n').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function ascii85(data: Uint8Array): Uint8Array {
+  const out: number[] = [];
+  let tuple = 0, count = 0;
+  let i = 0;
+  if (data[0] === 0x3c && data[1] === 0x7e) i = 2; // optional <~
+  for (; i < data.length; i++) {
+    const c = data[i]!;
+    if (c === 0x7e) break; // ~>
+    if (c === 0x7a && count === 0) { out.push(0, 0, 0, 0); continue; } // z
+    if (c < 0x21 || c > 0x75) continue; // whitespace
+    tuple = tuple * 85 + (c - 33);
+    if (++count === 5) { out.push((tuple >>> 24) & 255, (tuple >>> 16) & 255, (tuple >>> 8) & 255, tuple & 255); tuple = 0; count = 0; }
+  }
+  if (count > 0) { for (let k = count; k < 5; k++) tuple = tuple * 85 + 84; const b = [(tuple >>> 24) & 255, (tuple >>> 16) & 255, (tuple >>> 8) & 255, tuple & 255]; out.push(...b.slice(0, count - 1)); }
+  return new Uint8Array(out);
 }
 
 /** Pull strings out of Tj / TJ / ' / " operators; approximate spaces and line breaks from positioning. */
