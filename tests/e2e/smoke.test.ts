@@ -1,7 +1,7 @@
 /**
  * Browser smoke tests against the COMPILED output in dist/ — both editions:
- *   served      → dist/ over the loopback static server (same headers as Serve-Synapse.ps1)
- *   standalone  → dist/Synapse-Standalone.html over file://
+ *   served      → dist/ over the loopback static server (same headers as Start-Shellback.ps1)
+ *   standalone  → dist/Shellback-Standalone.html over file://
  * Run with: npm run test:e2e  (requires `npm run build` first and Playwright Chromium).
  */
 import { test, before, after } from 'node:test';
@@ -13,7 +13,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Browser, Page } from 'playwright';
 
-const root = process.env.SYNAPSE_ROOT ?? process.cwd();
+const root = process.env.SHELLBACK_ROOT ?? process.env.SYNAPSE_ROOT ?? process.cwd();
 const { chromium } = createRequire(path.join(root, 'package.json'))('playwright') as typeof import('playwright');
 const fixture = (name: string) => path.join(root, 'examples/employees', name);
 const readFixture = (name: string) => JSON.parse(readFileSync(fixture(name), 'utf8'));
@@ -298,7 +298,7 @@ test('served edition: galaxy hover is stationary, drag moves, keyboard selects',
 });
 
 test('standalone edition: personas, v1 import, peer exchange, encrypted round trip', async () => {
-  const { page, errors } = await open(pathToFileURL(path.join(root, 'dist/Synapse-Standalone.html')).href);
+  const { page, errors } = await open(pathToFileURL(path.join(root, 'dist/Shellback-Standalone.html')).href);
   assert.equal(await page.locator('html').getAttribute('data-edition'), 'standalone');
   const shapes = new Set<string | null>();
   for (const pid of ['morgan-vale', 'riley-chen', 'jordan-brooks', 'casey-rivera']) {
@@ -406,7 +406,7 @@ test('Escape on the export dialog aborts — no plaintext download (independent 
   assert.equal(await page.locator('dialog[open]').count(), 0);
   await page.locator('#exportBtn').click();
   const [d] = await Promise.all([page.waitForEvent('download'), page.locator('dialog [data-dialog="choice-plain"]').click()]);
-  assert.match(d.suggestedFilename(), /^synapse-workspace-.*\.json$/);
+  assert.match(d.suggestedFilename(), /^shellback-workspace-.*\.json$/);
   assert.deepEqual(errors, []);
 });
 

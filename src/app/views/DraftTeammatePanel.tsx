@@ -76,13 +76,13 @@ export function DraftTeammatePanel({ teamId, onAdded }: { teamId: string | undef
     onAdded(member.id);
     reset();
   }
-  function download() { const card = buildCard(); if (card) downloadJson(card, `synapse-draft-${card.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`); }
+  function download() { const card = buildCard(); if (card) downloadJson(card, `shellback-draft-${card.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`); }
   const reset = () => { setName(''); setOrgCode(''); setOrgTitle(''); setText(''); setPreview(null); };
 
   return (
     <Panel id="draftTeammate">
       <PanelHeading eyebrow="BUILD A TEAM FASTER" title="Add a teammate from a résumé (draft)">
-        For when you hold the résumés and the people have not used Synapse yet. What you add here is a <b>draft</b>: badged as not attested, excluded from coverage unless you include drafts, and meant to be handed to the person to confirm. Nothing here becomes a skill of theirs until they say so.
+        For when you hold the résumés and the people have not used Shellback yet. What you add here is a <b>draft</b>: badged as not attested, excluded from coverage unless you include drafts, and meant to be handed to the person to confirm. Nothing here becomes a skill of theirs until they say so.
       </PanelHeading>
       <div className="grid gap-3 md:grid-cols-3">
         <Field label="Display name" htmlFor="draftName"><Input id="draftName" value={name} onChange={setName} maxLength={70} placeholder="e.g. Jordan Reyes" /></Field>

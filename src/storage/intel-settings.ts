@@ -7,6 +7,7 @@
 import { decryptJson, encryptJson, isEncryptedEnvelope, type EncryptedEnvelope } from '../core/crypto';
 import { createConfiguredProvider, endpointOrigin, getProvider, localRulesProvider, registerProvider, unregisterProvider, type IntelligenceProvider, type RemoteProviderConfig } from '../core/intelligence';
 
+// Former-name key, kept so existing users keep their provider setup (see storage/idb.ts).
 export const INTEL_KEY = 'synapse-intel-v1';
 export type ProviderChoice = 'local-rules' | 'remote-http';
 
@@ -19,7 +20,7 @@ export interface IntelSettings {
 export const DEFAULT_INTEL: IntelSettings = { provider: 'local-rules', remote: { kind: 'openai', label: '', endpoint: '', model: '', dataHandling: '' }, tokenEnvelope: null };
 
 /** Origins the build allows in connect-src (besides 'self'). Injected by tools/build.mjs. */
-export const ALLOWED_INTEL_HOSTS: readonly string[] = typeof __SYNAPSE_INTEL_HOSTS__ !== 'undefined' ? __SYNAPSE_INTEL_HOSTS__ : [];
+export const ALLOWED_INTEL_HOSTS: readonly string[] = typeof __SHELLBACK_INTEL_HOSTS__ !== 'undefined' ? __SHELLBACK_INTEL_HOSTS__ : [];
 
 export function isHostAllowed(endpoint: string): boolean {
   const origin = endpointOrigin(endpoint);

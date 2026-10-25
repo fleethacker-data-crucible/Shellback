@@ -4,7 +4,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { extractDocumentText, docKind } from '../../src/app/lib/document-text';
 
-const root = process.env.SYNAPSE_ROOT ?? process.cwd();
+const root = process.env.SHELLBACK_ROOT ?? process.env.SYNAPSE_ROOT ?? process.cwd();
 
 test('sample PDF résumés extract their text layer (ASCII85 + Flate chain)', async () => {
   const dir = path.join(root, 'examples/resumes');

@@ -38,7 +38,7 @@ test('malformed records are dropped with warnings, not fatal (review bug #9)', (
 });
 
 test('non-workspace input is rejected clearly', () => {
-  assert.throws(() => parseWorkspace(null), /not a Synapse workspace/);
+  assert.throws(() => parseWorkspace(null), /not a Shellback workspace/);
   assert.throws(() => parseWorkspace({ version: 9 }), /Unrecognized/);
 });
 

@@ -1,8 +1,8 @@
-# Synapse roadmap
+# Shellback roadmap
 
 Status as of 2026-10-24. Phases are ordered by what unblocks the next thing; each one ships as its own PR and leaves `main` green on the Windows self-hosted runner.
 
-Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in scope for Synapse
+Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in scope for Shellback
 
 ## Phase A — Galaxy v2 and visual polish ✅
 
@@ -15,7 +15,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | "Show nearby pathways" ghosts (off by default; Confirmed view still shows exactly your attestations) | ✅ | ghosts use `.sky-ghost-node`, never `.sky-skill-node` |
 | Arrow-key navigation between stars, Enter/Space selects | ✅ | |
 | Domain hubs show confirmed / suggested counts | ✅ | |
-| New brand mark (five-star constellation tracing an S) + favicon | ✅ | `src/app/components/SynapseMark.tsx` |
+| New brand mark (five-star constellation tracing an S) + favicon | ✅ | `src/app/components/ShellbackMark.tsx` |
 | Home hero decoration no longer clips off the page | ✅ | |
 | Spider web "confirmed floor" ring | ✅ | |
 | `TrustChip` ("Self-reported ⓘ" etc.) replacing repeated disclaimers | ✅ | `src/app/components/TrustChip.tsx` |
@@ -28,9 +28,9 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Remote provider settings (endpoint, model, token) stored **encrypted at rest** with a passphrase; never exported | ✅ | AES-GCM via existing `core/crypto` |
 | Plain-language "what leaves this workstation" disclosure, mirrored on Trust & data | ✅ | |
 | Connection test with a synthetic payload, result shown inline | ✅ | |
-| CSP `connect-src` is `'self'` in the shipped build; a remote host must be added at build time (`SYNAPSE_INTEL_HOST`) so a misconfigured browser cannot leak data | ✅ | `tools/build.mjs` |
+| CSP `connect-src` is `'self'` in the shipped build; a remote host must be added at build time (`SHELLBACK_INTEL_HOST`) so a misconfigured browser cannot leak data | ✅ | `tools/build.mjs` |
 | Provider contract documented (`docs/INTELLIGENCE_PROVIDERS.md`) | ✅ | |
-| GenAI.mil / Advana adapter implementations | 🚫 | Owned by the program's AI integration lead; Synapse only exposes the seam |
+| GenAI.mil / Advana adapter implementations | 🚫 | Owned by the program's AI integration lead; Shellback only exposes the seam |
 
 ## Phase C — First intelligent features ✅
 

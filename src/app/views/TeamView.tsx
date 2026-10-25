@@ -51,8 +51,8 @@ export function TeamView() {
       if (mode === 'encrypt') {
         const pass = await dialogs.prompt('Passphrase for this card (share it over a different channel).', { label: 'Passphrase', password: true, minLength: 8 });
         if (pass === null) return;
-        downloadJson(await encryptJson(card, pass, 'synapse-peer-card'), `synapse-peer-${card.issued}.encrypted.json`);
-      } else downloadJson(card, `synapse-peer-${card.issued}.json`);
+        downloadJson(await encryptJson(card, pass, 'synapse-peer-card'), `shellback-peer-${card.issued}.encrypted.json`);
+      } else downloadJson(card, `shellback-peer-${card.issued}.json`);
       update((d) => { d.profile.displayName = card.name; });
       note('Peer card exported. You control where to send it.');
     } catch (err) { note(err instanceof Error ? err.message : String(err)); }
@@ -177,7 +177,7 @@ export function TeamView() {
               <>
                 <div className="eyebrow">EMPLOYEE-SHARED FIELDS ONLY</div>
                 <h4 className="mt-1 text-[15px]">{peer.name}</h4>
-                {!peer.attested && <p className="mb-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[12px]"><b>Draft.</b> {peer.draftNote} Download the draft card and send it to {peer.name}; when they import it, every item becomes a suggestion for them to confirm or dismiss, and their real card will replace this draft (same id). <Button size="sm" className="ml-2" data-draft-download={peer.id} onClick={() => downloadJson({ format: 'synapse-draft-card', version: 1, id: peer.id, name: peer.name, attested: false, issued: peer.issued, draftedBy: ws.profile.displayName || '', skills: peer.skills, credentialNames: peer.qualificationClaims, orgCode: peer.orgCode, orgTitle: peer.orgTitle, note: peer.draftNote }, `synapse-draft-${peer.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`)}>Download draft card ↧</Button></p>}
+                {!peer.attested && <p className="mb-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[12px]"><b>Draft.</b> {peer.draftNote} Download the draft card and send it to {peer.name}; when they import it, every item becomes a suggestion for them to confirm or dismiss, and their real card will replace this draft (same id). <Button size="sm" className="ml-2" data-draft-download={peer.id} onClick={() => downloadJson({ format: 'synapse-draft-card', version: 1, id: peer.id, name: peer.name, attested: false, issued: peer.issued, draftedBy: ws.profile.displayName || '', skills: peer.skills, credentialNames: peer.qualificationClaims, orgCode: peer.orgCode, orgTitle: peer.orgTitle, note: peer.draftNote }, `shellback-draft-${peer.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`)}>Download draft card ↧</Button></p>}
                 <p className="text-muted">{peer.synthetic ? 'Entirely fictional.' : peer.self ? 'Only local profile claims included here.' : !peer.attested ? 'Prepared from a résumé; the person has not confirmed any of it.' : 'Voluntarily shared capability card; not authenticated or verified.'}{peer.issued && peer.issued !== 'Unknown' ? ` Issued ${peer.issued}.` : ''}</p>
                 <div className="mt-2 flex flex-wrap gap-1">{peer.skills.length ? peer.skills.map((x) => <Pill key={x}>{skillName(x)}</Pill>) : 'No confirmed skill mentions'}</div>
                 <p className="mt-2 text-muted">{Object.keys(peer.surveys).length} task confidence/execution response(s) voluntarily shared.{peer.synthetic ? ' (Synthetic responses)' : ''}</p>

@@ -83,7 +83,7 @@ test('ROI: cash lanes, capacity lanes, break-even, basis share', () => {
   assert.equal(Math.round(o.lanes.find((l) => l.id === 'lapse-cash')!.value), 6 * 2500 * 0.5);
   assert.equal(Math.round(o.lanes.find((l) => l.id === 'search-cap')!.value), Math.round(12 * 0.5 * 46 * 0.5 * 85));
   assert.equal(o.cash, o.lanes.filter((l) => l.kind === 'cash').reduce((s, l) => s + l.value, 0));
-  assert.ok(o.capacityNet < o.capacityGross, 'time Synapse consumes is subtracted');
+  assert.ok(o.capacityNet < o.capacityGross, 'time Shellback consumes is subtracted');
   assert.equal(o.netCash, o.cash - o.platformCost);
   // Break-even adoption is linear in uptake
   const be = roiScenario({ ...p, adoption: 60 });

@@ -6,7 +6,9 @@
  *  - Imports are tolerant: a malformed element is dropped (and reported as a warning),
  *    it never aborts the whole import or blanks the workspace.
  *  - The v1 export written by the original MVP (`version: 1`) remains importable.
- *  - Peer cards keep the `synapse-peer-card` v1 format so existing cards stay valid.
+ *  - Peer cards keep the `synapse-peer-card` v1 format so existing cards stay valid. The `synapse-*`
+ *    format ids (peer card, draft card, knowledge relay, encrypted envelope) predate the rename to
+ *    Shellback and are kept so old exports import and older copies of the app read new ones.
  */
 import { z } from 'zod';
 import { isSkillId } from './taxonomy';
@@ -257,7 +259,7 @@ export const isDraftCard = (v: unknown): v is { format: 'synapse-draft-card' } =
 
 export function parseDraftCard(input: unknown): DraftCard {
   const r = draftCardSchema.safeParse(input);
-  if (!r.success) { const i = r.error.issues[0]; throw new Error(i ? `Not a Synapse draft card (${i.path.join('.') || 'root'}: ${i.message}).` : 'Not a Synapse draft card.'); }
+  if (!r.success) { const i = r.error.issues[0]; throw new Error(i ? `Not a Shellback draft card (${i.path.join('.') || 'root'}: ${i.message}).` : 'Not a Shellback draft card.'); }
   if (RESERVED_MEMBER_ID.test(r.data.id)) throw new Error('This card uses a reserved identifier and cannot be imported.');
   return r.data;
 }
@@ -278,7 +280,7 @@ export function parsePeerCard(input: unknown): Member {
   const base = peerCardSchema.safeParse(input);
   if (!base.success) {
     const msg = base.error.issues[0];
-    throw new Error(msg ? `Not an opt-in Synapse peer card (${msg.path.join('.') || 'root'}: ${msg.message}).` : 'Not an opt-in Synapse peer card.');
+    throw new Error(msg ? `Not an opt-in Shellback peer card (${msg.path.join('.') || 'root'}: ${msg.message}).` : 'Not an opt-in Shellback peer card.');
   }
   if (RESERVED_MEMBER_ID.test(base.data.id)) throw new Error('This card uses a reserved identifier and cannot be imported.');
   const member = memberSchema.parse({ ...(input as object), synthetic: false });
@@ -462,16 +464,16 @@ export function newWorkspace(): Workspace {
 
 export interface ParseResult { workspace: Workspace; warnings: string[]; migratedFrom?: 1 }
 
-/** Accepts a v2 workspace or a v1 MVP export; throws only when the input is not a Synapse workspace at all. */
+/** Accepts a v2 workspace or a v1 MVP export; throws only when the input is not a Shellback workspace at all. */
 export function parseWorkspace(input: unknown): ParseResult {
-  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('This file is not a Synapse workspace.');
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('This file is not a Shellback workspace.');
   const raw = input as Record<string, unknown>;
   const warnings: string[] = [];
   let candidate: Record<string, unknown>;
   let migratedFrom: 1 | undefined;
   if (raw.schemaVersion === SCHEMA_VERSION) candidate = raw;
   else if (raw.version === 1 && raw.profile && typeof raw.profile === 'object') { candidate = migrateV1(raw); migratedFrom = 1; }
-  else throw new Error('Unrecognized Synapse workspace version. Expected a v1 MVP export or a v2 workspace.');
+  else throw new Error('Unrecognized Shellback workspace version. Expected a v1 MVP export or a v2 workspace.');
 
   // Count dropped records for the warning list by comparing array lengths before/after.
   const r = workspaceSchema.safeParse(candidate);

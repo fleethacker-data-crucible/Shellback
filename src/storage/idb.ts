@@ -9,6 +9,9 @@
  */
 import { parseWorkspace, newWorkspace, type Workspace } from '../core/schema';
 
+// Storage names below predate the rename to Shellback (formerly Synapse). They are kept on purpose:
+// existing users' workspaces live under them, and renaming would make that data vanish.
+// tests/unit/rename-compat.test.ts guards them.
 const DB_NAME = 'synapse';
 const DB_VERSION = 1;
 const STORE = 'workspace';
