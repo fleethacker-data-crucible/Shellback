@@ -23,6 +23,7 @@ export function HomeView() {
 
   const go = (s: JourneyStep) => {
     if (s.id === 'reflect' && ws.profile.confirmed.length) { openPulse(); return; }
+    if (s.id === 'contribute') { navigate(s.route, { type: 'focus-contribution' }); return; }
     navigate(s.route);
   };
 
