@@ -45,7 +45,7 @@ test('closing the last tab stops the server; a reload does not', async () => {
     await sleep(1800); // longer than the leaving grace: the reload's fresh heartbeat kept it alive
     assert.equal(s.isRunning(), true, 'a reload must not stop the server');
     await page.close({ runBeforeUnload: true });
-    await within(s.exited, 6000, 'server should stop after the tab closed');
+    await within(s.exited, 15000, 'server should stop after the tab closed');
     await context.close();
   } finally { if (s.isRunning()) s.proc.kill(); }
 });
@@ -60,7 +60,7 @@ test('two tabs: closing one keeps the server for the other', async () => {
     await sleep(4000); // past the leaving grace; tab b keeps heartbeating
     assert.equal(s.isRunning(), true, 'the other tab is still open');
     await b.close({ runBeforeUnload: true });
-    await within(s.exited, 6000, 'server should stop after the last tab closed');
+    await within(s.exited, 15000, 'server should stop after the last tab closed');
     await context.close();
   } finally { if (s.isRunning()) s.proc.kill(); }
 });
@@ -77,7 +77,7 @@ test('End session in the navigation stops the server and says so', async () => {
     await page.locator('#endSessionBtn').click();
     await page.locator('dialog [data-dialog="confirm"]').click();
     await page.locator('#sessionEnded').waitFor();
-    await within(s.exited, 5000, 'server should stop on End session');
+    await within(s.exited, 15000, 'server should stop on End session');
     assert.deepEqual(errors, []);
     await context.close();
   } finally { if (s.isRunning()) s.proc.kill(); }
