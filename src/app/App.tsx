@@ -30,6 +30,17 @@ export function App() {
   const { ws, view, navigate, flashMessage, ready, loadInfo, replace, flash, settings, setSettings } = store;
   const dialogs = useDialogs();
   const fileRef = useRef<HTMLInputElement | null>(null);
+  // Modal dialogs (confirm, the pulse drawer) live in the browser's top layer and would hide the toast.
+  // Promote the toast into the top layer too (Popover API) whenever a message is showing.
+  const flashRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = flashRef.current as (HTMLDivElement & { showPopover?: () => void; hidePopover?: () => void; matches: (s: string) => boolean }) | null;
+    if (!el || typeof el.showPopover !== 'function') return;
+    try {
+      if (flashMessage) { el.setAttribute('popover', 'manual'); if (!el.matches(':popover-open')) el.showPopover!(); }
+      else if (el.matches(':popover-open')) el.hidePopover!();
+    } catch { /* popover unsupported or element not connected */ }
+  }, [flashMessage]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ended, setEnded] = useState(false);
   const toReview = pendingCredentialCandidates(ws).length + ws.profile.candidates.length;
@@ -163,7 +174,7 @@ export function App() {
           </div>
         </header>
 
-        <div id="flash" role="status" aria-live="polite" className={cn('flash pointer-events-none fixed bottom-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-panel2 px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
+        <div id="flash" ref={flashRef} role="status" aria-live="polite" className={cn('flash pointer-events-none fixed bottom-4 right-4 z-50 max-w-[420px] rounded-md border border-mint/40 bg-panel2 px-4 py-3 text-[13px] text-text shadow-panel', flashMessage && 'show')}>{flashMessage}</div>
 
         {loadInfo?.recovered && (
           <Notice tone="warn" className="mb-4">
