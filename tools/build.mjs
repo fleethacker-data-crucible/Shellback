@@ -4,6 +4,7 @@
  *
  *   node tools/build.mjs          → writes dist/
  *   node tools/build.mjs --check  → rebuilds into a temp dir and fails if dist/ is stale
+ *   node tools/build.mjs --out dist-intel  → write elsewhere (for a SYNAPSE_INTEL_HOST build you don't commit)
  *
  * Produces:
  *   dist/index.html                 served edition (PowerShell / Node static server)
@@ -30,7 +31,9 @@ const intelHosts = (process.env.SYNAPSE_INTEL_HOST ?? '').split(',').map((s) => 
   if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error(`SYNAPSE_INTEL_HOST must be https: ${h}`);
   return u.origin;
 });
-const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-dist-')) : path.join(root, 'dist');
+const outArg = process.argv.indexOf('--out');
+// --out <dir>: write a host-specific build (e.g. with SYNAPSE_INTEL_HOST) somewhere other than the committed dist/.
+const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-dist-')) : path.resolve(root, outArg > -1 ? process.argv[outArg + 1] ?? 'dist' : 'dist');
 
 // ---------------------------------------------------------------------------
 // Dependency resolution: local node_modules first, then NODE_PATH entries.
