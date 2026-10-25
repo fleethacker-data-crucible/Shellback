@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { DOMAINS, skillName } from '../../core/taxonomy';
 import { activeTeam, aggregate, benchSignals, coverageGaps, participants, MIN_AGGREGATE, DEMO_TEAM_ID } from '../../core/analytics';
-import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard } from '../../core/schema';
+import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard, type Member } from '../../core/schema';
 import { buildPeerCard, describeCard } from '../../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../../core/crypto';
 import { useStore } from '../state/store';
@@ -10,7 +10,7 @@ import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, sele
 import { DraftTeammatePanel } from './DraftTeammatePanel';
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
-import { ContributionMap, OrgRollup } from './TeamInsightPanels';
+import { ContributionMap, OrgRollup, RecommendationsPanel } from './TeamInsightPanels';
 import { TrustChips } from '../components/TrustChip';
 import { TeamBriefPanel } from './TeamBriefPanel';
 import { orgLevelName } from '../../core/org';
@@ -59,34 +59,63 @@ export function TeamView() {
   }
 
   async function importCard(e: ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!f || !team) return;
+    if (!files.length || !team) return;
+    if (files.length === 1) { await importOne(files[0]!, true); return; }
+    // Several files: parse everything first, one confirmation, then import in order. Encrypted files are asked for individually.
+    const parsed: Array<{ file: File; member: Member; draft: boolean; replaces?: string }> = [];
+    const problems: string[] = [];
+    for (const f of files.slice(0, 100)) {
+      try {
+        const member = await readCard(f);
+        if (!member) continue; // user cancelled a passphrase prompt
+        parsed.push({ file: f, member: member.member, draft: member.draft, replaces: team.members.find((m) => m.id === member.member.id)?.name });
+      } catch (err) { problems.push(`${f.name}: ${err instanceof Error ? err.message : String(err)}`); }
+    }
+    if (!parsed.length) { note(`Nothing importable. ${problems.join(' ')}`); return; }
+    const ok = await dialogs.confirm(
+      <>Import <b>{parsed.length}</b> card{parsed.length === 1 ? '' : 's'} into "{team.name}"?
+        <ul className="mt-2 max-h-48 list-disc overflow-y-auto pl-5 text-[12px]">{parsed.map((p) => <li key={p.file.name}>{p.member.name}{p.draft ? ' (draft)' : ''} · {p.member.skills.length} skills{p.replaces ? <b className="text-amber"> · replaces "{p.replaces}"</b> : ''}</li>)}</ul>
+        {problems.length > 0 && <p className="mt-2 text-[12px] text-amber">Skipped: {problems.join(' · ')}</p>}</>,
+      { title: 'Import peer cards', confirmLabel: `Import ${parsed.length}` },
+    );
+    if (!ok) return;
+    let imported = 0;
+    for (const p of parsed) { const o = act((d) => importMember(d, team.id, p.member)); if (o) imported++; }
+    if (parsed[0]) setSelectedPeer(parsed[0].member.id);
+    note(`Imported ${imported} card${imported === 1 ? '' : 's'}${problems.length ? `; ${problems.length} skipped` : ''}. Information is unverified.`);
+  }
+  /** Read one file into a member (peer card or draft), asking for a passphrase when encrypted. Returns null if the user cancels. */
+  async function readCard(f: File): Promise<{ member: Member; draft: boolean } | null> {
+    let data = await readJsonFile(f, 256_000);
+    if (isEncryptedEnvelope(data)) {
+      const pass = await dialogs.prompt(`"${f.name}" is encrypted. Enter the passphrase the sender gave you.`, { label: 'Passphrase', password: true });
+      if (pass === null) return null;
+      data = await decryptJson(data, pass);
+    }
+    if (isDraftCard(data)) return { member: draftToMember(parseDraftCard(data)), draft: true };
+    return { member: parsePeerCard(data), draft: false };
+  }
+  async function importOne(f: File, confirm: boolean) {
+    if (!team) return;
     try {
-      let data = await readJsonFile(f, 256_000);
-      if (isEncryptedEnvelope(data)) {
-        const pass = await dialogs.prompt(`"${f.name}" is encrypted. Enter the passphrase the sender gave you.`, { label: 'Passphrase', password: true });
-        if (pass === null) return;
-        data = await decryptJson(data, pass);
-      }
-      if (isDraftCard(data)) {
-        const draft = draftToMember(parseDraftCard(data));
-        const ok = await dialogs.confirm(<>Add <b>{draft.name}</b> as a <b>draft</b> ({draft.skills.length} suggested skills)? Drafts are not attested by the person and stay out of coverage unless you include drafts.</>, { title: 'Import draft card', confirmLabel: 'Add draft' });
-        if (!ok) return;
-        const o = act((d) => importMember(d, team.id, draft));
-        if (o) { setSelectedPeer(draft.id); note(`Added ${draft.name} as a draft (not attested).`); }
-        return;
-      }
-      const member = parsePeerCard(data);
+      const r = await readCard(f);
+      if (!r) return;
+      const { member, draft } = r;
       const existing = team.members.find((m) => m.id === member.id);
-      const ok = await dialogs.confirm(
-        <>Import <b>{member.name}</b>'s opt-in card ({member.skills.length} skills, {Object.keys(member.surveys).length} optional survey signals{member.mentorOptIn ? ', mentoring opt-in' : ''}{member.qualificationClaims.length ? ', unverified qualification claims' : ''}) into "{team.name}"?
-          {existing && <><br /><b className="text-amber">This replaces the existing card for "{existing.name}" (same peer id).</b></>}</>,
-        { title: 'Import peer card', confirmLabel: existing ? 'Replace card' : 'Import card' },
-      );
-      if (!ok) return;
+      if (confirm) {
+        const ok = draft
+          ? await dialogs.confirm(<>Add <b>{member.name}</b> as a <b>draft</b> ({member.skills.length} suggested skills)? Drafts are not attested by the person and stay out of coverage unless you include drafts.</>, { title: 'Import draft card', confirmLabel: 'Add draft' })
+          : await dialogs.confirm(
+            <>Import <b>{member.name}</b>'s opt-in card ({member.skills.length} skills, {Object.keys(member.surveys).length} optional survey signals{member.mentorOptIn ? ', mentoring opt-in' : ''}{member.qualificationClaims.length ? ', unverified qualification claims' : ''}) into "{team.name}"?
+              {existing && <><br /><b className="text-amber">This replaces the existing card for "{existing.name}" (same peer id).</b></>}</>,
+            { title: 'Import peer card', confirmLabel: existing ? 'Replace card' : 'Import card' },
+          );
+        if (!ok) return;
+      }
       const outcome = act((d) => importMember(d, team.id, member));
-      if (outcome) { setSelectedPeer(member.id); note(outcome.replaced ? `Replaced ${outcome.previousName}'s card with the new one from ${member.name}. Information is unverified.` : `Imported ${member.name}'s card. Information is unverified.`); }
+      if (outcome) { setSelectedPeer(member.id); note(draft ? `Added ${member.name} as a draft (not attested).` : outcome.replaced ? `Replaced ${outcome.previousName}'s card with the new one from ${member.name}. Information is unverified.` : `Imported ${member.name}'s card. Information is unverified.`); }
     } catch (err) { note('Import blocked: ' + (err instanceof Error ? err.message : String(err))); }
   }
 
@@ -174,8 +203,8 @@ export function TeamView() {
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             <Button id="exportPeer" variant="primary" onClick={exportCard}>Export opt-in card ↗</Button>
-            <Button id="importPeerBtn" onClick={() => importRef.current?.click()}>Import peer card ↧</Button>
-            <input ref={importRef} hidden type="file" id="importPeerFile" accept=".json,application/json" onChange={importCard} />
+            <Button id="importPeerBtn" onClick={() => importRef.current?.click()}>Import peer cards ↧</Button>
+            <input ref={importRef} hidden type="file" id="importPeerFile" multiple accept=".json,application/json" aria-label="Import peer cards" onChange={importCard} />
           </div>
           <p id="teamExchangeStatus" role="status" className="note mt-2">{status}</p>
           <p className="note mt-3">Your card id stays the same across exports (so teammates' copies update instead of duplicating){ws.profile.shareId ? `: ${ws.profile.shareId}` : '.'}</p>
@@ -226,6 +255,7 @@ export function TeamView() {
       </Panel>
       <TeamBriefPanel teamName={team?.name ?? 'Team'} people={people} agg={agg} priorities={team?.priorities ?? []} />
       <ContributionMap people={people} teamName={team?.name ?? 'Team'} />
+      <RecommendationsPanel people={people} priorities={team?.priorities ?? []} />
       <OrgRollup people={people} />
       </>)}
 
