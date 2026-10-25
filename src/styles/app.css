@@ -137,6 +137,9 @@
 
 /* Flash message */
 .flash { transform: translateY(8px); opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease; }
+/* As a popover the toast is in the top layer; keep our own placement instead of the UA's centred box. */
+.flash:popover-open { position: fixed; inset: auto 1rem 1rem auto; margin: 0; width: auto; max-width: 420px; }
+.flash[popover] { border-width: 1px; }
 .flash.show { transform: translateY(0); opacity: 1; }
 
 /* Native dialog */

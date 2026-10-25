@@ -312,6 +312,9 @@
   .mr-2 {
     margin-right: calc(var(--spacing) * 2);
   }
+  .mr-auto {
+    margin-right: auto;
+  }
   .mb-1 {
     margin-bottom: var(--spacing);
   }
@@ -614,6 +617,9 @@
   }
   .gap-y-2 {
     row-gap: calc(var(--spacing) * 2);
+  }
+  .self-center {
+    align-self: center;
   }
   .truncate {
     overflow: hidden;
@@ -1940,6 +1946,16 @@
   transform: translateY(8px);
   opacity: 0;
   transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.flash:popover-open {
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  margin: 0;
+  width: auto;
+  max-width: 420px;
+}
+.flash[popover] {
+  border-width: 1px;
 }
 .flash.show {
   transform: translateY(0);
