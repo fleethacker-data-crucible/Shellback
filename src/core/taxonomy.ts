@@ -97,14 +97,6 @@ export const BRIDGES: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /** Fictional six-person cohort used by the synthetic demo team. */
-export const SYNTHETIC_COHORT: ReadonlyArray<{ name: string; skills: string[] }> = [
-  { name: 'Demo participant A', skills: ['sql-pipelines', 'data-modeling', 'aws-architecture', 'data-quality', 'power-bi', 'api-design', 'knowledge-transfer', 'problem-framing', 'ai-orchestration'] },
-  { name: 'Demo participant B', skills: ['aws-architecture', 'cloud-networking', 'security-controls', 'incident-readiness', 'ci-cd-pipelines', 'git-workflows', 'agile-facilitation', 'qualification-planning', 'technical-writing'] },
-  { name: 'Demo participant C', skills: ['requirements-analysis', 'systems-integration', 'trade-studies', 'shipyard-process-mapping', 'technical-work-instructions', 'risk-register', 'test-strategy', 'root-cause-analysis', 'mentoring'] },
-  { name: 'Demo participant D', skills: ['sql-pipelines', 'data-governance', 'power-bi', 'dashboard-design', 'forecasting', 'metrics-definition', 'data-storytelling', 'training-facilitation', 'product-judgment'] },
-  { name: 'Demo participant E', skills: ['powershell-automation', 'frontend-engineering', 'backend-services', 'test-automation', 'workflow-automation', 'knowledge-transfer', 'rapid-prototyping', 'ai-outcome-validation', 'quality-assurance'] },
-  { name: 'Demo participant F', skills: ['cloud-observability', 'aws-architecture', 'configuration-management', 'shipyard-process-mapping', 'qualification-planning', 'milestone-tracking', 'peer-coaching', 'systems-thinking', 'responsible-ai-use'] },
-];
 
 export const SAMPLE_RESUME =
   'Cloud solutions architect who designed AWS architecture and infrastructure as code. Developed SQL pipelines, ETL / ELT, Power BI dashboards, PowerShell automation, API design, Git workflows, rapid prototyping, and responsible AI use. Facilitated knowledge transfer and agile delivery.\n' +
