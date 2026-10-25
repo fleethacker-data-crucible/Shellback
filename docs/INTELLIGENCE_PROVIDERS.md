@@ -4,7 +4,16 @@ Synapse works completely without a model. **Local rules** (deterministic keyword
 
 ## What the user sees
 
-Program → **Intelligence**
+Program → **Intelligence** — Local rules (default) or a remote provider set up in four steps:
+
+1. **Where is it?** Kind of endpoint — *OpenAI-compatible gateway* (the API base, usually `…/v1`; Synapse calls `/models` and `/chat/completions` itself) or *Synapse contract endpoint* (a platform-side implementation of the contract below) — plus display name and URL.
+2. **Which key?** The API key / bearer token, sealed with a passphrase (AES-256-GCM), unlocked per browser session, never exported.
+3. **Which model?** *Load models* lists what the key can use; pick one (or type it).
+4. **Does it work?** *Test connection*, then *Save connection* and select the provider at the top.
+
+Advanced: an optional **data-handling notice** — the one-sentence statement employees see wherever the provider is used (intake, team brief, Trust & data). Generated from host + model by default; an approved platform statement (retention, ATO, PII approval) can replace it verbatim.
+
+For an OpenAI-compatible gateway the browser talks to it directly, so the gateway must allow CORS from the Synapse origin **and** the build must allow the host. If either is missing, run the loopback adapter below instead (it also implements `list-models`).
 
 - A provider choice: Local rules (default) or Remote provider.
 - Connection settings: display name, endpoint (HTTPS, POST), optional model/deployment string, optional disclosure text.
@@ -65,6 +74,12 @@ Synapse times out after 30 s (15 s for the connection test) and treats a non-2xx
 
 ```jsonc
 { "task": "ping" }                      →  { "detail": "optional text" }
+```
+
+### `list-models`
+
+```jsonc
+{ "task": "list-models" }               →  { "models": ["deployment-a", "deployment-b"] }
 ```
 
 ### `scan-resume`

@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { DOMAINS, skillName } from '../../core/taxonomy';
 import { activeTeam, aggregate, benchSignals, coverageGaps, participants, MIN_AGGREGATE, DEMO_TEAM_ID } from '../../core/analytics';
-import { parsePeerCard } from '../../core/schema';
+import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard } from '../../core/schema';
 import { buildPeerCard, describeCard } from '../../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../../core/crypto';
 import { useStore } from '../state/store';
 import { useAction } from '../state/hooks';
-import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, selectTeam, togglePriority } from '../state/actions';
+import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, selectTeam, setIncludeDrafts, togglePriority } from '../state/actions';
+import { DraftTeammatePanel } from './DraftTeammatePanel';
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
 import { ContributionMap, OrgRollup } from './TeamInsightPanels';
@@ -26,6 +27,8 @@ export function TeamView() {
   const dialogs = useDialogs();
   const team = activeTeam(ws);
   const people = useMemo(() => participants(ws, team), [ws, team]);
+  const roster = useMemo(() => participants(ws, team, { includeDrafts: true }), [ws, team]);
+  const draftCount = roster.filter((p) => !p.attested).length;
   const agg = useMemo(() => aggregate(people), [people]);
   const [teamName, setTeamName] = useState('');
   const [shareName, setShareName] = useState(ws.profile.displayName || 'Demo participant');
@@ -66,6 +69,14 @@ export function TeamView() {
         if (pass === null) return;
         data = await decryptJson(data, pass);
       }
+      if (isDraftCard(data)) {
+        const draft = draftToMember(parseDraftCard(data));
+        const ok = await dialogs.confirm(<>Add <b>{draft.name}</b> as a <b>draft</b> ({draft.skills.length} suggested skills)? Drafts are not attested by the person and stay out of coverage unless you include drafts.</>, { title: 'Import draft card', confirmLabel: 'Add draft' });
+        if (!ok) return;
+        const o = act((d) => importMember(d, team.id, draft));
+        if (o) { setSelectedPeer(draft.id); note(`Added ${draft.name} as a draft (not attested).`); }
+        return;
+      }
       const member = parsePeerCard(data);
       const existing = team.members.find((m) => m.id === member.id);
       const ok = await dialogs.confirm(
@@ -86,7 +97,7 @@ export function TeamView() {
     act((d) => deleteTeam(d, team.id));
   }
 
-  const peer = people.find((p) => p.id === selectedPeer);
+  const peer = roster.find((p) => p.id === selectedPeer);
   const bench = benchSignals(agg);
   const gaps = coverageGaps(agg, team?.priorities ?? []);
   const prio = new Set(team?.priorities ?? []);
@@ -123,10 +134,10 @@ export function TeamView() {
           </div>
           <h4 className="mt-5 text-[14px]">Shared peer roster</h4>
           <div id="teamMemberList" className="mt-2 space-y-1.5">
-            {people.length ? people.map((p) => (
-              <div key={p.id} className="row-card team-member">
+            {roster.length ? roster.map((p) => (
+              <div key={p.id} className="row-card team-member" data-member-attested={String(p.attested)}>
                 <button type="button" className="text-left font-bold text-mint hover:underline" data-peerview={p.id} onClick={() => setSelectedPeer(p.id)}>{p.name}</button>
-                <Pill>{p.synthetic ? 'Synthetic' : p.self ? 'Local' : 'Shared card'}</Pill>
+                <Pill tone={p.attested ? 'neutral' : 'amber'}>{!p.attested ? 'Draft · not attested' : p.synthetic ? 'Synthetic' : p.self ? 'Local' : 'Shared card'}</Pill>
                 <span className="text-[12px] text-quiet">{p.skills.length} reviewed mentions</span>
                 {!p.self && !p.synthetic && <Button size="sm" variant="danger" data-peerdel={p.id} onClick={async () => { if (await dialogs.confirm('Remove this imported peer card from your local team?', { confirmLabel: 'Remove', danger: true })) { setSelectedPeer(null); act((d) => removeMember(d, team!.id, p.id)); } }}>Remove</Button>}
               </div>
@@ -137,7 +148,8 @@ export function TeamView() {
               <>
                 <div className="eyebrow">EMPLOYEE-SHARED FIELDS ONLY</div>
                 <h4 className="mt-1 text-[15px]">{peer.name}</h4>
-                <p className="text-muted">{peer.synthetic ? 'Entirely fictional.' : peer.self ? 'Only local profile claims included here.' : 'Voluntarily shared capability card; not authenticated or verified.'}{peer.issued && peer.issued !== 'Unknown' ? ` Issued ${peer.issued}.` : ''}</p>
+                {!peer.attested && <p className="mb-2 rounded-md border border-amber/40 bg-amber/10 px-3 py-2 text-[12px]"><b>Draft.</b> {peer.draftNote} Download the draft card and send it to {peer.name}; when they import it, every item becomes a suggestion for them to confirm or dismiss, and their real card will replace this draft (same id). <Button size="sm" className="ml-2" data-draft-download={peer.id} onClick={() => downloadJson({ format: 'synapse-draft-card', version: 1, id: peer.id, name: peer.name, attested: false, issued: peer.issued, draftedBy: ws.profile.displayName || '', skills: peer.skills, credentialNames: peer.qualificationClaims, orgCode: peer.orgCode, orgTitle: peer.orgTitle, note: peer.draftNote }, `synapse-draft-${peer.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.json`)}>Download draft card ↧</Button></p>}
+                <p className="text-muted">{peer.synthetic ? 'Entirely fictional.' : peer.self ? 'Only local profile claims included here.' : !peer.attested ? 'Prepared from a résumé; the person has not confirmed any of it.' : 'Voluntarily shared capability card; not authenticated or verified.'}{peer.issued && peer.issued !== 'Unknown' ? ` Issued ${peer.issued}.` : ''}</p>
                 <div className="mt-2 flex flex-wrap gap-1">{peer.skills.length ? peer.skills.map((x) => <Pill key={x}>{skillName(x)}</Pill>) : 'No confirmed skill mentions'}</div>
                 <p className="mt-2 text-muted">{Object.keys(peer.surveys).length} task confidence/execution response(s) voluntarily shared.{peer.synthetic ? ' (Synthetic responses)' : ''}</p>
                 <div className="mt-1 space-y-1">{Object.entries(peer.surveys).map(([sid, r]) => <div key={sid} className="bench-row flex justify-between"><span>{skillName(sid)}</span><strong>{r.confidence}/4 · {r.method}</strong></div>)}</div>
@@ -169,9 +181,16 @@ export function TeamView() {
           <p className="note mt-3">Your card id stays the same across exports (so teammates' copies update instead of duplicating){ws.profile.shareId ? `: ${ws.profile.shareId}` : '.'}</p>
         </Panel>
       </div>
+      <DraftTeammatePanel teamId={team?.id} onAdded={setSelectedPeer} />
       </>)}
 
       {tab === 'coverage' && (<>
+      {draftCount > 0 && team && (
+        <div id="draftToggle" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber/40 bg-amber/5 px-4 py-2 text-[13px]">
+          <span><b>{draftCount} draft{draftCount === 1 ? '' : 's'}</b> in this team {team.includeDrafts ? 'are counted below and labelled as unattested.' : 'are left out of every number below.'}</span>
+          <Checkbox id="includeDrafts" checked={team.includeDrafts} onChange={(v) => update((d) => setIncludeDrafts(d, team.id, v))}>Include drafts (unattested) in coverage</Checkbox>
+        </div>
+      )}
       <div id="teamStats" className="grid gap-3 sm:grid-cols-3">
         <Stat label="Voluntary profiles" value={agg.n} hint={team?.id === DEMO_TEAM_ID ? 'Synthetic sample' : 'Local team workspace'} />
         <Stat label="Domains represented" value={agg.allowed ? agg.domainCounts.filter((x) => x > 0).length : '—'} hint={agg.allowed ? 'Employee-declared, not verified' : `Suppressed until ${MIN_AGGREGATE} shared profiles`} />

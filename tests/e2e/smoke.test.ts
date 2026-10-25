@@ -238,12 +238,14 @@ test('served edition: employee flow end to end', async () => {
 
   // ROI
   await nav(page, 'program', 'roi');
-  const before = await page.locator('#roiTotal').innerText();
-  await page.locator('[data-roi="minutesSaved"]').fill('0');
-  assert.notEqual(await page.locator('#roiTotal').innerText(), before);
+  const before = await page.locator('#roiCapacity').innerText();
+  await page.locator('[data-roi="searchMinutes"]').fill('0');
+  assert.notEqual(await page.locator('#roiCapacity').innerText(), before);
+  await page.locator('[data-roi-basis="adoption"]').selectOption('measured');
+  assert.match(await page.locator('#roiBasisSummary').innerText(), /1 measured/);
   await page.locator('[data-roi="adoption"]').fill('0');
   assert.equal(await page.locator('#roiCash').innerText(), '$0');
-  assert.equal(await page.locator('#roiCapacity').innerText(), '$0');
+  assert.match(await page.locator('#roiBreakEven').innerText(), /\d+%|Not reached/);
 
   // Withdrawn skill hides its confidence in Pathways (review bug #2)
   await nav(page, 'profile', 'skills');
@@ -482,32 +484,41 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
   assert.deepEqual(errors, []);
 });
 
-test('intelligence: local by default, remote is explicit, CSP-blocked hosts are explained, token is sealed', async () => {
+test('intelligence: local by default, four-step remote setup, CSP-blocked hosts are explained, key is sealed', async () => {
   const { page, errors } = await open(baseUrl);
   await nav(page, 'program', 'intelligence');
   assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
   assert.equal(await page.locator('[data-provider="remote-http"]').isDisabled(), true, 'remote cannot be chosen before it is configured');
+  // Step 1: endpoint validation + build allow-list warning
   await page.locator('#intelEndpoint').fill('http://ai.example.mil/v1');
   assert.match(await page.locator('#intelRemote').innerText(), /https/);
   await page.locator('#intelEndpoint').fill('https://ai.example.mil/v1');
   assert.match(await page.locator('#intelRemote').innerText(), /This build does not allow connections to that host/);
   await page.locator('#intelLabel').fill('Enterprise AI');
-  await page.locator('#intelSave').click();
-  // Connection test fails fast (CSP blocks the host) and says why — and no request reaches the network
-  await page.locator('#intelTest').click();
-  await page.locator('#intelTestResult').waitFor();
-  assert.match(await page.locator('#intelTestResult').innerText(), /Could not reach https:\/\/ai\.example\.mil/);
-  // Seal a token with a passphrase; it is stored encrypted only
+  assert.equal(await page.locator('[data-step="1"]').getAttribute('data-done'), 'true');
+  // Step 2: seal a key; stored encrypted only
+  assert.equal(await page.locator('#intelLoadModels').isDisabled(), true, 'models need the key first');
   await page.locator('#intelSaveToken').click();
-  await page.locator('#dialog-input').fill('tok_super_secret_123');
+  await page.locator('#dialog-input').fill('sk-super_secret_123');
   await page.locator('dialog [data-dialog="confirm"]').click();
   await page.locator('#dialog-input').fill('correct horse battery');
   await page.locator('dialog [data-dialog="confirm"]').click();
-  await page.locator('#intelRemote:has-text("token unlocked")').waitFor();
+  await page.locator('#intelRemote:has-text("key unlocked")').waitFor();
   const stored = await page.evaluate(() => localStorage.getItem('synapse-intel-v1') ?? '');
-  assert.ok(stored.includes('synapse-encrypted') && !stored.includes('tok_super_secret_123'), 'token never stored in clear');
-  // Select the remote provider → Trust & data mirrors the disclosure; intake says where text goes
+  assert.ok(stored.includes('synapse-encrypted') && !stored.includes('sk-super_secret_123'), 'key never stored in clear');
+  // Step 3: Load models fails fast (CSP blocks the host) and says why; typing a model still works
+  await page.locator('#intelLoadModels').click();
+  await page.locator('#intelModelsError').waitFor();
+  assert.match(await page.locator('#intelModelsError').innerText(), /Could not reach https:\/\/ai\.example\.mil/);
+  await page.locator('#intelModel').fill('gpt-test');
+  assert.equal(await page.locator('[data-step="3"]').getAttribute('data-done'), 'true');
+  // Step 4 + save + select
+  await page.locator('#intelTest').click();
+  await page.locator('#intelTestResult').waitFor();
+  assert.match(await page.locator('#intelTestResult').innerText(), /Could not reach/);
+  await page.locator('#intelSave').click();
   await page.locator('[data-provider="remote-http"]').check();
+  // Trust & data mirrors the disclosure; intake says where text goes
   await page.locator('[data-testid="tab-governance"]').click();
   assert.match(await page.locator('#trustIntel').innerText(), /Enterprise AI/);
   await page.locator('#trustIntelDisclosure #intelDataTable').waitFor();
@@ -517,13 +528,12 @@ test('intelligence: local by default, remote is explicit, CSP-blocked hosts are 
   await page.locator('#loadResumeSample').click();
   await page.locator('[data-confirm]').first().waitFor();
   assert.match(await page.locator('#flash').innerText(), /Used local rules instead/);
-  // Back to local; nothing about the token is in a workspace export
+  // Forget the key → back to local; nothing about the key is in a workspace export
   await nav(page, 'program', 'intelligence');
-  await page.locator('[data-provider="local-rules"]').check();
   await page.locator('#intelForgetToken').click();
   await page.locator('dialog [data-dialog="confirm"]').click();
   await page.locator('#intelSaveToken').waitFor();
-  // The blocked request is expected noise; nothing else may error
+  assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
   const unexpected = errors.filter((e) => !/ai\.example\.mil|Content Security Policy|Failed to fetch|net::ERR/i.test(e));
   assert.deepEqual(unexpected, []);
 });
@@ -707,5 +717,54 @@ test('two-axis contribution: energy + fluency → quadrant, tags and example per
   assert.match(await page.locator('[data-quadrants="finish"]').innerText(), /grind 2/i);
   assert.match(await page.locator('#contributionNotes').innerText(), /Good at it but drained by it/);
   assert.match(await page.locator('#workshopSheet').innerText({ timeout: 5000 }).catch(async () => page.evaluate(() => document.getElementById('workshopSheet')?.textContent ?? '')), /Grind: /);
+  assert.deepEqual(errors, []);
+});
+
+test('draft teammates: build a team from résumés, drafts stay out of coverage until included, employee imports draft as suggestions', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team', 'roster');
+  await page.locator('#teamName').fill('Code 1513');
+  await page.locator('#createTeam').click();
+  // Draft from a PDF résumé
+  await page.locator('#draftFile').setInputFiles(path.join(root, 'examples/resumes/Jordan_Reyes_Data_Analyst.pdf'));
+  await page.locator('#draftPreview').waitFor();
+  assert.equal(await page.locator('#draftName').inputValue(), 'Jordan Reyes', 'name guessed from the first line');
+  assert.ok((await page.locator('[data-draft-skill="sql-pipelines"]').count()) === 1);
+  await page.locator('#draftOrg').fill('1513.2');
+  await page.locator('#draftAdd').click();
+  await page.locator('#teamMemberList [data-member-attested="false"]').waitFor();
+  assert.match(await page.locator('#teamMemberList').innerText(), /Jordan Reyes[\s\S]*Draft · not attested/i);
+  assert.match(await page.locator('#teamPeerDetail').innerText(), /Draft\./);
+  // Two more drafts from text so the team crosses the aggregate minimum
+  for (const [n, t] of [['Priya Natarajan', 'Built ETL pipelines in Python and SQL; Kubernetes and Terraform.'], ['Marcus Bell', 'TypeScript and React frontend engineering; code reviews; Git.']]) {
+    await page.locator('#draftName').fill(n!);
+    await page.locator('#draftTeammate details').evaluate((d) => { (d as HTMLDetailsElement).open = true; });
+    await page.locator('#draftText').fill(t!);
+    await page.locator('#draftScan').click();
+    await page.locator('#draftPreview').waitFor();
+    await page.locator('#draftAdd').click();
+    await page.locator(`#teamMemberList:has-text("${n}")`).waitFor();
+  }
+  // Coverage: drafts excluded by default, included on request and labelled
+  await page.locator('[data-testid="tab-coverage"]').click();
+  await page.locator('#draftToggle').waitFor();
+  assert.match(await page.locator('#teamBars').innerText(), /At least 3 opt-in profiles/);
+  await page.locator('#includeDrafts').check();
+  assert.match(await page.locator('#teamBars').innerText(), /Data Engineering/);
+  assert.match(await page.locator('#draftToggle').innerText(), /counted below and labelled as unattested/);
+  // Download the draft card, then import it as the employee → suggestions only
+  await page.locator('[data-testid="tab-roster"]').click();
+  await page.locator('[data-peerview]').first().click();
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('[data-draft-download]').first().click()]);
+  const draftPath = await dl.path();
+  const draft = JSON.parse(readFileSync(draftPath!, 'utf8'));
+  assert.equal(draft.format, 'synapse-draft-card'); assert.equal(draft.attested, false);
+  await nav(page, 'profile', 'intake');
+  await page.locator('#importDraftFile').setInputFiles(draftPath!);
+  await page.locator('dialog [data-dialog="confirm"]').click();
+  await page.locator('[data-confirm="sql-pipelines"]').waitFor();
+  assert.equal(await page.locator('#profileCount').innerText(), '0', 'nothing confirmed automatically');
+  const ws = await waitStored(page, (w) => w.profile.orgCode === '1513.2');
+  assert.equal(ws.profile.shareId, draft.id, 'the employee inherits the draft id so their real card replaces the draft');
   assert.deepEqual(errors, []);
 });
