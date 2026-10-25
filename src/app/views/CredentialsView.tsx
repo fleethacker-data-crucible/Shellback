@@ -97,7 +97,7 @@ export function CredentialsView({ embedded = false }: { embedded?: boolean }) {
                   <div className="min-w-0">
                     <b className="block text-[13px]">{c.name}</b>
                     <small className="block text-quiet">{c.authority || 'Authority unspecified'}{c.issued ? ` · issued ${c.issued}` : ''}{c.expiry ? ` · ${r.state === 'past' ? 'expired' : 'expires'} ${c.expiry}` : ' · no expiry recorded'}</small>
-                    <span className={`cred-status mt-1 inline-flex flex-wrap items-center gap-1.5 text-[11px] ${r.state === 'past' ? 'text-danger' : r.state === 'soon' ? 'text-amber' : 'text-muted'}`}><Pill tone={st.tone}>{st.label}</Pill>{c.expiry && <span>{renewalLabel(r)}</span>}{c.source === 'resume-reviewed' && <span>· from résumé review</span>}</span>
+                    <span className={`cred-status mt-1 inline-flex flex-wrap items-center gap-1.5 text-[12px] ${r.state === 'past' ? 'text-danger' : r.state === 'soon' ? 'text-amber' : 'text-muted'}`}><Pill tone={st.tone}>{st.label}</Pill>{c.expiry && <span>{renewalLabel(r)}</span>}{c.source === 'resume-reviewed' && <span>· from résumé review</span>}</span>
                     {c.note && <p className="note mt-1">{c.note}</p>}
                   </div>
                   <div className="flex shrink-0 gap-1">
