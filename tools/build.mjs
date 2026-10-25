@@ -93,7 +93,8 @@ const appBuild = await esbuild.build({
     '__SHELLBACK_VERSION__': JSON.stringify(pkg.version),
     '__SHELLBACK_INTEL_HOSTS__': JSON.stringify(intelHosts),
   },
-  loader: { '.json': 'json' },
+  // Brand art (src/app/assets/*.png) is inlined as data: URLs so the standalone file:// edition has it too.
+  loader: { '.json': 'json', '.png': 'dataurl' },
   plugins: [inlineWorkerPlugin],
   metafile: true,
 });
@@ -148,6 +149,8 @@ const cspBase = [
   "form-action 'none'",
 ];
 const buildId = sha256(appJs + appCss + template).slice(0, 12);
+// Favicon / taskbar icon: the emblem's circle (src/app/assets/icon-96.png), inlined for both editions.
+const favicon = `data:image/png;base64,${fs.readFileSync(path.join(root, 'src/app/assets/icon-96.png')).toString('base64')}`;
 
 function renderHtml({ css, js, inline }) {
   const scriptSrc = inline ? `'sha256-${sha256b64(js)}'` : "'self'";
@@ -157,6 +160,7 @@ function renderHtml({ css, js, inline }) {
     .replaceAll('{{BUILD_ID}}', buildId)
     .replaceAll('{{VERSION}}', pkg.version)
     .replaceAll('{{EDITION}}', inline ? 'standalone' : 'served')
+    .replace('{{FAVICON}}', () => favicon)
     .replace('{{STYLES}}', () => (inline ? `<style>${css}</style>` : '<link rel="stylesheet" href="./assets/app.css">'))
     .replace('{{SCRIPT}}', () => (inline ? `<script type="module">${js}</script>` : '<script type="module" src="./assets/app.js"></script>'));
   // NOTE: function replacers — minified JS contains `$&`/`$'` sequences that string replacers would expand.

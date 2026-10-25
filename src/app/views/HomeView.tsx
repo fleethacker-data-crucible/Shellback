@@ -2,7 +2,7 @@ import { DOMAINS, SKILLS } from '../../core/taxonomy';
 import { useStore } from '../state/store';
 import { journey, nextStep, type JourneyStep, type StepState } from '../state/journey';
 import { Button, Panel, PanelHeading, cn } from '../components/ui/primitives';
-import { ShellbackMark } from '../components/ShellbackMark';
+import { Emblem } from '../components/Emblem';
 import { SpiderWeb } from '../viz/SpiderWeb';
 import { domainWebItems } from './SpiderWebView';
 
@@ -30,18 +30,18 @@ export function HomeView() {
   return (
     <section id="home" aria-labelledby="pageTitle" className="space-y-5">
       {fresh ? (
-        <div className="relative overflow-hidden rounded-xl border border-stroke bg-gradient-to-br from-[#10203a] via-panel to-[#0b1628] p-6 md:p-9">
+        <div className="relative overflow-hidden rounded-lg border border-stroke bg-panel p-6 md:p-9">
           <div className="relative z-10 max-w-[62ch]">
             <div className="eyebrow mb-3">WELCOME TO SHELLBACK</div>
-            <h2 className="text-[28px] leading-[1.1] md:text-[36px]">Map what you can do, <em className="not-italic text-mint">on your terms.</em></h2>
+            <h2 className="font-display text-[28px] font-semibold leading-[1.25]">Map what you can do, <em className="not-italic text-mint">on your terms.</em></h2>
             <p className="mt-3 text-[15px] text-muted">Start from your résumé and Shellback suggests skills. You decide what's true. Nothing becomes a score, and nothing leaves this browser unless you export it.</p>
             <div className="mt-6 flex flex-wrap gap-2">
               <Button id="homeStart" variant="primary" size="lg" onClick={() => navigate({ view: 'profile', tab: 'intake' })}>Start with my résumé ↗</Button>
               <Button id="homePersona" size="lg" onClick={() => navigate({ view: 'profile', tab: 'intake' }, undefined)}>Try a fictional employee</Button>
             </div>
           </div>
-          <div aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 lg:block">
-            <ShellbackMark size={200} glow className="opacity-70" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-8 top-1/2 hidden -translate-y-1/2 xl:block">
+            <Emblem size={240} alt="" />
           </div>
         </div>
       ) : next && (
@@ -67,7 +67,7 @@ export function HomeView() {
                 <li key={s.id} data-step={s.id} data-state={s.state} className={cn('flex flex-wrap items-center gap-3 rounded-md border px-3 py-2.5', s.state === 'attention' ? 'border-amber/40 bg-amber/5' : 'border-stroke bg-panel2/40')}>
                   <span aria-hidden="true" className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[13px] font-extrabold', st.cls)}>{st.mark || i + 1}</span>
                   <div className="min-w-0 flex-1">
-                    <strong className="block text-[14px]">{s.title}{s.optional && <span className="ml-2 text-[11px] font-bold text-quiet">optional</span>}</strong>
+                    <strong className="block text-[14px]">{s.title}{s.optional && <span className="ml-2 text-[12px] font-bold text-quiet">optional</span>}</strong>
                     <small className="block text-[12px] text-muted">{s.detail}</small>
                   </div>
                   <span className="sr-only">{st.label}</span>
