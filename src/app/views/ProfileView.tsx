@@ -196,6 +196,7 @@ function SkillsTab() {
 
   useEffect(() => {
     if (intent?.type === 'manual-add') { setManual(intent.skillId); consumeIntent(); setTimeout(() => manualRef.current?.focus(), 0); }
+    if (intent?.type === 'focus-contribution') { consumeIntent(); setTimeout(() => { const el = document.getElementById('contributionCard'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); (el?.querySelector('[data-stage] button') as HTMLElement | null)?.focus(); }, 50); }
   }, [intent, consumeIntent]);
 
   async function clear() {
