@@ -8,7 +8,7 @@ import { defaultTeams, DEMO_TEAM_ID, SELF_ID } from '../../core/analytics';
 import { newId, newShareId } from '../../core/ids';
 import { normalizeOrgCode } from '../../core/org';
 import { STAGES, energyFromScore, scoreFromEnergy, type Contribution, type Energy, type Stage, type StageDetail } from '../../core/contribution';
-import { emptyProfile, today, type Member, type Method, type Performed, type Workspace, type CredentialCandidate, type CredentialProvenance } from '../../core/schema';
+import { emptyProfile, today, type DraftCard, type Member, type Method, type Performed, type Workspace, type CredentialCandidate, type CredentialProvenance } from '../../core/schema';
 import type { ScanResponse } from '../../core/scanners';
 
 export class ActionError extends Error {}
@@ -165,7 +165,7 @@ export function createTeam(ws: Workspace, name: string): string {
   if (!n) return fail('Enter a name for your team.');
   if (ws.teams.items.length >= 25) return fail('Limit of 25 local team workspaces reached.');
   const id = newId('team');
-  ws.teams.items.push({ id, name: n, members: [], priorities: [] });
+  ws.teams.items.push({ id, name: n, members: [], priorities: [], includeDrafts: false });
   ws.teams.active = id;
   return `Created ${n}. Import peer cards to populate it.`;
 }
@@ -191,6 +191,33 @@ export function importMember(ws: Workspace, teamId: string, member: Member): Imp
   team.members = team.members.filter((m) => m.id !== member.id);
   team.members.push(member);
   return existing ? { replaced: true, previousName: existing.name } : { replaced: false };
+}
+
+export function setIncludeDrafts(ws: Workspace, teamId: string, on: boolean): void {
+  const team = ws.teams.items.find((t) => t.id === teamId);
+  if (team) team.includeDrafts = on;
+}
+
+/** Employee side: a draft card prepared for me becomes suggestions, never confirmed skills. */
+export function applyDraftToProfile(ws: Workspace, d: DraftCard): string {
+  const p = ws.profile;
+  const dismissed = new Set(p.candidateDismissed), confirmed = new Set(p.confirmed);
+  const newSkills = d.skills.filter((id) => !dismissed.has(id) && !confirmed.has(id) && !p.candidates.includes(id));
+  p.candidates = [...p.candidates, ...newSkills].slice(0, 104);
+  const haveCred = new Set(p.credentials.map((c) => credentialKey(c.name)));
+  const dismissedCred = new Set(p.credentialDismissed);
+  let newCreds = 0;
+  for (const name of d.credentialNames) {
+    const key = credentialKey(name);
+    if (haveCred.has(key) || dismissedCred.has(key) || p.credentialCandidates.some((c) => c.key === key)) continue;
+    p.credentialCandidates.push({ key: key.slice(0, 65), name, authority: '', matched: 'draft card' });
+    newCreds++;
+  }
+  if (!p.orgCode && d.orgCode) p.orgCode = d.orgCode;
+  if (!p.orgTitle && d.orgTitle) p.orgTitle = d.orgTitle;
+  if (!p.displayName && d.name) p.displayName = d.name;
+  if (!p.shareId) p.shareId = d.id; // so the draft in the team is replaced by the real card on export
+  return `Draft loaded as suggestions: ${newSkills.length} skill${newSkills.length === 1 ? '' : 's'} and ${newCreds} credential${newCreds === 1 ? '' : 's'} to review. Nothing is confirmed until you say so.`;
 }
 
 export function removeMember(ws: Workspace, teamId: string, memberId: string): string {

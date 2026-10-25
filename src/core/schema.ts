@@ -188,6 +188,9 @@ export const memberSchema = z.object({
   orgCode: orgCodeSchema,
   orgTitle: strTrim(80),
   contribution: contributionSchema,
+  /** false = a draft someone else prepared (e.g. from a résumé); the person has not attested to it. */
+  attested: z.boolean().catch(true),
+  draftNote: strTrim(200).catch(''),
 }).transform((m) => ({ ...m, surveys: Object.fromEntries(Object.entries(m.surveys).filter(([id]) => m.skills.includes(id))) }));
 export type Member = z.infer<typeof memberSchema>;
 
@@ -196,6 +199,8 @@ export const teamSchema = z.object({
   name: strTrim(80).pipe(z.string().min(1)),
   members: arrayOf(memberSchema, 100).transform(uniqueById),
   priorities: skillIdList(104),
+  /** Count unattested drafts in coverage views. Off by default; always labelled when on. */
+  includeDrafts: z.boolean().catch(false),
 });
 export type Team = z.infer<typeof teamSchema>;
 
@@ -228,6 +233,43 @@ export type PeerCard = {
   qualificationClaims?: string[]; qualificationDisclaimer?: string;
   orgCode?: string; orgTitle?: string; contribution?: Contribution;
 };
+
+/**
+ * Draft card: prepared by someone else (typically a supervisor from a résumé). Not consented, not attested.
+ * A team can hold it as a draft member; the person can import it into their own profile as suggestions.
+ */
+export const draftCardSchema = z.object({
+  format: z.literal('synapse-draft-card'),
+  version: z.literal(1),
+  id: z.string().regex(/^[a-zA-Z0-9-]{8,70}$/),
+  name: z.string().transform((s) => s.trim().slice(0, 70)).pipe(z.string().min(1)),
+  attested: z.literal(false),
+  issued: isoDate.catch('Unknown'),
+  draftedBy: strTrim(70).catch(''),
+  skills: skillIdList(104),
+  credentialNames: z.unknown().transform((v) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').map((x) => x.trim().slice(0, 160)).filter(Boolean).slice(0, 50) : [])),
+  orgCode: orgCodeSchema,
+  orgTitle: strTrim(80).catch(''),
+  note: strTrim(200).catch(''),
+});
+export type DraftCard = z.infer<typeof draftCardSchema>;
+export const isDraftCard = (v: unknown): v is { format: 'synapse-draft-card' } => !!v && typeof v === 'object' && (v as { format?: unknown }).format === 'synapse-draft-card';
+
+export function parseDraftCard(input: unknown): DraftCard {
+  const r = draftCardSchema.safeParse(input);
+  if (!r.success) { const i = r.error.issues[0]; throw new Error(i ? `Not a Synapse draft card (${i.path.join('.') || 'root'}: ${i.message}).` : 'Not a Synapse draft card.'); }
+  if (RESERVED_MEMBER_ID.test(r.data.id)) throw new Error('This card uses a reserved identifier and cannot be imported.');
+  return r.data;
+}
+
+/** A draft becomes a team member that is clearly marked as unattested. */
+export function draftToMember(d: DraftCard): Member {
+  return memberSchema.parse({
+    id: d.id, name: d.name, synthetic: false, issued: d.issued, skills: d.skills, surveys: {}, mentorOptIn: false, mentorTopics: [], availability: 'unknown', mentorIntro: '',
+    qualificationClaims: d.credentialNames, orgCode: d.orgCode, orgTitle: d.orgTitle, contribution: { stages: {}, source: '', detail: {} },
+    attested: false, draftNote: d.note || `Draft prepared${d.draftedBy ? ` by ${d.draftedBy}` : ''} on ${d.issued}; not confirmed by ${d.name}.`,
+  });
+}
 
 /** Ids the app uses for the local profile and the synthetic cohort. */
 const RESERVED_MEMBER_ID = /^(self-current|demo-\d+)$/;
@@ -342,23 +384,42 @@ export const fleetPlansSchema = z.unknown().transform((value) => {
 // ----------------------------------------------------------------------------
 // ROI
 // ----------------------------------------------------------------------------
+/** Conservative, illustrative defaults for a 100-person pilot. Every one of them should be replaced by a measured figure. */
 export const ROI_DEFAULTS = {
-  employees: 100, trainingCost: 2000, trainingAvoidance: 15, trainingHours: 8, hourlyRate: 75,
-  externalSpend: 100000, externalAvoidance: 10, minutesSaved: 55, weeks: 46, realization: 70,
-  adoption: 75, overlap: 25, annualCost: 60000,
+  employees: 100, adoption: 60, hourlyRate: 85, weeks: 46,
+  externalHours: 600, externalRate: 180, internalCoverage: 25, internalAnswerHours: 1.25,
+  trainingCost: 1500, trainingAvoidance: 8, trainingHours: 24,
+  lapsesPerYear: 6, lapseCost: 2500, lapseAvoidance: 50,
+  leads: 12, searchMinutes: 30, realization: 50,
+  annualCost: 25000, upkeepMinutes: 15, adminHours: 120,
 } as const;
-export type RoiInputs = { -readonly [K in keyof typeof ROI_DEFAULTS]: number };
-export const ROI_PERCENT_KEYS: ReadonlySet<keyof RoiInputs> = new Set(['trainingAvoidance', 'externalAvoidance', 'realization', 'adoption', 'overlap']);
+export type RoiKey = keyof typeof ROI_DEFAULTS;
+export type RoiInputs = { -readonly [K in RoiKey]: number };
+export const ROI_PERCENT_KEYS: ReadonlySet<RoiKey> = new Set<RoiKey>(['adoption', 'internalCoverage', 'trainingAvoidance', 'lapseAvoidance', 'realization']);
+export const ROI_BASES = ['assumed', 'benchmark', 'measured'] as const;
+export type RoiBasis = (typeof ROI_BASES)[number];
+export type RoiBasisMap = Partial<Record<RoiKey, RoiBasis>>;
+
+/** Inputs from the retired v1.0–v1.4 model that map onto the new one; everything else is dropped. */
+const ROI_LEGACY: Partial<Record<string, RoiKey>> = { minutesSaved: 'searchMinutes' };
 
 export const roiSchema = z.unknown().transform((value): RoiInputs => {
   const out: RoiInputs = { ...ROI_DEFAULTS };
   if (!value || typeof value !== 'object') return out;
-  for (const key of Object.keys(ROI_DEFAULTS) as (keyof RoiInputs)[]) {
-    const n = Number((value as Record<string, unknown>)[key]);
+  const v = value as Record<string, unknown>;
+  for (const key of Object.keys(ROI_DEFAULTS) as RoiKey[]) {
+    const n = Number(v[key]);
     if (Number.isFinite(n) && n >= 0) out[key] = Math.min(n, ROI_PERCENT_KEYS.has(key) ? 100 : 100_000_000);
   }
+  for (const [legacy, key] of Object.entries(ROI_LEGACY)) { const n = Number(v[legacy]); if (key && v[key] === undefined && Number.isFinite(n) && n >= 0) out[key] = Math.min(n, 100_000_000); }
   return out;
 });
+export const roiBasisSchema = z.unknown().transform((value): RoiBasisMap => {
+  const out: RoiBasisMap = {};
+  if (!value || typeof value !== 'object') return out;
+  for (const [k, b] of Object.entries(value as Record<string, unknown>)) if (k in ROI_DEFAULTS && (ROI_BASES as readonly unknown[]).includes(b)) out[k as RoiKey] = b as RoiBasis;
+  return out;
+}).catch({});
 
 // ----------------------------------------------------------------------------
 // Workspace (v2)
@@ -370,6 +431,7 @@ export const workspaceSchema = z.object({
   fleetPlans: fleetPlansSchema,
   workforce: workforceSchema,
   roi: roiSchema,
+  roiBasis: roiBasisSchema,
   meta: z.object({ created: dateOrToday, updated: dateOrToday, rev: z.number().int().min(0).catch(0) }).catch({ created: today(), updated: today(), rev: 0 }),
 });
 export type Workspace = z.infer<typeof workspaceSchema>;
@@ -393,6 +455,7 @@ export function newWorkspace(): Workspace {
     fleetPlans: {},
     workforce: emptyWorkforce(),
     roi: { ...ROI_DEFAULTS },
+    roiBasis: {},
     meta: { created: today(), updated: today(), rev: 0 },
   };
 }

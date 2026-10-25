@@ -66,6 +66,15 @@ http.createServer(async (req, res) => {
       if (body.contract !== 1) return send(res, 200, { ok: false, error: `unsupported contract ${body.contract}` });
       const p = body.payload ?? {};
       if (p.task === 'ping') return send(res, 200, { ok: true, result: { detail: `adapter ok → ${new URL(UPSTREAM).host}${MODEL ? ` (${MODEL})` : ''}` } });
+      if (p.task === 'list-models') {
+        // GET <base>/models where base is the upstream URL minus /chat/completions
+        const modelsUrl = UPSTREAM.replace(/\/chat\/completions\/?$/, '') + '/models';
+        const r = await fetch(modelsUrl, { headers: { authorization: `Bearer ${KEY}` } });
+        if (!r.ok) return send(res, 200, { ok: false, error: `upstream /models answered ${r.status}` });
+        const j = await r.json();
+        const models = Array.isArray(j?.data) ? j.data.map((m) => m.id).filter((x) => typeof x === 'string') : [];
+        return send(res, 200, { ok: true, result: { models } });
+      }
       const make = prompts[p.task];
       if (!make) return send(res, 200, { ok: false, error: `unknown task ${p.task}` });
       const started = Date.now();
