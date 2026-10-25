@@ -5,7 +5,8 @@
  * Every number produced here is a coverage *signal* over voluntarily shared claims.
  * None of it is a readiness, fitness, or performance score.
  */
-import { DOMAINS, SKILLS, SKILL_BY_ID, SYNTHETIC_COHORT } from './taxonomy';
+import { DOMAINS, SKILLS, SKILL_BY_ID } from './taxonomy';
+import { SYNTHETIC_COHORT_V2, energyLabelOf } from './cohort';
 import type { Member, Team, Workspace, Credential } from './schema';
 
 export const MIN_AGGREGATE = 3;
@@ -15,40 +16,36 @@ export const DEMO_TEAM_ID = 'team-demo';
 export interface Participant extends Member { self?: boolean }
 
 export function defaultTeams(): { active: string; items: Team[] } {
-  const members: Member[] = SYNTHETIC_COHORT.map((p, i) => ({
-    id: `demo-${i}`,
-    name: p.name,
-    synthetic: true,
-    attested: true,
-    draftNote: '',
-    issued: '2026-10-21',
-    skills: p.skills.filter((id) => SKILL_BY_ID.has(id)),
-    surveys: Object.fromEntries(p.skills.slice(0, 5).map((skill, j) => [skill, { confidence: (i + j) % 3 === 0 ? 4 : 3, method: (i + j) % 4 === 0 ? 'ai' : 'independent' } as const])),
-    mentorOptIn: i % 2 === 0,
-    mentorTopics: i % 2 === 0 ? p.skills.slice(0, 2) : [],
-    availability: i % 2 === 0 ? 'limited' : 'unknown',
-    mentorIntro: '',
-    qualificationClaims: [],
-    orgCode: ['1510', '1513', '1513', '1520', '1513.1', '1520'][i] ?? '',
-    orgTitle: ['Division Head', 'Branch Head', 'Engineer', 'Analyst', 'Technician', 'Planner'][i] ?? '',
-    contribution: {
-      source: 'Synthetic example',
-      stages: {
-        question: (['energizing', 'neutral', 'draining', 'neutral', 'energizing', 'neutral'] as const)[i]!,
-        ideate: (['energizing', 'draining', 'neutral', 'energizing', 'neutral', 'draining'] as const)[i]!,
-        evaluate: (['neutral', 'energizing', 'energizing', 'neutral', 'draining', 'neutral'] as const)[i]!,
-        rally: (['draining', 'energizing', 'neutral', 'neutral', 'neutral', 'energizing'] as const)[i]!,
-        support: (['neutral', 'neutral', 'energizing', 'draining', 'energizing', 'neutral'] as const)[i]!,
-        finish: (['neutral', 'draining', 'neutral', 'energizing', 'neutral', 'energizing'] as const)[i]!,
-      },
-      // Two-axis detail for a few people so the quadrant read-out has something to show.
-      detail: i === 1 ? { finish: { energy: -1, fluency: 3, tags: ['under-deadline'], example: '' }, rally: { energy: 2, fluency: 2, tags: [], example: '' } }
-        : i === 2 ? { finish: { energy: -1, fluency: 2, tags: [], example: '' }, evaluate: { energy: 1, fluency: 1, tags: ['new-people'], example: '' } }
-        : i === 3 ? { finish: { energy: 1, fluency: 3, tags: [], example: '' } }
-        : {},
-    },
-  }));
-  return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning'], includeDrafts: false }] };
+  const members: Member[] = SYNTHETIC_COHORT_V2.map((p, i) => {
+    const skills = p.skills.filter((id) => SKILL_BY_ID.has(id));
+    const stages: Member['contribution']['stages'] = {};
+    const detail: Member['contribution']['detail'] = {};
+    for (const [stage, v] of Object.entries(p.stages) as Array<[keyof typeof p.stages, NonNullable<(typeof p.stages)[keyof typeof p.stages]>]>) {
+      const [energy, fluency, tags] = v;
+      stages[stage] = energyLabelOf(energy);
+      detail[stage] = { energy, fluency, tags: tags ?? [], example: '' };
+    }
+    return {
+      id: `demo-${i}`,
+      name: p.name,
+      synthetic: true,
+      attested: true,
+      draftNote: '',
+      issued: '2026-10-21',
+      skills,
+      // Confidence for about half their skills; a few 'ai' and 'guided' answers so bench strength has texture.
+      surveys: Object.fromEntries(skills.filter((_, j) => (i + j) % 2 === 0).map((skill, j) => [skill, { confidence: (i + j) % 4 === 0 ? 4 : (i + j) % 5 === 0 ? 2 : 3, method: (i + j) % 6 === 0 ? 'ai' : (i + j) % 7 === 0 ? 'guided' : 'independent' } as const])),
+      mentorOptIn: !!p.mentor,
+      mentorTopics: p.mentor?.topics.filter((id) => SKILL_BY_ID.has(id)) ?? [],
+      availability: p.mentor?.availability ?? 'unknown',
+      mentorIntro: p.mentor?.intro ?? '',
+      qualificationClaims: p.credentials ?? [],
+      orgCode: p.org,
+      orgTitle: p.title,
+      contribution: { source: 'Synthetic example', stages, detail },
+    };
+  });
+  return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning', 'threat-modeling'], includeDrafts: false }] };
 }
 
 export function activeTeam(ws: Workspace): Team | undefined {

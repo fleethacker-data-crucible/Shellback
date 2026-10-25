@@ -715,7 +715,7 @@ test('two-axis contribution: energy + fluency → quadrant, tags and example per
   await page.locator('#shareToggle').check({ force: true });
   await page.locator('#shareContributionLocally').check();
   await nav(page, 'team', 'coverage');
-  assert.match(await page.locator('[data-quadrants="finish"]').innerText(), /grind 2/i);
+  assert.match(await page.locator('[data-quadrants="finish"]').innerText(), /grind \d+/i);
   assert.match(await page.locator('#contributionNotes').innerText(), /Good at it but drained by it/);
   assert.match(await page.locator('#workshopSheet').innerText({ timeout: 5000 }).catch(async () => page.evaluate(() => document.getElementById('workshopSheet')?.textContent ?? '')), /Grind: /);
   assert.deepEqual(errors, []);

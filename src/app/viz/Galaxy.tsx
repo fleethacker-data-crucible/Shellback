@@ -9,7 +9,7 @@ import { quadtree } from 'd3-quadtree';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
 import { DOMAINS } from '../../core/taxonomy';
-import { GALAXY_H, GALAXY_W, type GalaxyModel } from './galaxy-model';
+import { GALAXY_H, GALAXY_W, type GalaxyModel, type Hub } from './galaxy-model';
 
 interface Props { model: GalaxyModel; selected: string | null; onSelect: (id: string) => void; fitSignal?: number; reducedMotion?: boolean }
 interface Pos { x: number; y: number }
@@ -60,7 +60,7 @@ export function Galaxy({ model, selected, onSelect, fitSignal = 0 }: Props) {
     const svg = svgRef.current, z = zoomRef.current;
     if (!svg || !z) return;
     const pts: Pos[] = [...visible].map((id) => ({ x: byId.get(id)!.homeX, y: byId.get(id)!.homeY }));
-    for (const h of hubs) if (activeDomains.has(h.di)) { const w = (DOMAINS[h.di]!.name.length * 6.6 + 16) / 2; pts.push({ x: Math.min(h.x - w, h.x - h.r - 8), y: h.y - h.r - 32 }, { x: Math.max(h.x + w, h.x + h.r + 8), y: h.y + h.r + 8 }); }
+    for (const h of hubs) if (activeDomains.has(h.di)) { const w = (Math.min(DOMAINS[h.di]!.name.length, 17) * 6.6 + 16) / 2; pts.push({ x: Math.min(h.x - w, h.x - h.r - 8), y: h.y - h.r - 44 }, { x: Math.max(h.x + w, h.x + h.r + 8), y: h.y + h.r + 44 }); }
     if (!pts.length) { select(svg).call(z.transform, zoomIdentity); return; }
     const minX = Math.min(...pts.map((p) => p.x)) - 30, maxX = Math.max(...pts.map((p) => p.x)) + 30;
     const minY = Math.min(...pts.map((p) => p.y)) - 24, maxY = Math.max(...pts.map((p) => p.y)) + 30;
@@ -153,6 +153,47 @@ export function Galaxy({ model, selected, onSelect, fitSignal = 0 }: Props) {
   const tipLinked = tip ? [...(adj.get(tip.s.id) ?? [])].filter((x) => visible.has(x)).slice(0, 3).map((x) => byId.get(x)!.s.name) : [];
   const labelZoom = transform.k >= 2.2;
   const ls = 1 / Math.sqrt(transform.k); // labels grow slower than the map so zooming in separates them
+  // Domain label plates: place each above its hub, else below, else nudged sideways, so plates never overlap each other.
+  const plates = useMemo(() => {
+    type Plate = { h: Hub; lines: string[]; count: string; w: number; hgt: number; x: number; y: number };
+    // Wrap long domain names onto two lines so plates stay narrow (≈ cluster width).
+    const wrap = (name: string): string[] => {
+      const words = name.toUpperCase().split(' ');
+      if (name.length <= 16) return [words.join(' ')];
+      let best = [words.join(' ')];
+      for (let i = 1; i < words.length; i++) { const a = words.slice(0, i).join(' '), b = words.slice(i).join(' '); if (Math.max(a.length, b.length) < Math.max(...best.map((l) => l.length))) best = [a, b]; }
+      return best;
+    };
+    const placed: Plate[] = [];
+    const rect = (p: Plate) => ({ x1: p.x, y1: p.y, x2: p.x + p.w * ls, y2: p.y + p.hgt * ls });
+    const sorted = hubs.filter((h) => activeDomains.has(h.di)).sort((a, b) => a.y - b.y || a.x - b.x);
+    // Obstacles: every other hub's star field (as a box), so a plate never sits on top of someone else's cluster.
+    const hubBox = (h: Hub) => ({ x1: h.x - h.r, y1: h.y - h.r, x2: h.x + h.r, y2: h.y + h.r });
+    const overlaps = (r: { x1: number; y1: number; x2: number; y2: number }, o: { x1: number; y1: number; x2: number; y2: number }, pad: number) => r.x1 < o.x2 + pad && r.x2 > o.x1 - pad && r.y1 < o.y2 + pad && r.y2 > o.y1 - pad;
+    const hits = (p: Plate) => { const r = rect(p); return placed.some((q) => overlaps(r, rect(q), 6)) || sorted.some((o) => o.di !== p.h.di && overlaps(r, hubBox(o), 2)); };
+    for (const h of sorted) {
+      const lines = wrap(DOMAINS[h.di]!.name);
+      const count = [h.confirmed ? `${h.confirmed} confirmed` : '', h.pending ? `${h.pending} suggested` : ''].filter(Boolean).join(' · ');
+      const w = Math.max(...lines.map((l) => l.length), count.length * 0.85) * 6.6 + 16, hgt = 6 + lines.length * 12 + (count ? 12 : 0);
+      const sw = w * ls, sh = hgt * ls;
+      const inward = h.x < GALAXY_W / 2 ? 1 : -1; // nudge toward the middle, never off the edge
+      const candidates: Array<[number, number]> = [
+        [h.x - sw / 2, h.y - h.r - 10 - sh],                    // above
+        [h.x - sw / 2, h.y + h.r + 10],                         // below
+        [h.x - sw / 2 + inward * sw * 0.5, h.y - h.r - 10 - sh], // above, nudged inward
+        [h.x - sw / 2 + inward * sw * 0.5, h.y + h.r + 10],     // below, nudged inward
+        [inward > 0 ? h.x + h.r + 8 : h.x - h.r - 8 - sw, h.y - sh / 2],            // beside, on the inward side
+        [inward > 0 ? h.x + h.r + 8 : h.x - h.r - 8 - sw, h.y - h.r * 0.6 - sh / 2], // beside, higher
+        [inward > 0 ? h.x + h.r + 8 : h.x - h.r - 8 - sw, h.y + h.r * 0.6 - sh / 2], // beside, lower
+        [h.x - sw / 2, h.y - h.r - 10 - sh * 2.1],              // stacked higher
+        [h.x - sw / 2, h.y + h.r + 10 + sh * 1.1],              // stacked lower
+      ];
+      let chosen: Plate | null = null;
+      for (const [x, y] of candidates) { const p: Plate = { h, lines, count, w, hgt, x, y }; if (!hits(p)) { chosen = p; break; } }
+      placed.push(chosen ?? { h, lines, count, w, hgt, x: candidates[0]![0], y: candidates[0]![1] });
+    }
+    return placed;
+  }, [hubs, activeDomains, ls]);
   const perDomain = useMemo(() => { const m = new Map<number, number>(); for (const id of displayed) { const di = byId.get(id)!.s.di; m.set(di, (m.get(di) ?? 0) + 1); } return m; }, [displayed, byId]);
 
   return (
@@ -170,19 +211,18 @@ export function Galaxy({ model, selected, onSelect, fitSignal = 0 }: Props) {
         </g>
         <g ref={sceneRef} transform={transform.toString()}>
           <g aria-hidden="true">
-            {hubs.filter((h) => activeDomains.has(h.di)).map((h) => {
+            {plates.map(({ h, lines, count, w, hgt, x, y }) => {
               const d = DOMAINS[h.di]!;
-              const label = d.name.toUpperCase();
-              const count = [h.confirmed ? `${h.confirmed} confirmed` : '', h.pending ? `${h.pending} suggested` : ''].filter(Boolean).join(' · ');
-              const w = label.length * 6.6 + 16;
               return (
                 <g key={h.di} className="galaxy-domain-hub" data-domain={h.di}>
                   <circle cx={h.x} cy={h.y} r={h.r + 8} fill={d.color} opacity={0.035 + h.confirmed * 0.012} />
                   <circle cx={h.x} cy={h.y} r={h.r + 8} fill="none" stroke={d.color} strokeWidth={h.confirmed ? 1.2 : 0.7} strokeOpacity={h.confirmed ? 0.4 : 0.16} strokeDasharray="3 6" />
-                  <g transform={`translate(${h.x} ${h.y - h.r - 30 * ls}) scale(${ls}) translate(${-w / 2} 0)`}>
-                    <rect width={w} height={count ? 30 : 18} rx={6} fill="#0a1527" fillOpacity={0.88} stroke={d.color} strokeOpacity={0.35} />
-                    <text className="galaxy-domain-label" x={8} y={12.5} fill={d.color}>{label}</text>
-                    {count && <text className="galaxy-domain-count" x={8} y={25}>{count}</text>}
+                  {/* leader line when the plate had to move away from its hub */}
+                  {Math.abs(x + (w * ls) / 2 - h.x) > 4 && <line x1={h.x} y1={h.y - h.r - 6} x2={x + (w * ls) / 2} y2={y + hgt * ls} stroke={d.color} strokeOpacity={0.35} strokeWidth={0.8} />}
+                  <g transform={`translate(${x} ${y}) scale(${ls})`}>
+                    <rect width={w} height={hgt} rx={6} fill="#0a1527" fillOpacity={0.88} stroke={d.color} strokeOpacity={0.35} />
+                    {lines.map((l, i) => <text key={l} className="galaxy-domain-label" x={8} y={12.5 + i * 12} fill={d.color}>{l}</text>)}
+                    {count && <text className="galaxy-domain-count" x={8} y={12.5 + lines.length * 12} >{count}</text>}
                   </g>
                 </g>
               );
