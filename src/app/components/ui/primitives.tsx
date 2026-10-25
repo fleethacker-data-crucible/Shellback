@@ -121,7 +121,7 @@ export function Switch({ id, checked, onChange, label, onText = 'On', offText = 
   return (
     <label className="inline-flex cursor-pointer items-center gap-3 select-none" data-testid="switch">
       <input id={id} type="checkbox" className="peer sr-only" role="switch" aria-checked={checked} aria-label={label} checked={checked} onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.checked)} />
-      <span className="relative h-6 w-11 rounded-full border border-stroke bg-bg transition-colors peer-checked:border-mint/60 peer-checked:bg-mint/30 peer-focus-visible:outline-2 peer-focus-visible:outline-[#a0eeea]">
+      <span className="relative h-6 w-11 rounded-full border border-stroke bg-bg transition-colors peer-checked:border-mint/60 peer-checked:bg-mint/30 peer-focus-visible:outline-2 peer-focus-visible:outline-brass">
         <span className={cn('absolute top-[3px] left-[3px] h-4 w-4 rounded-full bg-muted transition-transform', checked && 'translate-x-5 bg-mint')} />
       </span>
       <b className="text-[13px]">{checked ? onText : offText}</b>
@@ -149,7 +149,7 @@ export function Stat({ label, value, hint, id }: { label: string; value: ReactNo
     <article className="rounded-md border border-stroke bg-panel2/60 px-4 py-3">
       <span className="eyebrow block">{label}</span>
       <strong id={id} className="mt-1 block text-[26px] leading-none">{value}</strong>
-      {hint && <small className="mt-1 block text-[11px] text-quiet">{hint}</small>}
+      {hint && <small className="mt-1 block text-[12px] text-quiet">{hint}</small>}
     </article>
   );
 }

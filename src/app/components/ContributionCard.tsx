@@ -49,11 +49,11 @@ export function ContributionCard() {
                 return (
                   <div key={s.id} data-stage={s.id} data-quadrant={q}>
                     <div className="flex items-start justify-between gap-2"><strong className="block text-[13px]">{s.label}</strong>{d && <Pill tone={QUADRANT_TONE[q]} className="shrink-0" title={QUADRANT_DETAIL[q]}>{QUADRANT_LABEL[q]}</Pill>}</div>
-                    <small className="block text-[11px] text-quiet">{s.detail}</small>
+                    <small className="block text-[12px] text-quiet">{s.detail}</small>
                     <div role="radiogroup" aria-label={`${s.label}: energy`} className="mt-1.5 flex flex-wrap gap-1">
                       {ENERGY_SCALE.map((e) => (
                         <button key={e} type="button" role="radio" aria-checked={d?.energy === e} aria-label={ENERGY_SCORE_LABEL[e]} title={ENERGY_SCORE_LABEL[e]} data-energy={ENERGY_KEY[e]}
-                          className={cn('rounded-full border px-2 py-[3px] text-[11px] font-bold transition-colors', d?.energy === e ? ENERGY_TONE(e) : 'border-stroke text-muted hover:text-text')}
+                          className={cn('rounded-full border px-2 py-[3px] text-[12px] font-bold transition-colors', d?.energy === e ? ENERGY_TONE(e) : 'border-stroke text-muted hover:text-text')}
                           onClick={() => update((w) => { if (d?.energy === e) setContributionStage(w, s.id, null); else setStageDetail(w, s.id, { energy: e }); })}>
                           {ENERGY_SHORT[e]}
                         </button>
@@ -61,7 +61,7 @@ export function ContributionCard() {
                     </div>
                     {d && (
                       <div role="radiogroup" aria-label={`${s.label}: how practiced`} className="mt-1 flex flex-wrap items-center gap-1">
-                        <span className="mr-1 text-[10px] font-bold uppercase tracking-wider text-quiet">Practiced?</span>
+                        <span className="mr-1 text-[12px] font-bold uppercase tracking-wider text-quiet">Practiced?</span>
                         {FLUENCY_SCALE.map((f) => (
                           <button key={f} type="button" role="radio" aria-checked={d.fluency === f} data-fluency={f}
                             className={cn('rounded-full border px-2 py-[2px] text-[10.5px] font-bold transition-colors', d.fluency === f ? 'border-blue/60 bg-blue/15 text-text' : 'border-stroke text-muted hover:text-text')}
@@ -72,7 +72,7 @@ export function ContributionCard() {
                       </div>
                     )}
                     {d && (
-                      <details className="mt-1 text-[11px]">
+                      <details className="mt-1 text-[12px]">
                         <summary className="cursor-pointer text-quiet hover:text-text">When, and an example {d.tags.length || d.example ? `(${[d.tags.length ? `${d.tags.length} tag${d.tags.length === 1 ? '' : 's'}` : '', d.example ? 'example' : ''].filter(Boolean).join(', ')})` : '(optional)'}</summary>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {CONTEXT_TAGS.map((t) => { const on = d.tags.includes(t); return <button key={t} type="button" aria-pressed={on} data-context-tag={t} className={cn('rounded-full border px-2 py-[2px] text-[10.5px]', on ? 'border-purple/60 bg-purple/15 text-text' : 'border-stroke text-muted hover:text-text')} onClick={() => update((w) => setStageDetail(w, s.id, { tags: on ? d.tags.filter((x) => x !== t) : [...d.tags, t] }))}>{CONTEXT_TAG_LABEL[t]}</button>; })}

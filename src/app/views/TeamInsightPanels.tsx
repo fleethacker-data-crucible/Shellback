@@ -40,17 +40,17 @@ export function ContributionMap({ people, teamName = 'Team' }: { people: Partici
                       <i className="bg-[#56708f]" style={{ width: `${(r.neutral.length / sharers.length) * 100}%` }} />
                       <i className="bg-amber" style={{ width: `${(r.drained.length / sharers.length) * 100}%` }} />
                     </div>
-                    <small className="mt-1 block text-[11px] text-quiet">{r.energized.length ? r.energized.join(', ') : 'No one energized'}{r.drained.length ? ` · drains ${r.drained.length}` : ''}</small>
+                    <small className="mt-1 block text-[12px] text-quiet">{r.energized.length ? r.energized.join(', ') : 'No one energized'}{r.drained.length ? ` · drains ${r.drained.length}` : ''}</small>
                     <div className="mt-1 flex flex-wrap gap-1" data-quadrants={r.stage.id}>
                       {(['flow', 'growth', 'grind', 'avoid'] as Quadrant[]).filter((q) => r.quadrants[q].length).map((q) => <Pill key={q} tone={QUADRANT_TONE[q]} title={`${QUADRANT_DETAIL[q]} — ${r.quadrants[q].join(', ')}`}>{QUADRANT_LABEL[q]} {r.quadrants[q].length}</Pill>)}
-                      {r.quadrants.unknown.length > 0 && r.quadrants.unknown.length === r.energized.length + r.drained.length && <small className="text-[10px] text-quiet">energy only · no fluency shared</small>}
+                      {r.quadrants.unknown.length > 0 && r.quadrants.unknown.length === r.energized.length + r.drained.length && <small className="text-[12px] text-quiet">energy only · no fluency shared</small>}
                     </div>
                   </div>
                 ))}
               </div>
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-4 text-[11px] text-quiet"><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-mint align-middle" />energizes</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-[#56708f] align-middle" />neutral</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-amber align-middle" />drains</span><span>· <b>Flow</b> energized + practiced · <b>Growth edge</b> energized, learning · <b>Grind</b> practiced, drained · <b>Avoid / pair</b> neither</span></div>
+          <div className="mt-3 flex flex-wrap gap-4 text-[12px] text-quiet"><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-mint align-middle" />energizes</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-[#56708f] align-middle" />neutral</span><span><i className="mr-1 inline-block h-2 w-3 rounded-sm bg-amber align-middle" />drains</span><span>· <b>Flow</b> energized + practiced · <b>Growth edge</b> energized, learning · <b>Grind</b> practiced, drained · <b>Avoid / pair</b> neither</span></div>
           {notes.length > 0 && <ul id="contributionNotes" className="mt-3 space-y-1 text-[13px]">{notes.map((n) => <li key={n} className="rounded-md border border-stroke bg-panel2/50 px-3 py-2">{n}</li>)}</ul>}
           {pairings.length > 0 && (
             <div id="contributionPairings" className="mt-3 rounded-md border border-stroke bg-panel2/40 p-3 text-[13px]">
@@ -138,7 +138,7 @@ function OrgTreeNode({ node, depth, selected, onSelect }: { node: OrgNode<Partic
     <>
       <Button size="sm" variant={selected === node.code ? 'primary' : 'ghost'} full className={cn('justify-start border border-stroke', depth > 0 && 'border-l-0')} data-org-unit={node.code}
         onClick={() => onSelect(node.code)}>
-        <span style={{ paddingLeft: depth * 14 }} className="flex items-center gap-2"><span className="opacity-70">{depth > 0 ? "└" : "▸"}</span>{node.level} {node.code}<Pill>{node.all.length}</Pill>{node.all.length < MIN_AGGREGATE && <span className="text-[10px] text-quiet">rolls up</span>}</span>
+        <span style={{ paddingLeft: depth * 14 }} className="flex items-center gap-2"><span className="opacity-70">{depth > 0 ? "└" : "▸"}</span>{node.level} {node.code}<Pill>{node.all.length}</Pill>{node.all.length < MIN_AGGREGATE && <span className="text-[12px] text-quiet">rolls up</span>}</span>
       </Button>
       {node.children.map((c) => <OrgTreeNode key={c.code} node={c} depth={depth + 1} selected={selected} onSelect={onSelect} />)}
     </>
