@@ -34,7 +34,7 @@ export function TrustChip({ kind, className, extra }: { kind: TrustKind; classNa
   const c = COPY[kind];
   return (
     <details className={cn('trust-chip relative inline-block align-middle', className)} data-trust-chip={kind}>
-      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-stroke bg-panel2/70 px-2 py-0.5 text-[11px] font-bold text-muted hover:border-mint/50 hover:text-text [&::-webkit-details-marker]:hidden">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-full border border-stroke bg-panel2/70 px-2 py-0.5 text-[12px] font-bold text-muted hover:border-mint/50 hover:text-text [&::-webkit-details-marker]:hidden">
         <i aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-mint/70" />{c.label}<span aria-hidden="true" className="text-quiet">ⓘ</span>
       </summary>
       <div role="note" className="absolute left-0 top-full z-20 mt-1 w-[300px] max-w-[80vw] rounded-md border border-stroke bg-panel p-3 text-[12px] leading-relaxed shadow-xl">

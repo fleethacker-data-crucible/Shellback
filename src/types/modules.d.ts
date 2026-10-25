@@ -7,3 +7,9 @@ declare module 'worker:scan' {
 declare const __SHELLBACK_VERSION__: string;
 /** Extra origins allowed in connect-src, from SHELLBACK_INTEL_HOST at build time (comma-separated). */
 declare const __SHELLBACK_INTEL_HOSTS__: readonly string[];
+
+declare module '*.png' {
+  /** data: URL, inlined by tools/build.mjs (esbuild dataurl loader). */
+  const url: string;
+  export default url;
+}

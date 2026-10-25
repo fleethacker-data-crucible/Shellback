@@ -29,7 +29,7 @@ export function GalaxyView() {
   return (
     <div id="graph" className="space-y-5">
       <Panel>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[11px] font-extrabold tracking-[0.12em] text-quiet">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[12px] font-extrabold tracking-[0.12em] text-quiet">
           <span>YOUR SKILL UNIVERSE</span><span>Confirmed = your actual attestations · Pathways = possibilities</span>
         </div>
         <div id="galaxyStatus" aria-live="polite" className="mb-3 flex flex-wrap gap-4 text-[13px] text-muted">
