@@ -7,6 +7,12 @@
   installers, no services, no network beyond the loopback adapter. Serves only
   files under the dist directory (GET/HEAD, no directory listings, no traversal).
 
+  Lifecycle (TechStack "Lifecycle rules"): the page POSTs /api/heartbeat every 5 s and a
+  sendBeacon "leaving" signal on pagehide; the server stops itself 20 s after the last heartbeat
+  from any tab, or 5 s after a leaving signal with no new heartbeat. POST /api/session/stop is
+  "End session". Both routes accept only this server's own Origin and Host (there is no session
+  token). While running it writes logs\synapse-server-<pid>.json and deletes it on stop.
+
   TechStack: Launcher .bat -> powershell.exe -File ; Local server PowerShell 5.1 + TcpListener on 127.0.0.1
 
 .PARAMETER Root
@@ -20,25 +26,53 @@
 .PARAMETER NoBrowser
   Do not open the default browser after the server starts.
 
+.PARAMETER Stay
+  Keep the server running after the browser tab closes. By default the tab owns the server: it
+  stops itself about 20 s after the last tab closes (5 s after the tab says it is leaving).
+  Also: Launch-Synapse.bat --stay, or set SYNAPSE_AUTO_STOP=0.
+
+.PARAMETER Replace
+  If a Synapse server is already running, stop it and start fresh without asking. Also: --replace
+
 .EXAMPLE
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\Serve-Synapse.ps1
+
+.EXAMPLE
+  Launch-Synapse.bat --replace --stay
 #>
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $false)]
 param(
   [string]$Root = '',
   [ValidateRange(1, 65535)][int]$Port = 8765,
-  [switch]$NoBrowser
+  [switch]$NoBrowser,
+  [switch]$Stay,
+  [switch]$Replace,
+  [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-# Resolve the default here, not in param(): $PSScriptRoot can be empty in param defaults on older hosts.
-if (-not $Root) {
-  $scriptDir = $PSScriptRoot
-  if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition }
-  $Root = Join-Path $scriptDir '..\dist'
+# Launch-Synapse.bat passes its arguments through; accept the --long spellings too.
+foreach ($a in @($Rest)) {
+  switch -Regex ($a) {
+    '^--?stay$' { $Stay = $true }
+    '^--?replace$' { $Replace = $true }
+    '^--?no-browser$' { $NoBrowser = $true }
+    default { if ($a) { Write-Warning "Ignoring unknown option $a" } }
+  }
 }
+
+# Resolve the default here, not in param(): $PSScriptRoot can be empty in param defaults on older hosts.
+$scriptDir = $PSScriptRoot
+if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition }
+$appRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptDir '..')).TrimEnd('\', '/')
+if (-not $Root) { $Root = Join-Path $scriptDir '..\dist' }
+. (Join-Path $scriptDir 'Synapse-Process.ps1')
+
+# Lifecycle (TechStack "Lifecycle rules"): the browser tab owns this server unless -Stay or SYNAPSE_AUTO_STOP=0.
+$autoStop = -not $Stay
+if ($env:SYNAPSE_AUTO_STOP -match '^(0|false|off|no)$') { $autoStop = $false }
 
 $Root = [System.IO.Path]::GetFullPath($Root).TrimEnd('\', '/')
 if (-not (Test-Path -LiteralPath (Join-Path $Root 'index.html'))) {
@@ -89,6 +123,27 @@ function Send-Text {
   Send-Response -Stream $Stream -Status $Status -Reason $Reason -Body $bytes -ContentType 'text/plain; charset=utf-8' -HeadOnly $HeadOnly -Extra $null
 }
 
+# One instance: a second server on the next port would show an empty workspace (data is per port).
+$running = @(Get-SynapseProcesses -Root $appRoot)
+if ($running.Count -gt 0) {
+  $where = ($running | ForEach-Object { if ($_.Url) { $_.Url + ' (PID ' + $_.Pid + ')' } else { 'PID ' + $_.Pid } }) -join ', '
+  Write-Host ('Synapse is already running: ' + $where) -ForegroundColor Yellow
+  $answer = 'y'
+  if (-not $Replace) {
+    try { $answer = Read-Host 'Stop it and start fresh? [Y/n]' } catch { $answer = $null }
+  }
+  if ($null -eq $answer) {
+    Write-Warning 'No console to ask in (non-interactive), so the running server is left alone and another one starts. Pass -Replace to stop it first.'
+  } elseif ($answer -eq '' -or $answer -match '^[Yy]') {
+    foreach ($p in Stop-SynapseProcesses -Root $appRoot) { Write-Host ('  stopped Synapse server PID ' + $p) -ForegroundColor DarkGray }
+  } else {
+    Write-Host 'Leaving the running server alone. Use "End session" in its browser tab, or tools\Stop-Synapse.ps1.' -ForegroundColor DarkGray
+    $existing = @($running | Where-Object { $_.Url })
+    if (-not $NoBrowser -and $existing.Count -gt 0) { try { Start-Process $existing[0].Url | Out-Null } catch { } }
+    exit 0
+  }
+}
+
 $listener = $null
 $boundPort = 0
 for ($candidate = $Port; $candidate -le [Math]::Min(65535, $Port + 10); $candidate++) {
@@ -106,21 +161,39 @@ if ($boundPort -ne $Port) {
   Write-Warning "Port $Port is busy; using $boundPort. Browser data is stored per port, so this session will not show workspace data saved on port $Port."
 }
 $url = "http://127.0.0.1:$boundPort/"
+# Only this page may call the lifecycle routes: another site (or a DNS-rebinding name) must not stop the app.
+# Synapse has no session token, so the Origin and Host headers are the check.
+$allowedOrigins = @("http://127.0.0.1:$boundPort", "http://localhost:$boundPort")
+$allowedHosts = @("127.0.0.1:$boundPort", "localhost:$boundPort")
+$presence = New-SynapsePresence -AutoStop $autoStop
+$runtimeFile = $null
+$stopReason = ''
 
 Write-Host ''
 Write-Host '  SYNAPSE  offline synthetic pilot' -ForegroundColor Cyan
 Write-Host "  Serving $Root"
 Write-Host "  Open    $url" -ForegroundColor Green
 Write-Host '  Loopback only. No login, no telemetry. Do not enter real personnel data.' -ForegroundColor DarkYellow
-Write-Host '  Press Ctrl+C in this window to stop.'
+if ($autoStop) {
+  Write-Host '  Closing the browser tab stops this server (about 20 s later). End session in the app, or Ctrl+C here, stops it now.'
+} else {
+  Write-Host '  Auto-stop is off (-Stay or SYNAPSE_AUTO_STOP=0). Press Ctrl+C in this window, or run tools\Stop-Synapse.ps1, to stop.'
+}
 Write-Host ''
 
 if (-not $NoBrowser) {
   try { Start-Process $url | Out-Null } catch { Write-Warning "Could not open a browser automatically. Browse to $url" }
 }
 
+$lastTick = [DateTime]::UtcNow
 try {
-  while ($true) {
+  $runtimeFile = Write-SynapseRuntimeFile -Root $appRoot -Port $boundPort -Url $url
+  while (-not $stopReason) {
+    $now = [DateTime]::UtcNow
+    if (($now - $lastTick).TotalMilliseconds -ge 1000) {
+      $lastTick = $now
+      if (Test-SynapseBrowserGone -State $presence -Now $now) { $stopReason = 'The browser tab closed; stopping (SYNAPSE_AUTO_STOP=0 or -Stay keeps the server running).'; break }
+    }
     # Poll instead of blocking in AcceptTcpClient so Ctrl+C is handled promptly by PowerShell.
     if (-not $listener.Pending()) { Start-Sleep -Milliseconds 40; continue }
     $client = $listener.AcceptTcpClient()
@@ -137,14 +210,53 @@ try {
       $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 4096, $true)
       $requestLine = $reader.ReadLine()
       if (-not $requestLine) { continue }
-      # Drain headers (we do not need them for static GET/HEAD).
-      while ($true) { $h = $reader.ReadLine(); if ($null -eq $h -or $h -eq '') { break } }
+      # Headers: static GET/HEAD ignores them; the lifecycle routes check Host and Origin.
+      $headers = @{}
+      while ($true) {
+        $h = $reader.ReadLine(); if ($null -eq $h -or $h -eq '') { break }
+        $colon = $h.IndexOf(':')
+        if ($colon -gt 0 -and $headers.Count -lt 64) { $headers[$h.Substring(0, $colon).Trim().ToLowerInvariant()] = $h.Substring($colon + 1).Trim() }
+      }
 
       $parts = $requestLine.Split(' ')
       if ($parts.Length -lt 2) { Send-Text -Stream $stream -Status 400 -Reason 'Bad Request' -Text 'Bad request' -HeadOnly $false; continue }
       $method = $parts[0].ToUpperInvariant()
       $target = $parts[1]
       $headOnly = ($method -eq 'HEAD')
+
+      $apiPath = $target.Split('?')[0]
+      if ($apiPath -eq '/api/heartbeat' -or $apiPath -eq '/api/session/stop') {
+        if ($method -ne 'POST') { Send-Text -Stream $stream -Status 405 -Reason 'Method Not Allowed' -Text 'Method not allowed' -HeadOnly $false; continue }
+        $origin = $headers['origin']; $hostHeader = $headers['host']
+        if (-not $origin -or $allowedOrigins -notcontains $origin -or -not $hostHeader -or $allowedHosts -notcontains $hostHeader) {
+          Send-Text -Stream $stream -Status 403 -Reason 'Forbidden' -Text 'Forbidden' -HeadOnly $false; continue
+        }
+        # Small JSON body; never logged. Synapse has no session token, so there is nothing secret in it.
+        $length = 0
+        if ($headers['content-length']) { [void][int]::TryParse($headers['content-length'], [ref]$length) }
+        if ($length -lt 0 -or $length -gt 4096) { Send-Text -Stream $stream -Status 413 -Reason 'Payload Too Large' -Text 'Too large' -HeadOnly $false; continue }
+        $body = $null
+        if ($length -gt 0) {
+          $buffer = New-Object char[] $length
+          $read = 0
+          while ($read -lt $length) { $n = $reader.Read($buffer, $read, $length - $read); if ($n -le 0) { break }; $read += $n }
+          try { $body = [System.String]::new($buffer, 0, $read) | ConvertFrom-Json } catch { $body = $null }
+        }
+        if ($apiPath -eq '/api/heartbeat') {
+          $tab = ''; $leaving = $false
+          if ($body -and $body.PSObject.Properties['tab']) { $tab = [string]$body.tab }
+          if ($body -and $body.PSObject.Properties['leaving']) { $leaving = [bool]$body.leaving }
+          if ($tab.Length -gt 64) { $tab = $tab.Substring(0, 64) }
+          Update-SynapsePresence -State $presence -TabId $tab -Leaving:$leaving
+          Send-Response -Stream $stream -Status 204 -Reason 'No Content' -Body ([byte[]]@()) -ContentType 'text/plain; charset=utf-8' -HeadOnly $false -Extra $null
+        } else {
+          # End session: a custom header, so a cross-site form or beacon cannot trigger it.
+          if ($headers['x-synapse-intent'] -ne 'end-session') { Send-Text -Stream $stream -Status 403 -Reason 'Forbidden' -Text 'Forbidden' -HeadOnly $false; continue }
+          Send-Text -Stream $stream -Status 200 -Reason 'OK' -Text 'Stopping' -HeadOnly $false
+          $stopReason = 'End session was chosen in the browser; stopping.'
+        }
+        continue
+      }
       if ($method -ne 'GET' -and -not $headOnly) { Send-Text -Stream $stream -Status 405 -Reason 'Method Not Allowed' -Text 'Method not allowed' -HeadOnly $false; continue }
 
       $pathPart = $target.Split('?')[0]
@@ -175,5 +287,7 @@ try {
   }
 } finally {
   $listener.Stop()
+  Remove-SynapseRuntimeFile -Path $runtimeFile
+  if ($stopReason) { Write-Host $stopReason -ForegroundColor DarkGray }
   Write-Host 'Synapse server stopped.'
 }

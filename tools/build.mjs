@@ -22,6 +22,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+import { stopRunningSynapse } from './stop-running.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
@@ -55,6 +56,8 @@ const read = (p) => fs.readFileSync(path.join(root, p), 'utf8').replace(/\r\n/g,
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const sha256b64 = (buf) => crypto.createHash('sha256').update(buf).digest('base64');
 
+// A running server keeps serving the old dist/ while it is rewritten; stop it first (--check writes to a temp dir).
+if (!check) stopRunningSynapse(root, 'build');
 fs.mkdirSync(path.join(outDir, 'assets'), { recursive: true });
 
 // ---------------------------------------------------------------------------

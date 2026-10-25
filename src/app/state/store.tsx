@@ -10,6 +10,7 @@ import { newWorkspace, today, type Workspace } from '../../core/schema';
 import { defaultTeams } from '../../core/analytics';
 import { loadWorkspace, onRemoteSave, saveWorkspace, storageDescription, type LoadResult } from '../../storage/idb';
 import { loadSettings, saveSettings, type Route, type Settings, type ViewId } from '../../storage/settings';
+import { startHeartbeat } from '../lib/session';
 
 /** One-shot instructions for the view being opened (focus a field, drill into a domain, …). */
 export type Intent =
@@ -108,6 +109,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.addEventListener('pagehide', onHide);
     return () => { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', onHide); };
   }, [flush]);
+
+  // The tab owns the loopback server: heartbeat while open, leaving beacon on pagehide (served edition only).
+  useEffect(() => startHeartbeat(), []);
 
   function flash(message: string) {
     setFlashMessage(message);

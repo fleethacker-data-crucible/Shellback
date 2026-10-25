@@ -1,4 +1,5 @@
 @echo off
+rem Starts Synapse in the browser. Options: --stay (keep running after the tab closes), --replace (stop a running server without asking), -Port 8765, -NoBrowser
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0" || exit /b 1
 echo [SYNAPSE] Offline synthetic pilot. No CAC, no backend, no installation.
