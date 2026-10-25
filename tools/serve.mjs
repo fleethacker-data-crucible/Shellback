@@ -26,6 +26,9 @@ const rootDir = path.resolve(appRoot, opt('root', 'dist'));
 const autoStop = !args.includes('--stay') && !/^(0|false|off|no)$/i.test(process.env.SYNAPSE_AUTO_STOP ?? '');
 const timeoutMs = Number(opt('timeout-ms', 20_000));
 const leavingMs = Number(opt('leaving-ms', 5_000));
+// A tab that has missed two 5 s heartbeats is treated as gone once some tab has signalled leaving. Browsers
+// sometimes drop the pagehide beacon of a page that is being reloaded, which would otherwise keep a ghost tab alive.
+const staleMs = Number(opt('stale-ms', 11_000));
 
 // Presence: tab id -> last heartbeat. Mirrors New-SynapsePresence / Test-SynapseBrowserGone.
 const tabs = new Map();
@@ -33,7 +36,7 @@ let lastHeartbeat = 0;
 let leavingAt = 0;
 function browserGone(now) {
   if (!autoStop || !lastHeartbeat) return false;
-  for (const [id, t] of tabs) if (now - t >= timeoutMs) tabs.delete(id);
+  for (const [id, t] of tabs) if (now - t >= timeoutMs || (leavingAt && now - t >= staleMs)) tabs.delete(id);
   if (tabs.size) return false;
   if (leavingAt && now - leavingAt >= leavingMs) return true;
   return now - lastHeartbeat >= timeoutMs;

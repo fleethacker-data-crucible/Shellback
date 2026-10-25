@@ -12,11 +12,12 @@ function New-SynapsePresence {
   .SYNOPSIS
     Presence state for one server. AutoStop is off with -Stay or SYNAPSE_AUTO_STOP=0.
   #>
-  param([bool]$AutoStop = $true, [double]$TimeoutSeconds = 20, [double]$LeavingGraceSeconds = 5)
+  param([bool]$AutoStop = $true, [double]$TimeoutSeconds = 20, [double]$LeavingGraceSeconds = 5, [double]$StaleSeconds = 11)
   return @{
     AutoStop            = $AutoStop
     TimeoutSeconds      = $TimeoutSeconds
     LeavingGraceSeconds = $LeavingGraceSeconds
+    StaleSeconds        = $StaleSeconds   # after a leaving signal, a tab that missed two heartbeats no longer counts
     Tabs                = @{}      # tab id -> last heartbeat (UTC DateTime)
     LastHeartbeat       = $null    # last heartbeat from any tab
     LeavingAt           = $null    # last "leaving" signal (pagehide beacon)
@@ -53,7 +54,10 @@ function Test-SynapseBrowserGone {
   if (-not $State.AutoStop -or $State.Busy) { return $false }
   if ($null -eq $State.LastHeartbeat) { return $false }
   foreach ($id in @($State.Tabs.Keys)) {
-    if (($Now - [DateTime]$State.Tabs[$id]).TotalSeconds -ge $State.TimeoutSeconds) { $State.Tabs.Remove($id) }
+    $age = ($Now - [DateTime]$State.Tabs[$id]).TotalSeconds
+    # Browsers sometimes drop the pagehide beacon of a page being reloaded; without this a ghost tab id
+    # would keep the server alive for the full timeout after the real last tab left.
+    if ($age -ge $State.TimeoutSeconds -or ($null -ne $State.LeavingAt -and $age -ge $State.StaleSeconds)) { $State.Tabs.Remove($id) }
   }
   if ($State.Tabs.Count -gt 0) { return $false }
   if ($null -ne $State.LeavingAt -and ($Now - [DateTime]$State.LeavingAt).TotalSeconds -ge $State.LeavingGraceSeconds) { return $true }
