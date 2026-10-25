@@ -78,3 +78,6 @@ jobs:
           } finally {
             if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
           }
+      - name: PowerShell 5.1 lifecycle (auto-stop, runtime file, End session, -Replace, Stop-Synapse.ps1)
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tests\ps\Lifecycle.Tests.ps1

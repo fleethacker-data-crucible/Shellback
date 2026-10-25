@@ -24,7 +24,8 @@ let baseUrl = '';
 
 before(async () => {
   browser = await chromium.launch();
-  server = spawn(process.execPath, [path.join(root, 'tools/serve.mjs'), '--port', '0'], { stdio: ['ignore', 'pipe', 'inherit'] });
+  // --stay: this server is shared by every test; the auto-stop rule has its own tests in lifecycle.test.ts.
+  server = spawn(process.execPath, [path.join(root, 'tools/serve.mjs'), '--port', '0', '--stay'], { stdio: ['ignore', 'pipe', 'inherit'] });
   baseUrl = await new Promise<string>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('server did not start')), 10_000);
     server.stdout!.on('data', (b: Buffer) => { const m = /http:\/\/127\.0\.0\.1:\d+\//.exec(String(b)); if (m) { clearTimeout(t); resolve(m[0]); } });

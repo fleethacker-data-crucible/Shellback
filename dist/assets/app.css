@@ -270,6 +270,9 @@
   .mx-1 {
     margin-inline: var(--spacing);
   }
+  .mx-auto {
+    margin-inline: auto;
+  }
   .my-5 {
     margin-block: calc(var(--spacing) * 5);
   }
@@ -452,6 +455,9 @@
   }
   .w-full {
     width: 100%;
+  }
+  .max-w-\[60ch\] {
+    max-width: 60ch;
   }
   .max-w-\[62ch\] {
     max-width: 62ch;
@@ -979,6 +985,9 @@
   .px-5 {
     padding-inline: calc(var(--spacing) * 5);
   }
+  .px-6 {
+    padding-inline: calc(var(--spacing) * 6);
+  }
   .px-\[13px\] {
     padding-inline: 13px;
   }
@@ -1005,6 +1014,9 @@
   }
   .py-5 {
     padding-block: calc(var(--spacing) * 5);
+  }
+  .py-16 {
+    padding-block: calc(var(--spacing) * 16);
   }
   .py-\[1px\] {
     padding-block: 1px;
