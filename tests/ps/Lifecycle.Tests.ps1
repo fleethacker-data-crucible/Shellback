@@ -57,6 +57,13 @@ Update-SynapsePresence -State $s -TabId 'b' -Leaving -Now $t0.AddSeconds(11)
 Check (Test-SynapseBrowserGone -State $s -Now $t0.AddSeconds(16)) 'two tabs: gone after the last one leaves'
 
 $s = New-SynapsePresence
+Update-SynapsePresence -State $s -TabId 'a' -Now $t0                      # original page; its reload beacon is lost
+Update-SynapsePresence -State $s -TabId 'b' -Now $t0.AddSeconds(1)        # the reloaded page
+Update-SynapsePresence -State $s -TabId 'b' -Leaving -Now $t0.AddSeconds(3)
+Check (-not (Test-SynapseBrowserGone -State $s -Now $t0.AddSeconds(8))) 'ghost tab: still waiting while the stale window runs'
+Check (Test-SynapseBrowserGone -State $s -Now $t0.AddSeconds(12)) 'ghost tab: gone once the ghost missed two heartbeats'
+
+$s = New-SynapsePresence
 Update-SynapsePresence -State $s -TabId 'a' -Now $t0
 $s.Busy = $true
 Check (-not (Test-SynapseBrowserGone -State $s -Now $t0.AddMinutes(5))) 'never stops while a job runs'
