@@ -11,7 +11,7 @@ import type { Route } from '../../storage/settings';
 export type StepState = 'done' | 'todo' | 'attention' | 'optional';
 
 export interface JourneyStep {
-  id: 'intake' | 'review' | 'confirm' | 'reflect' | 'credentials' | 'share' | 'team';
+  id: 'intake' | 'review' | 'confirm' | 'reflect' | 'contribute' | 'credentials' | 'share' | 'team';
   title: string;
   /** One-line status written for the employee. */
   detail: string;
@@ -31,6 +31,8 @@ export function journey(ws: Workspace): JourneyStep[] {
   const realTeams = ws.teams.items.filter((t) => t.id !== DEMO_TEAM_ID);
   const peers = realTeams.reduce((n, t) => n + t.members.length, 0);
   const scanned = !!p.lastScan;
+  const stagesAnswered = Object.keys(p.contribution.stages).length;
+  const detailAnswered = Object.values(p.contribution.detail).filter((d) => d && d.fluency !== null).length;
 
   return [
     {
@@ -52,6 +54,11 @@ export function journey(ws: Workspace): JourneyStep[] {
       id: 'reflect', title: 'Reflect on confidence', optional: true,
       detail: confirmed ? `${rated} of ${confirmed} confirmed skill${confirmed === 1 ? '' : 's'} have an optional confidence pulse.` : 'Available once you confirm a skill.',
       state: !confirmed ? 'optional' : rated === confirmed ? 'done' : 'optional', action: rated < confirmed ? 'Rate next skill' : 'Review ratings', route: { view: 'explore', tab: 'web' },
+    },
+    {
+      id: 'contribute', title: 'Say how you like to work', optional: true,
+      detail: stagesAnswered ? `${stagesAnswered} of 6 stages of work answered (energy${detailAnswered ? ` · practiced for ${detailAnswered}` : ''}). Not an assessment; it only helps a team balance who leads what.` : 'Six stages of work — which energize you, which drain you, how practiced you are. Two minutes, entirely optional.',
+      state: stagesAnswered >= 6 ? 'done' : 'optional', action: stagesAnswered ? 'Update preferences' : 'Answer the six', route: { view: 'profile', tab: 'skills' },
     },
     {
       id: 'credentials', title: 'Review credentials', optional: true,

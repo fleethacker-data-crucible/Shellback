@@ -16,7 +16,8 @@ import { startHeartbeat } from '../lib/session';
 export type Intent =
   | { type: 'manual-add'; skillId: string }
   | { type: 'radar-domain'; di: number }
-  | { type: 'galaxy-select'; skillId: string };
+  | { type: 'galaxy-select'; skillId: string }
+  | { type: 'focus-contribution' };
 
 export interface Store {
   ws: Workspace;
