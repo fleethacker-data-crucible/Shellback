@@ -1,16 +1,16 @@
 #requires -Version 5.1
-# Dot-sourced helpers for the Synapse server lifecycle (TechStack "Lifecycle rules"):
+# Dot-sourced helpers for the Shellback server lifecycle (TechStack "Lifecycle rules"):
 #   - the presence rule (the browser tab owns the server),
 #   - runtime files under logs\ (one per running server),
 #   - finding and stopping running servers without knowing PIDs.
-# Used by Serve-Synapse.ps1 (single-instance guard, auto-stop), Stop-Synapse.ps1 and the CI tests.
+# Used by Start-Shellback.ps1 (single-instance guard, auto-stop), Stop-Shellback.ps1 and the CI tests.
 
 # ---------------------------------------------------------------------------- presence rule
 
-function New-SynapsePresence {
+function New-ShellbackPresence {
   <#
   .SYNOPSIS
-    Presence state for one server. AutoStop is off with -Stay or SYNAPSE_AUTO_STOP=0.
+    Presence state for one server. AutoStop is off with -Stay or SHELLBACK_AUTO_STOP=0.
   #>
   param([bool]$AutoStop = $true, [double]$TimeoutSeconds = 20, [double]$LeavingGraceSeconds = 5, [double]$StaleSeconds = 11)
   return @{
@@ -21,11 +21,11 @@ function New-SynapsePresence {
     Tabs                = @{}      # tab id -> last heartbeat (UTC DateTime)
     LastHeartbeat       = $null    # last heartbeat from any tab
     LeavingAt           = $null    # last "leaving" signal (pagehide beacon)
-    Busy                = $false   # a background job is running (Synapse has none today; kept for the rule)
+    Busy                = $false   # a background job is running (Shellback has none today; kept for the rule)
   }
 }
 
-function Update-SynapsePresence {
+function Update-ShellbackPresence {
   <#
   .SYNOPSIS
     Records a heartbeat (or, with -Leaving, the pagehide beacon) from one tab.
@@ -42,7 +42,7 @@ function Update-SynapsePresence {
   }
 }
 
-function Test-SynapseBrowserGone {
+function Test-ShellbackBrowserGone {
   <#
   .SYNOPSIS
     True when no tab is alive any more and nothing is running: the server should stop.
@@ -66,52 +66,54 @@ function Test-SynapseBrowserGone {
 
 # ---------------------------------------------------------------------------- runtime files
 
-function Get-SynapseLogsDir {
+function Get-ShellbackLogsDir {
   param([Parameter(Mandatory = $true)][string]$Root)
   return (Join-Path $Root 'logs')
 }
 
-function Write-SynapseRuntimeFile {
+function Write-ShellbackRuntimeFile {
   <#
   .SYNOPSIS
-    Writes logs\synapse-server-<pid>.json (pid, port, url, startedAt) and returns its path,
-    or $null when the folder is not writable. Synapse has no session token; nothing secret is written.
+    Writes logs\shellback-server-<pid>.json (pid, port, url, startedAt) and returns its path,
+    or $null when the folder is not writable. Shellback has no session token; nothing secret is written.
   #>
   param([Parameter(Mandatory = $true)][string]$Root, [int]$Port, [string]$Url)
   try {
-    $dir = Get-SynapseLogsDir -Root $Root
+    $dir = Get-ShellbackLogsDir -Root $Root
     if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    $path = Join-Path $dir ('synapse-server-' + $PID + '.json')
+    $path = Join-Path $dir ('shellback-server-' + $PID + '.json')
     $info = [ordered]@{ pid = $PID; port = $Port; url = $Url; startedAt = [DateTime]::UtcNow.ToString('o') }
     [System.IO.File]::WriteAllText($path, (ConvertTo-Json -InputObject $info), (New-Object System.Text.UTF8Encoding($false)))
     return $path
   } catch {
-    Write-Warning ('Could not write the runtime file under ' + $Root + '\logs (' + $_.Exception.Message + '). Stop-Synapse.ps1 will still find this server by its command line.')
+    Write-Warning ('Could not write the runtime file under ' + $Root + '\logs (' + $_.Exception.Message + '). Stop-Shellback.ps1 will still find this server by its command line.')
     return $null
   }
 }
 
-function Remove-SynapseRuntimeFile {
+function Remove-ShellbackRuntimeFile {
   param([string]$Path)
   if ($Path) { Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue }
 }
 
 # ---------------------------------------------------------------------------- find / stop
 
-function Get-SynapseProcesses {
+function Get-ShellbackProcesses {
   <#
   .SYNOPSIS
-    Running Synapse servers: PID, port and URL, from the runtime files under logs\ plus any
-    PowerShell whose command line runs Serve-Synapse.ps1. Stale runtime files (dead pid) are removed.
+    Running Shellback servers: PID, port and URL, from the runtime files under logs\ plus any
+    PowerShell whose command line runs Start-Shellback.ps1. Stale runtime files (dead pid) are removed.
   .PARAMETER ThisCopyOnly
-    Only match command lines that run this copy's tools\Serve-Synapse.ps1 (used by CI on a shared machine).
+    Only match command lines that run this copy's tools\Start-Shellback.ps1 (used by CI on a shared machine).
   #>
   [CmdletBinding()]
   param([Parameter(Mandatory = $true)][string]$Root, [switch]$ThisCopyOnly)
   $found = @{}
-  $logs = Get-SynapseLogsDir -Root $Root
+  $logs = Get-ShellbackLogsDir -Root $Root
   if (Test-Path -LiteralPath $logs) {
-    foreach ($f in Get-ChildItem -LiteralPath $logs -Filter 'synapse-server-*.json' -ErrorAction SilentlyContinue) {
+    # synapse-server-*.json: runtime files written by a server started before the rename (still found and stopped).
+    $runtimeFiles = @(Get-ChildItem -LiteralPath $logs -Filter 'shellback-server-*.json' -ErrorAction SilentlyContinue) + @(Get-ChildItem -LiteralPath $logs -Filter 'synapse-server-*.json' -ErrorAction SilentlyContinue)
+    foreach ($f in $runtimeFiles) {
       try {
         $info = Get-Content -LiteralPath $f.FullName -Raw | ConvertFrom-Json
         $id = [int]$info.pid
@@ -124,8 +126,9 @@ function Get-SynapseProcesses {
       } catch { Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue }
     }
   }
-  $pattern = 'Serve-Synapse\.ps1'
-  if ($ThisCopyOnly) { $pattern = [regex]::Escape((Join-Path $Root 'tools\Serve-Synapse.ps1')) }
+  # Serve-Synapse.ps1 is the pre-rename script name: a server started from it is still found and stopped.
+  $pattern = '(Start-Shellback|Serve-Synapse)\.ps1'
+  if ($ThisCopyOnly) { $pattern = [regex]::Escape((Join-Path $Root 'tools\Start-Shellback.ps1')) + '|' + [regex]::Escape((Join-Path $Root 'tools\Serve-Synapse.ps1')) }
   try {
     $mine = $PID
     Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" -ErrorAction SilentlyContinue |
@@ -139,23 +142,24 @@ function Get-SynapseProcesses {
   return @($found.Values | Sort-Object Pid)
 }
 
-function Stop-SynapseProcesses {
+function Stop-ShellbackProcesses {
   <#
   .SYNOPSIS
-    Stops every running Synapse server and returns the PIDs stopped. Their runtime files are removed
+    Stops every running Shellback server and returns the PIDs stopped. Their runtime files are removed
     (a forced stop skips the server's own cleanup). Access denied is reported, not thrown.
   #>
   [CmdletBinding()]
   param([Parameter(Mandatory = $true)][string]$Root, [switch]$ThisCopyOnly)
   $stopped = New-Object System.Collections.Generic.List[int]
-  foreach ($p in Get-SynapseProcesses -Root $Root -ThisCopyOnly:$ThisCopyOnly) {
+  foreach ($p in Get-ShellbackProcesses -Root $Root -ThisCopyOnly:$ThisCopyOnly) {
     try {
       Stop-Process -Id $p.Pid -Force -ErrorAction Stop
       $stopped.Add($p.Pid)
-      $file = Join-Path (Get-SynapseLogsDir -Root $Root) ('synapse-server-' + $p.Pid + '.json')
-      Remove-SynapseRuntimeFile -Path $file
+      $file = Join-Path (Get-ShellbackLogsDir -Root $Root) ('shellback-server-' + $p.Pid + '.json')
+      Remove-ShellbackRuntimeFile -Path $file
+      if ($p.RuntimeFile) { Remove-ShellbackRuntimeFile -Path $p.RuntimeFile }  # also a pre-rename synapse-server-<pid>.json
     } catch {
-      Write-Warning ('Could not stop Synapse server PID ' + $p.Pid + ': ' + $_.Exception.Message + ' (started from an administrator window? Close that window.)')
+      Write-Warning ('Could not stop Shellback server PID ' + $p.Pid + ': ' + $_.Exception.Message + ' (started from an administrator window? Close that window.)')
     }
   }
   if ($stopped.Count -gt 0) { Start-Sleep -Milliseconds 300 }  # let the port close

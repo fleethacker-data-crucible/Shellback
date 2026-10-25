@@ -2,18 +2,18 @@
  * Server lifecycle (TechStack "Lifecycle rules"): the browser tab owns the loopback server.
  *
  * Every 5 s the tab POSTs /api/heartbeat; on pagehide it sends a navigator.sendBeacon "leaving"
- * signal. Serve-Synapse.ps1 stops itself 20 s after the last heartbeat from any tab, or 5 s after a
+ * signal. Start-Shellback.ps1 stops itself 20 s after the last heartbeat from any tab, or 5 s after a
  * leaving signal with no new heartbeat, so a reload (which heartbeats at once) never stops it.
  *
  * Only the served edition has a server. The standalone file:// edition and the dev build skip all of
- * this. Synapse has no session token: the server accepts these routes only from its own Origin/Host.
+ * this. Shellback has no session token: the server accepts these routes only from its own Origin/Host.
  * Workspace data lives in IndexedDB, so stopping the server never loses work.
  */
 
 const HEARTBEAT = '/api/heartbeat';
 const STOP = '/api/session/stop';
 
-/** True when this page was loaded from a Synapse loopback server (not file://, not a dev build). */
+/** True when this page was loaded from a Shellback loopback server (not file://, not a dev build). */
 export function hasLocalServer(): boolean {
   return location.protocol.startsWith('http') && document.documentElement.dataset.edition === 'served';
 }
@@ -67,7 +67,7 @@ export function startHeartbeat(intervalMs = 5000): () => void {
 export async function endSession(): Promise<boolean> {
   if (!hasLocalServer()) return false;
   try {
-    const r = await fetch(STOP, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Synapse-Intent': 'end-session' }, body: '{}', cache: 'no-store' });
+    const r = await fetch(STOP, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Shellback-Intent': 'end-session' }, body: '{}', cache: 'no-store' });
     // The server is going away: stop heartbeating so this tab does not log failed requests.
     if (r.ok && stopActive) stopActive();
     return r.ok;

@@ -1,5 +1,5 @@
 /**
- * ROI model, rebuilt around what Synapse actually changes and what a government program office can
+ * ROI model, rebuilt around what Shellback actually changes and what a government program office can
  * defend. Four benefit lanes and two cost lanes, each tagged as CASH (money that stops leaving) or
  * CAPACITY (hours; never released cash). Only cash is set against operating cost. Every input carries
  * a basis (assumed / benchmark / measured) so a reviewer can see how much of the result rests on guesses.
@@ -96,13 +96,13 @@ export function roiScenario(p: RoiInputs, adoptionFactor = 1, basis?: Partial<Re
 
 export interface RoiField { label: string; unit: '$' | '%' | 'people' | 'hours' | 'minutes' | 'weeks' | 'count'; lane: string; hint: string }
 export const ROI_FIELDS: Readonly<Record<RoiKey, RoiField>> = {
-  employees: { label: 'People in the pilot', unit: 'people', lane: 'Scope', hint: 'Headcount offered Synapse.' },
+  employees: { label: 'People in the pilot', unit: 'people', lane: 'Scope', hint: 'Headcount offered Shellback.' },
   adoption: { label: 'Adoption', unit: '%', lane: 'Scope', hint: 'Share who confirm a profile and keep it current. Measure it from the pilot; do not assume.' },
   hourlyRate: { label: 'Loaded hourly rate', unit: '$', lane: 'Scope', hint: 'Salary + benefits + overhead per hour. Use the program office figure.' },
   weeks: { label: 'Working weeks per year', unit: 'weeks', lane: 'Scope', hint: '' },
   externalHours: { label: 'Outside expert / contractor hours bought per year', unit: 'hours', lane: 'Outside expertise', hint: 'Hours paid for questions an internal person could have answered. From contract records.' },
   externalRate: { label: 'Outside expert rate', unit: '$', lane: 'Outside expertise', hint: 'Fully burdened $/hour on those contracts.' },
-  internalCoverage: { label: 'Share now answered internally', unit: '%', lane: 'Outside expertise', hint: 'Of those hours, how many Synapse reveals an internal expert for.' },
+  internalCoverage: { label: 'Share now answered internally', unit: '%', lane: 'Outside expertise', hint: 'Of those hours, how many Shellback reveals an internal expert for.' },
   internalAnswerHours: { label: 'Internal hours per avoided external hour', unit: 'hours', lane: 'Outside expertise', hint: 'An internal expert still spends time; 1.0–1.5 is typical. This is subtracted as capacity spent.' },
   trainingCost: { label: 'Training spend per person per year', unit: '$', lane: 'Training', hint: 'Courses, travel, vendor fees. Exclude labor (counted as hours below).' },
   trainingAvoidance: { label: 'Share avoidable (already held / covered by a mentor)', unit: '%', lane: 'Training', hint: 'Sent to a course for a skill they already confirmed, or that a teammate could teach.' },
@@ -113,7 +113,7 @@ export const ROI_FIELDS: Readonly<Record<RoiKey, RoiField>> = {
   leads: { label: 'Leads / supervisors in scope', unit: 'people', lane: 'Finding people', hint: 'People who staff work and ask around for who knows what.' },
   searchMinutes: { label: 'Minutes per lead per week spent asking around', unit: 'minutes', lane: 'Finding people', hint: 'Measure with a two-week diary; do not guess high.' },
   realization: { label: 'Usable share of that time', unit: '%', lane: 'Finding people', hint: 'Recovered minutes rarely become productive hours one for one.' },
-  annualCost: { label: 'Platform cost per year', unit: '$', lane: 'Costs', hint: 'Hosting, support, accreditation upkeep. Synapse itself is a static site; most of this is people.' },
+  annualCost: { label: 'Platform cost per year', unit: '$', lane: 'Costs', hint: 'Hosting, support, accreditation upkeep. Shellback itself is a static site; most of this is people.' },
   upkeepMinutes: { label: 'Profile upkeep per person per quarter', unit: 'minutes', lane: 'Costs', hint: 'Time employees spend keeping their profile honest. Counted against capacity.' },
   adminHours: { label: 'Program admin hours per year', unit: 'hours', lane: 'Costs', hint: 'Taxonomy curation, onboarding, answering questions.' },
 };

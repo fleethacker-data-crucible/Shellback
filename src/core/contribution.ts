@@ -1,6 +1,6 @@
 /**
  * "How I like to contribute": six generic stages of work, each marked energizing, neutral or
- * draining by the employee. This is Synapse's own vocabulary; it is not an assessment and does
+ * draining by the employee. This is Shellback's own vocabulary; it is not an assessment and does
  * not use or reproduce any vendor's instrument. People who have taken a commercial assessment
  * can record where their answers came from in the free-text `source` field, in their own words.
  */

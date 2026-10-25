@@ -44,7 +44,7 @@ export function TrustView() {
         </dl>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button id="downloadJson" onClick={() => document.getElementById('exportBtn')?.click()}>Export JSON backup</Button>
-          <Button id="resetDemo" variant="danger" onClick={async () => { if (await dialogs.confirm('Reset the local Synapse workspace? Export first if you need a backup.', { title: 'Reset everything', confirmLabel: 'Reset workspace', danger: true })) { replace(newWorkspace(), 'Reset complete.'); navigate('home'); } }}>Reset everything to synthetic demo</Button>
+          <Button id="resetDemo" variant="danger" onClick={async () => { if (await dialogs.confirm('Reset the local Shellback workspace? Export first if you need a backup.', { title: 'Reset everything', confirmLabel: 'Reset workspace', danger: true })) { replace(newWorkspace(), 'Reset complete.'); navigate('home'); } }}>Reset everything to synthetic demo</Button>
         </div>
         <Checkbox className="mt-4" checked={settings.reducedMotion} onChange={(v) => setSettings({ reducedMotion: v })}>Reduce motion (also follows your operating-system preference automatically)</Checkbox>
         <p className="note mt-3">Local storage is accessible to anyone using the same browser profile. For real personnel data, deploy an approved backend with identity, access control, encryption, audit logging, records retention, privacy and labor review, and an ATO where required. Do not place actual personnel data into this offline prototype on a shared workstation.</p>
