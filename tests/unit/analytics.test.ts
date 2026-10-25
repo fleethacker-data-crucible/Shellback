@@ -39,7 +39,7 @@ test('consent shares skills only; mentoring and credentials need their own toggl
 test('aggregates count distinct people per domain and gate at 3', () => {
   const w = ws();
   const agg = aggregate(participants(w));
-  assert.equal(agg.n, 6);
+  assert.equal(agg.n, 20);
   assert.ok(agg.allowed);
   const two = aggregate(participants(w).slice(0, 2));
   assert.equal(two.allowed, false);

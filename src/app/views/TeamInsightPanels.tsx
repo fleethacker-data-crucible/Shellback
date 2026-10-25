@@ -10,6 +10,8 @@ import { QUADRANT_TONE } from '../components/ContributionCard';
 import { buildOrgTree, flattenOrg, type OrgNode } from '../../core/org';
 import { BarRow, Button, Empty, Panel, PanelHeading, Pill, cn } from '../components/ui/primitives';
 import { printSheet } from '../lib/print';
+import { recommendCrossTraining, recommendPairs } from '../../core/recommend';
+import { TrustChip } from '../components/TrustChip';
 
 export function ContributionMap({ people, teamName = 'Team' }: { people: Participant[]; teamName?: string }) {
   const sharers = people.filter((p) => hasContribution(p.contribution));
@@ -140,5 +142,46 @@ function OrgTreeNode({ node, depth, selected, onSelect }: { node: OrgNode<Partic
       </Button>
       {node.children.map((c) => <OrgTreeNode key={c.code} node={c} depth={depth + 1} selected={selected} onSelect={onSelect} />)}
     </>
+  );
+}
+
+// ----------------------------------------------------------------------------- recommendations
+
+export function RecommendationsPanel({ people, priorities }: { people: Participant[]; priorities: readonly string[] }) {
+  const pairs = useMemo(() => recommendPairs(people), [people]);
+  const cross = useMemo(() => recommendCrossTraining(people, priorities), [people, priorities]);
+  const sharers = people.filter((p) => hasContribution(p.contribution)).length;
+  return (
+    <Panel id="teamRecommendations">
+      <PanelHeading eyebrow="SUGGESTIONS FOR THE LEAD" title="Who might work well together, and who could pick up what">
+        Computed from shared skills and contribution preferences only; every suggestion shows its reasons. Pairing and training are conversations to have, not assignments to make. <TrustChip kind="aggregate" />
+      </PanelHeading>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div>
+          <h4 className="text-[14px]">Recommended pairs</h4>
+          <p className="note">Complementary energy across the stages of work, a flow ↔ growth-edge match, or both — plus a shared domain to talk in.</p>
+          <div id="teamPairs" className="mt-2 space-y-2">
+            {people.length < MIN_AGGREGATE ? <Empty>Needs at least {MIN_AGGREGATE} people.</Empty> : sharers < 2 ? <Empty>Needs at least two people who shared contribution preferences ({sharers} so far).</Empty> : pairs.length ? pairs.map((p) => (
+              <div key={`${p.a.id}|${p.b.id}`} data-pair className="rounded-md border border-stroke bg-panel2/50 px-3 py-2 text-[13px]">
+                <div className="flex flex-wrap items-center justify-between gap-2"><strong>{p.a.name} + {p.b.name}</strong><Pill tone="mint">fit {Math.round(p.score)}</Pill></div>
+                <ul className="mt-1 list-disc pl-5 text-[12px] text-muted">{p.reasons.map((r) => <li key={r}>{r}</li>)}</ul>
+              </div>
+            )) : <Empty>No strongly complementary pairs yet. More answered stages make this sharper.</Empty>}
+          </div>
+        </div>
+        <div>
+          <h4 className="text-[14px]">Recommended cross-training</h4>
+          <p className="note">Skills held by one person (or priorities nobody holds), and who could realistically learn them next.</p>
+          <div id="teamCrossTraining" className="mt-2 space-y-2">
+            {people.length < MIN_AGGREGATE ? <Empty>Needs at least {MIN_AGGREGATE} people.</Empty> : cross.length ? cross.map((c) => (
+              <div key={c.skillId} data-cross-training={c.skillId} className="rounded-md border border-stroke bg-panel2/50 px-3 py-2 text-[13px]">
+                <div className="flex flex-wrap items-center justify-between gap-2"><strong>{c.skillName}</strong><span className="text-[12px] text-quiet">{c.holder ? `only ${c.holder.name}` : 'nobody yet · priority'}</span></div>
+                <ul className="mt-1 space-y-1 text-[12px]">{c.candidates.map((k) => <li key={k.person.id}><b>{k.person.name}</b> <span className="text-muted">— {k.reasons.join('; ')}</span></li>)}</ul>
+              </div>
+            )) : <Empty>No single-holder skills with a plausible learner. That is a healthy sign.</Empty>}
+          </div>
+        </div>
+      </div>
+    </Panel>
   );
 }
