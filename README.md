@@ -50,12 +50,13 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 - **Skills galaxy (v2):** a deterministic d3-force map that never drifts. *Confirmed Skills* shows exactly your attestations; *Pathways* shows all 104 skills with learning links; *Show nearby pathways* (off by default) adds faint one-hop neighbours. Wheel to zoom, drag space to pan, **Fit**, hover to inspect, click or Enter to select, hold and drag a star to rearrange, arrow keys to move between stars.
 - **Confidence pulse:** a side drawer, opened from any skill. Only attested skills can be rated, and a rating stays hidden in every view (including Pathways) once the skill is withdrawn.
 - **Credential desk:** review, edit and approve résumé suggestions; edit in place; issue and renewal dates; provenance (*claimed* / *reviewed* / *verified by …*) with status derived from dates, never from a judgement; duplicates prevented; dismissals persist.
+- **Draft teammates:** Team → Roster can build a teammate's card from a résumé you hold. Drafts are badged *not attested*, excluded from coverage unless you include them, and downloadable for the person to import as suggestions and confirm.
 - **Teams & sharing:** local teams and opt-in JSON peer cards. Confidence, mentoring and credential names are each a separate opt-in. Re-importing a card with an existing id warns that it replaces that person's card. Aggregates appear only for 3+ people.
 - **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
 - **FLEETHACKER workflows** live where they belong: study guides, goals and renewals under My profile → Growth; missions, mentors and knowledge relay under Team. One implementation each, on a shared analytics module.
 - **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
 - **How I like to contribute (two axes):** six stages of work (asking the big questions → finishing and pushing through). For each, how it affects your *energy* (5-point) and, optionally, how *practiced* you are (4-point). Together they separate **Flow** (energized + practiced), **Growth edge** (energized, learning), **Grind** (practiced, drained — the burnout watch) and **Avoid / pair**. Optional context tags ("under deadline", "in a small team"…) and a one-line example. No fixed number of each, no letters, no totals. Synapse's own wording, not an assessment. Import a results file (CSV `stage,energy` or JSON, plain-English synonyms accepted). Teams see energy by stage, pairing ideas and a printable workshop sheet; missions can ask for a stage and surface people energized by it.
-- **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SYNAPSE_INTEL_HOST`). Contract in `docs/INTELLIGENCE_PROVIDERS.md`.
+- **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SYNAPSE_INTEL_HOST`). Contract and a loopback adapter for OpenAI-compatible gateways in `docs/INTELLIGENCE_PROVIDERS.md`. Sample fictional résumés for trying intake: `examples/resumes/` (PDF).
 - **Supervisor brief:** Team → Coverage writes a plain-language summary from aggregate numbers only (shown before generation). Never names, ranks or scores a person.
 - **Themes & print:** Auto / dark / light; printable capability summary (Profile → Skills) and team workshop sheet.
 - **Organization codes:** enter your code (e.g. `1513.1`) and Synapse derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
@@ -93,7 +94,18 @@ The schema is defined once with zod in `src/core/schema.ts`; it handles validati
 
 ## ROI calculation
 
-Cash = adopting participants × training spend × avoidance % + outside specialist spend × external avoidance % × adoption. Capacity = training hours recovered + workflow minutes recovered (minus the overlap deduction). Benefit/cost uses **cash only**. Audit check: 55 min × 100 people × 46 weeks × $75 × 70% = $221,375 before adoption and overlap (a unit test asserts this figure).
+Four benefit lanes and two cost lanes (`src/core/roi.ts`), each **cash** (money that stops leaving) or **capacity** (hours at the loaded rate, never counted as money):
+
+| Lane | Kind | Formula |
+|---|---|---|
+| Outside expertise avoided | cash | external hours × share now answered internally × external rate — minus the internal experts' answering time as capacity *spent* |
+| Duplicate training not bought | cash + capacity | people × training $ × avoidable share; people × training hours × avoidable share × rate |
+| Credential lapses avoided | cash | lapses × cost per lapse × avoided share |
+| Finding who knows what | capacity | leads × minutes/week × weeks × usable share × rate |
+| Platform cost | cash cost | as entered |
+| Profile upkeep, program admin | capacity spent | people × minutes/quarter × 4 × rate; admin hours × rate |
+
+Adoption scales every people-driven lane; **break-even adoption** is solved directly (cash is linear in adoption). Each input is tagged *assumed / benchmark / measured* and the page reports what share of the result rests on assumptions. Defaults are deliberately conservative: at 60% adoption of a 100-person pilot the base case is roughly break-even, and net capacity is negative until measured figures replace the guesses. A printable assumptions sheet is one click away.
 
 ## Repository layout
 

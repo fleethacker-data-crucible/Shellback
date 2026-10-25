@@ -19,6 +19,8 @@ export function defaultTeams(): { active: string; items: Team[] } {
     id: `demo-${i}`,
     name: p.name,
     synthetic: true,
+    attested: true,
+    draftNote: '',
     issued: '2026-10-21',
     skills: p.skills.filter((id) => SKILL_BY_ID.has(id)),
     surveys: Object.fromEntries(p.skills.slice(0, 5).map((skill, j) => [skill, { confidence: (i + j) % 3 === 0 ? 4 : 3, method: (i + j) % 4 === 0 ? 'ai' : 'independent' } as const])),
@@ -46,7 +48,7 @@ export function defaultTeams(): { active: string; items: Team[] } {
         : {},
     },
   }));
-  return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning'] }] };
+  return { active: DEMO_TEAM_ID, items: [{ id: DEMO_TEAM_ID, name: 'Synthetic demo cohort', members, priorities: ['aws-architecture', 'sql-pipelines', 'qualification-planning'], includeDrafts: false }] };
 }
 
 export function activeTeam(ws: Workspace): Team | undefined {
@@ -65,6 +67,8 @@ export function selfParticipant(ws: Workspace): Participant | null {
   const mentoring = p.shareMentoringLocally;
   return {
     id: SELF_ID,
+    attested: true,
+    draftNote: '',
     name: p.displayName.trim() ? `${p.displayName.trim()} (my local profile)` : 'My local profile',
     self: true,
     synthetic: false,
@@ -82,8 +86,9 @@ export function selfParticipant(ws: Workspace): Participant | null {
   };
 }
 
-export function participants(ws: Workspace, team: Team | undefined = activeTeam(ws)): Participant[] {
-  const people: Participant[] = [...(team?.members ?? [])];
+export function participants(ws: Workspace, team: Team | undefined = activeTeam(ws), opts: { includeDrafts?: boolean } = {}): Participant[] {
+  const includeDrafts = opts.includeDrafts ?? team?.includeDrafts ?? false;
+  const people: Participant[] = (team?.members ?? []).filter((m) => m.attested || includeDrafts);
   const self = selfParticipant(ws);
   if (self) people.push(self);
   return people;

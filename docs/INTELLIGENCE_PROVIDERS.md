@@ -4,7 +4,16 @@ Synapse works completely without a model. **Local rules** (deterministic keyword
 
 ## What the user sees
 
-Program → **Intelligence**
+Program → **Intelligence** — Local rules (default) or a remote provider set up in four steps:
+
+1. **Where is it?** Kind of endpoint — *OpenAI-compatible gateway* (the API base, usually `…/v1`; Synapse calls `/models` and `/chat/completions` itself) or *Synapse contract endpoint* (a platform-side implementation of the contract below) — plus display name and URL.
+2. **Which key?** The API key / bearer token, sealed with a passphrase (AES-256-GCM), unlocked per browser session, never exported.
+3. **Which model?** *Load models* lists what the key can use; pick one (or type it).
+4. **Does it work?** *Test connection*, then *Save connection* and select the provider at the top.
+
+Advanced: an optional **data-handling notice** — the one-sentence statement employees see wherever the provider is used (intake, team brief, Trust & data). Generated from host + model by default; an approved platform statement (retention, ATO, PII approval) can replace it verbatim.
+
+For an OpenAI-compatible gateway the browser talks to it directly, so the gateway must allow CORS from the Synapse origin **and** the build must allow the host. If either is missing, run the loopback adapter below instead (it also implements `list-models`).
 
 - A provider choice: Local rules (default) or Remote provider.
 - Connection settings: display name, endpoint (HTTPS, POST), optional model/deployment string, optional disclosure text.
@@ -22,6 +31,29 @@ npm run build
 ```
 
 The origins are written into `dist/build-manifest.json` (`intelHosts`) and shown in the Intelligence tab ("Allowed by this build"). A build with no `SYNAPSE_INTEL_HOST` is network-silent by construction.
+
+## Quickest way to try it: the loopback adapter
+
+`tools/intel-adapter.mjs` is a zero-dependency Node bridge that implements contract v1 on `http://127.0.0.1:8790` and forwards each task as a chat-completion request to any **OpenAI-compatible** endpoint (most enterprise gateways are), using an API key that never leaves your workstation.
+
+```powershell
+# 1. Build an edition that is allowed to talk to the adapter (not the committed dist/)
+$env:SYNAPSE_INTEL_HOST = "http://127.0.0.1:8790"
+npm run build:intel                      # → dist-intel
+# 2. Start the adapter (keep this window open)
+$env:INTEL_UPSTREAM_URL = "https://<your-gateway>/v1/chat/completions"
+$env:INTEL_API_KEY      = "<your key>"
+$env:INTEL_MODEL        = "<model or deployment name>"   # optional
+$env:INTEL_TOKEN        = "pick-a-shared-secret"         # optional; Synapse presents it as the bearer token
+npm run intel:adapter
+
+# 3. Serve that edition in a second window
+npm run serve:intel                      # or: .	ools\Serve-Synapse.ps1 -Root .\dist-intel
+```
+
+Then in Synapse: Program → Intelligence → endpoint `http://127.0.0.1:8790`, *Add bearer token…* = the `INTEL_TOKEN` you chose, *Test connection*, select *Remote provider*. If the gateway is not OpenAI-shaped, the adapter is ~80 lines; change `upstream()` and the three prompts.
+
+The adapter is a development convenience. For production the platform team should implement the contract server-side so the browser talks to the accredited service directly over HTTPS.
 
 ## Contract (version 1)
 
@@ -42,6 +74,12 @@ Synapse times out after 30 s (15 s for the connection test) and treats a non-2xx
 
 ```jsonc
 { "task": "ping" }                      →  { "detail": "optional text" }
+```
+
+### `list-models`
+
+```jsonc
+{ "task": "list-models" }               →  { "models": ["deployment-a", "deployment-b"] }
 ```
 
 ### `scan-resume`
