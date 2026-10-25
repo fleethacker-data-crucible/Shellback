@@ -4,6 +4,7 @@
  * approved medium. It is not a substitute for server-side access control.
  */
 export interface EncryptedEnvelope {
+  /** Former-name format id, kept for compatibility with existing encrypted exports. */
   format: 'synapse-encrypted';
   version: 1;
   kdf: 'PBKDF2-SHA-256';

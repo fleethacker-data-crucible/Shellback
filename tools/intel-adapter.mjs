@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Synapse intelligence adapter — a tiny loopback bridge between Synapse's provider contract (v1)
+ * Shellback intelligence adapter — a tiny loopback bridge between Shellback's provider contract (v1)
  * and any OpenAI-compatible chat-completions endpoint (enterprise gateways usually are).
  *
  *   node tools/intel-adapter.mjs
@@ -8,13 +8,13 @@
  * Environment (set in the shell that starts it; nothing is written to disk):
  *   INTEL_UPSTREAM_URL   e.g. https://api.genai.example.mil/v1/chat/completions   (required)
  *   INTEL_API_KEY        bearer token for the upstream                             (required)
- *   INTEL_MODEL          default model/deployment name                            (optional; Synapse may override)
+ *   INTEL_MODEL          default model/deployment name                            (optional; Shellback may override)
  *   INTEL_PORT           default 8790
- *   INTEL_TOKEN          optional shared secret Synapse must present (Program → Intelligence → bearer token)
+ *   INTEL_TOKEN          optional shared secret Shellback must present (Program → Intelligence → bearer token)
  *   NODE_EXTRA_CA_CERTS  (standard Node variable) PEM bundle for an internal CA, if the gateway uses one
  *
- * The adapter listens on 127.0.0.1 only. Synapse must be built with
- *   SYNAPSE_INTEL_HOST=http://127.0.0.1:8790
+ * The adapter listens on 127.0.0.1 only. Shellback must be built with
+ *   SHELLBACK_INTEL_HOST=http://127.0.0.1:8790
  * so its Content-Security-Policy allows the connection. Contract: docs/INTELLIGENCE_PROVIDERS.md.
  *
  * Zero dependencies. Node 18+.
@@ -86,4 +86,4 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: false, error: String(err.message).slice(0, 380) });
     }
   });
-}).listen(PORT, '127.0.0.1', () => console.log(`Synapse intelligence adapter on http://127.0.0.1:${PORT}  →  ${UPSTREAM}${SHARED ? '  (shared token required)' : ''}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`Shellback intelligence adapter on http://127.0.0.1:${PORT}  →  ${UPSTREAM}${SHARED ? '  (shared token required)' : ''}`));

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Synapse build — runs OFF the workstation (TechStack "Build rules").
+ * Shellback build — runs OFF the workstation (TechStack "Build rules").
  *
  *   node tools/build.mjs          → writes dist/
  *   node tools/build.mjs --check  → rebuilds into a temp dir and fails if dist/ is stale
- *   node tools/build.mjs --out dist-intel  → write elsewhere (for a SYNAPSE_INTEL_HOST build you don't commit)
+ *   node tools/build.mjs --out dist-intel  → write elsewhere (for a SHELLBACK_INTEL_HOST build you don't commit)
  *
  * Produces:
  *   dist/index.html                 served edition (PowerShell / Node static server)
  *   dist/assets/app.js, app.css     esbuild + Tailwind 4 output, all dependencies bundled
  *   dist/sw.js                      service worker with a precache list keyed by content hash
- *   dist/Synapse-Standalone.html    single-file edition (double-click, file://)
+ *   dist/Shellback-Standalone.html    single-file edition (double-click, file://)
  *   dist/build-manifest.json        sha256 of every shipped file (reproducibility check)
  *
  * No CDN, no runtime network calls, no telemetry. Output is deterministic for a given
@@ -22,19 +22,21 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { stopRunningSynapse } from './stop-running.mjs';
+import { stopRunningShellback } from './stop-running.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
 // Optional: origins a remote intelligence provider may be contacted at. Anything else is blocked by CSP.
-const intelHosts = (process.env.SYNAPSE_INTEL_HOST ?? '').split(',').map((s) => s.trim()).filter(Boolean).map((h) => {
+// SHELLBACK_INTEL_HOST first; SYNAPSE_INTEL_HOST (the former name) still works as a fallback.
+const intelHostEnv = process.env.SHELLBACK_INTEL_HOST ?? process.env.SYNAPSE_INTEL_HOST ?? '';
+const intelHosts = (intelHostEnv).split(',').map((s) => s.trim()).filter(Boolean).map((h) => {
   const u = new URL(h.includes('://') ? h : `https://${h}`);
-  if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error(`SYNAPSE_INTEL_HOST must be https: ${h}`);
+  if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error(`SHELLBACK_INTEL_HOST must be https: ${h}`);
   return u.origin;
 });
 const outArg = process.argv.indexOf('--out');
-// --out <dir>: write a host-specific build (e.g. with SYNAPSE_INTEL_HOST) somewhere other than the committed dist/.
-const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-dist-')) : path.resolve(root, outArg > -1 ? process.argv[outArg + 1] ?? 'dist' : 'dist');
+// --out <dir>: write a host-specific build (e.g. with SHELLBACK_INTEL_HOST) somewhere other than the committed dist/.
+const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'shellback-dist-')) : path.resolve(root, outArg > -1 ? process.argv[outArg + 1] ?? 'dist' : 'dist');
 
 // ---------------------------------------------------------------------------
 // Dependency resolution: local node_modules first, then NODE_PATH entries.
@@ -57,7 +59,7 @@ const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const sha256b64 = (buf) => crypto.createHash('sha256').update(buf).digest('base64');
 
 // A running server keeps serving the old dist/ while it is rewritten; stop it first (--check writes to a temp dir).
-if (!check) stopRunningSynapse(root, 'build');
+if (!check) stopRunningShellback(root, 'build');
 fs.mkdirSync(path.join(outDir, 'assets'), { recursive: true });
 
 // ---------------------------------------------------------------------------
@@ -88,8 +90,8 @@ const appBuild = await esbuild.build({
   platform: 'browser', nodePaths, legalComments: 'none', charset: 'utf8', sourcemap: false,
   jsx: 'automatic', define: {
     'process.env.NODE_ENV': '"production"',
-    '__SYNAPSE_VERSION__': JSON.stringify(pkg.version),
-    '__SYNAPSE_INTEL_HOSTS__': JSON.stringify(intelHosts),
+    '__SHELLBACK_VERSION__': JSON.stringify(pkg.version),
+    '__SHELLBACK_INTEL_HOSTS__': JSON.stringify(intelHosts),
   },
   loader: { '.json': 'json' },
   plugins: [inlineWorkerPlugin],
@@ -173,7 +175,7 @@ const outputs = {
   'assets/app.js': appJs,
   'assets/app.css': appCss,
   'sw.js': sw,
-  'Synapse-Standalone.html': standalone,
+  'Shellback-Standalone.html': standalone,
 };
 for (const [rel, content] of Object.entries(outputs)) {
   fs.writeFileSync(path.join(outDir, rel), content);

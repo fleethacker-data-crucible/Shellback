@@ -102,7 +102,7 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
     if (!f) return;
     try {
       const data = await readJsonFile(f, 256_000);
-      if (!isDraftCard(data)) { flash('That is not a Synapse draft card. Peer cards are imported under Team → Roster.'); return; }
+      if (!isDraftCard(data)) { flash('That is not a Shellback draft card. Peer cards are imported under Team → Roster.'); return; }
       const draft = parseDraftCard(data);
       const ok = await dialogs.confirm(<>A draft card for <b>{draft.name}</b> with {draft.skills.length} suggested skills{draft.credentialNames.length ? ` and ${draft.credentialNames.length} credential names` : ''}{draft.draftedBy ? `, prepared by ${draft.draftedBy}` : ''}. Load it as <b>suggestions</b> for you to confirm or dismiss? Nothing is added to your profile automatically.</>, { title: 'Import draft card', confirmLabel: 'Load as suggestions' });
       if (!ok) return;
@@ -128,7 +128,7 @@ function IntakeTab({ resume, setResume }: { resume: string; setResume: (v: strin
   return (
     <div id="intake" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <Panel>
-        <PanelHeading eyebrow="ADD EXPERIENCE" title="Scan a résumé">{activeProvider().describe().offline ? <>Synapse looks for skill and certification names locally{scanRunsInWorker() ? ' in a background worker' : ''}. The text is never stored, only the suggestions you then review.</> : <>Suggestions come from <b>{activeProvider().describe().label}</b>: the text is sent there (<Button size="sm" variant="ghost" className="underline" onClick={() => navigate({ view: 'program', tab: 'intelligence' })}>what leaves this workstation</Button>). Only the suggestions you then review are kept.</>}</PanelHeading>
+        <PanelHeading eyebrow="ADD EXPERIENCE" title="Scan a résumé">{activeProvider().describe().offline ? <>Shellback looks for skill and certification names locally{scanRunsInWorker() ? ' in a background worker' : ''}. The text is never stored, only the suggestions you then review.</> : <>Suggestions come from <b>{activeProvider().describe().label}</b>: the text is sent there (<Button size="sm" variant="ghost" className="underline" onClick={() => navigate({ view: 'program', tab: 'intelligence' })}>what leaves this workstation</Button>). Only the suggestions you then review are kept.</>}</PanelHeading>
         <Field label="Upload a résumé (.txt, .docx or .pdf — read in this browser)" htmlFor="resumeFile">
           <input id="resumeFile" type="file" accept=".txt,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="control file:mr-3 file:rounded-sm file:border-0 file:bg-panel2 file:px-3 file:py-1 file:text-[12px] file:font-bold file:text-text" onChange={onFile} />
         </Field>
@@ -279,7 +279,7 @@ function OrgCard() {
   return (
     <Panel id="orgCard">
       <PanelHeading eyebrow="WHERE I SIT" title="Organization code">
-        Optional. Codes nest by prefix (1500 → 1510 → 1513 → 1513.1), so Synapse can roll team coverage up through departments, divisions and branches without a fixed org chart.
+        Optional. Codes nest by prefix (1500 → 1510 → 1513 → 1513.1), so Shellback can roll team coverage up through departments, divisions and branches without a fixed org chart.
       </PanelHeading>
       <div className="grid gap-3 md:grid-cols-[200px_1fr_auto] md:items-end">
         <Field label="My code" htmlFor="orgCode"><Input id="orgCode" value={code} onChange={setCode} maxLength={24} placeholder="e.g. 1513" /></Field>

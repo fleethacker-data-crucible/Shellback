@@ -11,7 +11,7 @@ const EMPTY: Required<CredentialInput> = { name: '', authority: '', expiry: '', 
 const PROVENANCE: Array<{ value: CredentialProvenance; label: string; hint: string }> = [
   { value: 'claimed', label: 'Claimed — I hold this', hint: 'Your own statement. The default.' },
   { value: 'reviewed', label: 'Reviewed — from my résumé, checked by me', hint: 'A résumé suggestion you confirmed is accurate.' },
-  { value: 'verified', label: 'Verified — an authority confirmed it to me', hint: 'Name who verified it. Synapse records your statement; it does not check with the authority.' },
+  { value: 'verified', label: 'Verified — an authority confirmed it to me', hint: 'Name who verified it. Shellback records your statement; it does not check with the authority.' },
 ];
 
 /** Lifecycle status derived from dates + provenance. Never a judgement of the person. */
@@ -84,7 +84,7 @@ export function CredentialsView({ embedded = false }: { embedded?: boolean }) {
             <Button id="addCredential" variant="primary" onClick={save}>{editingId ? 'Save changes' : 'Save credential'}</Button>
             <Button id="credClearForm" onClick={clear}>{editingId ? 'Cancel' : 'Clear form'}</Button>
           </div>
-          <p className="note mt-3">Do not enter credential numbers, personal IDs, classified work details, or restricted records. <TrustChip kind="self-reported" extra="A verified credential here still means you told Synapse it was verified; an authoritative feed (see docs) would be needed to confirm it independently." /></p>
+          <p className="note mt-3">Do not enter credential numbers, personal IDs, classified work details, or restricted records. <TrustChip kind="self-reported" extra="A verified credential here still means you told Shellback it was verified; an authoritative feed (see docs) would be needed to confirm it independently." /></p>
         </Panel>
         <Panel>
           <PanelHeading title="My credentials">Sorted by renewal date. Status comes from the dates and how you said you know; it is never a judgement of you.</PanelHeading>

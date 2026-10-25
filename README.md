@@ -1,6 +1,14 @@
-# SYNAPSE · Workforce Capability Intelligence
+<p align="center"><img src="assets/brand/emblem-light.png" width="280" alt="Shellback"></p>
 
-Synapse is an employee-centered capability discovery and development prototype. It keeps résumé claims, confirmed skills, task-level confidence, execution mode, voluntary activity and self-entered credentials **separate**. It never creates a hidden proficiency rating.
+# Shellback
+
+Workforce capability intelligence: employee-attested skills, kept separate from claims, in a local-first browser app.
+
+## The name
+
+A *shellback* is a sailor who has actually crossed the equator — a status you earn, not claim. Shellback keeps claimed skills separate from confirmed ones. Formerly Synapse.
+
+Shellback is an employee-centered capability discovery and development prototype. It keeps résumé claims, confirmed skills, task-level confidence, execution mode, voluntary activity and self-entered credentials **separate**. It never creates a hidden proficiency rating.
 
 This version is a full rebuild on the project's [TechStack](TechStack): React 19 + TypeScript, Tailwind CSS 4, IndexedDB storage, a Web Worker for résumé scanning, a service worker for offline caching, Web Crypto export encryption, and a PowerShell 5.1 loopback server. It is compiled off the workstation and shipped as plain JS/CSS. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and for the places where this build differs from the TechStack table.
 
@@ -8,8 +16,8 @@ This version is a full rebuild on the project's [TechStack](TechStack): React 19
 
 | Option | How | Notes |
 | --- | --- | --- |
-| **Served (recommended)** | Double-click `Launch-Synapse.bat` | Runs `powershell.exe -File tools\Serve-Synapse.ps1`, which serves `dist\` on `http://127.0.0.1:8765/` and opens your browser. The port stays fixed because browser data is stored per origin. Loopback only. Stops by itself when you close the tab; **End session** in the navigation, Ctrl+C, or `tools\Stop-Synapse.ps1` stop it at once. Enables offline caching through the service worker. |
-| **Single file** | Double-click `dist\Synapse-Standalone.html` | Everything is inlined in one file and runs from `file://`. No server and no service worker. Same features otherwise. |
+| **Served (recommended)** | Double-click `Launch-Shellback.bat` | Runs `powershell.exe -File tools\Start-Shellback.ps1`, which serves `dist\` on `http://127.0.0.1:8765/` and opens your browser. The port stays fixed because browser data is stored per origin. Loopback only. Stops by itself when you close the tab; **End session** in the navigation, Ctrl+C, or `tools\Stop-Shellback.ps1` stop it at once. Enables offline caching through the service worker. |
+| **Single file** | Double-click `dist\Shellback-Standalone.html` | Everything is inlined in one file and runs from `file://`. No server and no service worker. Same features otherwise. |
 
 Both editions store data only in the current browser profile (IndexedDB) and make **no network requests**. A Content-Security-Policy blocks any connection other than the page's own origin.
 
@@ -26,7 +34,7 @@ npm test             # strict core typecheck, unit tests, dist freshness check, 
 npm run serve        # optional: Node loopback server with the same headers as the PowerShell one
 ```
 
-`dist/` is committed so the workstation never needs Node. CI runs on the self-hosted Windows runner. It rebuilds on every PR, runs the browser tests, starts the real `Serve-Synapse.ps1` under Windows PowerShell 5.1, and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`; `.gitattributes` keeps line endings identical on Windows), so the shipped files always come from the reviewed source.
+`dist/` is committed so the workstation never needs Node. CI runs on the self-hosted Windows runner. It rebuilds on every PR, runs the browser tests, starts the real `Start-Shellback.ps1` under Windows PowerShell 5.1, and **fails if the committed `dist/` doesn't match a fresh build** (`npm run build:check`; `.gitattributes` keeps line endings identical on Windows), so the shipped files always come from the reviewed source.
 
 ## How it's organised
 
@@ -55,11 +63,11 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 - **Local consent is granular:** the "contribute to team coverage" switch shares **confirmed skills only** with this browser's team tools. Mentoring details and credential names join only through their own checkboxes.
 - **FLEETHACKER workflows** live where they belong: study guides, goals and renewals under My profile → Growth; missions, mentors and knowledge relay under Team. One implementation each, on a shared analytics module.
 - **ROI laboratory:** cash and recovered capacity are reported separately, with adoption sensitivity.
-- **How I like to contribute (two axes):** six stages of work (asking the big questions → finishing and pushing through). For each, how it affects your *energy* (5-point) and, optionally, how *practiced* you are (4-point). Together they separate **Flow** (energized + practiced), **Growth edge** (energized, learning), **Grind** (practiced, drained — the burnout watch) and **Avoid / pair**. Optional context tags ("under deadline", "in a small team"…) and a one-line example. No fixed number of each, no letters, no totals. Synapse's own wording, not an assessment. Import a results file (CSV `stage,energy` or JSON, plain-English synonyms accepted). Teams see energy by stage, pairing ideas and a printable workshop sheet; missions can ask for a stage and surface people energized by it.
-- **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SYNAPSE_INTEL_HOST`). Contract and a loopback adapter for OpenAI-compatible gateways in `docs/INTELLIGENCE_PROVIDERS.md`. Sample fictional résumés for trying intake: `examples/resumes/` (PDF).
+- **How I like to contribute (two axes):** six stages of work (asking the big questions → finishing and pushing through). For each, how it affects your *energy* (5-point) and, optionally, how *practiced* you are (4-point). Together they separate **Flow** (energized + practiced), **Growth edge** (energized, learning), **Grind** (practiced, drained — the burnout watch) and **Avoid / pair**. Optional context tags ("under deadline", "in a small team"…) and a one-line example. No fixed number of each, no letters, no totals. Shellback's own wording, not an assessment. Import a results file (CSV `stage,energy` or JSON, plain-English synonyms accepted). Teams see energy by stage, pairing ideas and a printable workshop sheet; missions can ask for a stage and surface people energized by it.
+- **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SHELLBACK_INTEL_HOST`). Contract and a loopback adapter for OpenAI-compatible gateways in `docs/INTELLIGENCE_PROVIDERS.md`. Sample fictional résumés for trying intake: `examples/resumes/` (PDF).
 - **Supervisor brief:** Team → Coverage writes a plain-language summary from aggregate numbers only (shown before generation). Never names, ranks or scores a person.
 - **Themes & print:** Auto / dark / light; printable capability summary (Profile → Skills) and team workshop sheet.
-- **Organization codes:** enter your code (e.g. `1513.1`) and Synapse derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
+- **Organization codes:** enter your code (e.g. `1513.1`) and Shellback derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
 
@@ -67,13 +75,13 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 
 This is a synthetic demonstration. **Do not enter real Navy personnel records, qualification data, sensitive details, clearance information, or actual résumé PII into this pilot on a shared or unapproved workstation.** Browser storage is not a secure multi-user data store, and the navigation is not an authorization boundary. There is no login; *Local demo · No login* is shown at all times.
 
-Synapse is **not** an authoritative readiness, competency, credential, personnel or performance system. It does not crawl activity, ingest email or code, track employees, or infer skill decay. Missing data means **unknown**, not low proficiency.
+Shellback is **not** an authoritative readiness, competency, credential, personnel or performance system. It does not crawl activity, ingest email or code, track employees, or infer skill decay. Missing data means **unknown**, not low proficiency.
 
 For production: sponsor, employee/labor and privacy consultation; purpose limits and retention; ATO where required; identity federation, RBAC/ABAC and consent enforcement **server-side**; encrypted managed storage; auditable corrections, exports and deletions; minimum-size aggregation; and trust metrics. See [the product audit](docs/PRODUCT_AUDIT_2026-10-22.md).
 
 ## Data model (workspace v2)
 
-Stored in IndexedDB (`synapse` → `workspace` → `current`); UI settings in `localStorage['synapse-settings-v2']`. Exports use the same shape.
+Stored in IndexedDB (`synapse` → `workspace` → `current`); UI settings in `localStorage['synapse-settings-v3']`. Exports use the same shape. These storage names predate the rename to Shellback and are kept on purpose: they are where existing users' data lives in the browser.
 
 ```jsonc
 {
@@ -90,7 +98,7 @@ Stored in IndexedDB (`synapse` → `workspace` → `current`); UI settings in `l
 }
 ```
 
-The schema is defined once with zod in `src/core/schema.ts`; it handles validation, clamping, v1→v2 migration and tolerant import. Peer cards keep the `synapse-peer-card` v1 wire format. Encrypted files use the `synapse-encrypted` v1 envelope.
+The schema is defined once with zod in `src/core/schema.ts`; it handles validation, clamping, v1→v2 migration and tolerant import. Peer cards keep the `synapse-peer-card` v1 wire format. Encrypted files use the `synapse-encrypted` v1 envelope. These format identifiers (also `synapse-draft-card`, `synapse-knowledge-relay`) predate the rename and are kept so that existing files, and copies of the app not yet updated, keep reading each other's exports.
 
 ## ROI calculation
 
@@ -116,10 +124,11 @@ src/workers/    résumé scan Web Worker
 src/app/        React UI: state store + actions, UI kit, visualizations, nine views
 src/styles/     Tailwind 4 theme and visualization styles
 public/         HTML template and service worker template
-tools/          build.mjs, run-tests.mjs, serve.mjs, Serve-Synapse.ps1
+tools/          build.mjs, run-tests.mjs, serve.mjs, Start-Shellback.ps1, Stop-Shellback.ps1, Shellback-Process.ps1
 tests/unit/     node:test suites for core logic and actions
 tests/e2e/      Playwright smoke tests against the compiled served and standalone editions
 examples/       fictional employee workspaces and peer cards (also bundled as in-app personas)
+assets/brand/   emblem (dark and light); not yet wired into the app UI
 dist/           compiled, committed output shipped to workstations
 ```
 
