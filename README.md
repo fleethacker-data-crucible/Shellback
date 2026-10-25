@@ -1,4 +1,9 @@
-<p align="center"><img src="assets/brand/emblem-light.png" width="280" alt="Shellback"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/emblem-dark.png">
+    <img src="assets/brand/emblem-light.png" width="280" alt="Shellback emblem: a sea turtle and Neptune's trident above the waves, inside a brass compass ring">
+  </picture>
+</p>
 
 # Shellback
 
