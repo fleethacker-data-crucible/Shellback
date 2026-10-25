@@ -40,7 +40,7 @@ $env:SYNAPSE_INTEL_HOST = "https://ai.example.mil"   # comma-separate several
 npm run build
 ```
 
-The contract the platform must implement is in `docs/INTELLIGENCE_PROVIDERS.md`. Note that `npm run build:check` compares against the committed `dist\`, so a host-specific build should be produced on the deployment branch (or passed to CI as a secret) rather than committed to `main`.
+The contract the platform must implement is in `docs/INTELLIGENCE_PROVIDERS.md`, along with a loopback adapter (`npm run intel:adapter`) that bridges to any OpenAI-compatible gateway with your own API key. Use `npm run build:intel` (writes `dist-intel\`, git-ignored) so the committed `dist\` stays network-silent. Note that `npm run build:check` compares against the committed `dist\`, so a host-specific build should be produced on the deployment branch (or passed to CI as a secret) rather than committed to `main`.
 
 ## Release
 

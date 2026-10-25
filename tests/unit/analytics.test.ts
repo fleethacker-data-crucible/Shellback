@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newWorkspace } from '../../src/core/schema';
+import { newWorkspace, parseWorkspace } from '../../src/core/schema';
 import { aggregate, defaultTeams, missionCoverage, participants, renewalState, selfParticipant, visibleConfidence, SELF_ID } from '../../src/core/analytics';
 import { roiScenario } from '../../src/core/roi';
 import { ROI_DEFAULTS } from '../../src/core/schema';
@@ -73,11 +73,28 @@ test('renewal states use one consistent rule', () => {
   assert.equal(renewalState({ expiry: '2027-01-23' }, now).state, 'future');
 });
 
-test('ROI keeps cash separate and matches the documented audit figure', () => {
-  const p = { ...ROI_DEFAULTS, adoption: 100, realization: 70, trainingAvoidance: 0, overlap: 0 };
+test('ROI: cash lanes, capacity lanes, break-even, basis share', () => {
+  const p = { ...ROI_DEFAULTS, adoption: 100 };
   const o = roiScenario(p);
-  assert.equal(Math.round(o.grossWorkflow), 221_375); // 55 min × 100 × 46 wk × $75 × 70%
-  assert.equal(o.cash, ROI_DEFAULTS.externalSpend * 0.1);
-  assert.equal(roiScenario({ ...p, adoption: 0 }).capacity, 0);
+  // Lane arithmetic at full adoption
+  assert.equal(Math.round(o.lanes.find((l) => l.id === 'expertise-cash')!.value), 600 * 0.25 * 180);
+  assert.ok(Math.abs(o.lanes.find((l) => l.id === 'expertise-spent')!.value + 600 * 0.25 * 1.25 * 85) < 1);
+  assert.equal(Math.round(o.lanes.find((l) => l.id === 'training-cash')!.value), 100 * 1500 * 0.08);
+  assert.equal(Math.round(o.lanes.find((l) => l.id === 'lapse-cash')!.value), 6 * 2500 * 0.5);
+  assert.equal(Math.round(o.lanes.find((l) => l.id === 'search-cap')!.value), Math.round(12 * 0.5 * 46 * 0.5 * 85));
+  assert.equal(o.cash, o.lanes.filter((l) => l.kind === 'cash').reduce((s, l) => s + l.value, 0));
+  assert.ok(o.capacityNet < o.capacityGross, 'time Synapse consumes is subtracted');
+  assert.equal(o.netCash, o.cash - o.platformCost);
+  // Break-even adoption is linear in uptake
+  const be = roiScenario({ ...p, adoption: 60 });
+  assert.ok(be.breakEvenAdoption! > 0 && be.breakEvenAdoption! < 100);
+  const atBe = roiScenario({ ...p, adoption: be.breakEvenAdoption! });
+  assert.ok(Math.abs(atBe.netCash) < 1, `net cash at break-even should be ~0, got ${atBe.netCash}`);
+  assert.equal(roiScenario({ ...p, externalHours: 0, trainingCost: 0, lapsesPerYear: 0 }).breakEvenAdoption, null);
+  assert.equal(roiScenario({ ...p, adoption: 0 }).cash, 0);
   assert.equal(roiScenario({ ...p, annualCost: 0 }).multiple, null);
+  assert.equal(roiScenario(p, 1, { adoption: 'measured', hourlyRate: 'benchmark' }).assumedShare, (20 - 2) / 20);
+  // Legacy workspace input migrates
+  const w = parseWorkspace({ ...JSON.parse(JSON.stringify(newWorkspace())), roi: { minutesSaved: 12, employees: 50 } }).workspace;
+  assert.equal(w.roi.searchMinutes, 12); assert.equal(w.roi.employees, 50); assert.equal(w.roi.externalHours, ROI_DEFAULTS.externalHours);
 });
