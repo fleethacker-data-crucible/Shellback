@@ -33,7 +33,7 @@ export function RoiView() {
   return (
     <section id="roi" className="space-y-5">
       <SectionIntro eyebrow="BUSINESS CASE / SCENARIO MODEL" title="Cash that stops leaving, kept apart from hours that come back.">
-        Four things Synapse changes — outside expertise bought, training duplicated, credentials lapsing, time spent finding people — against what it costs to run. Only <b>cash</b> is set against platform cost; recovered hours are shown but never counted as money. Tag each input with how you know it; the result tells you how much rests on guesses.
+        Four things Shellback changes — outside expertise bought, training duplicated, credentials lapsing, time spent finding people — against what it costs to run. Only <b>cash</b> is set against platform cost; recovered hours are shown but never counted as money. Tag each input with how you know it; the result tells you how much rests on guesses.
       </SectionIntro>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -88,7 +88,7 @@ export function RoiView() {
           <Panel>
             <div className="eyebrow">CAPACITY · HOURS, NOT MONEY</div>
             <div id="roiCapacity" className={`mt-1 text-[28px] font-extrabold leading-none ${base.capacityNet < 0 ? 'text-amber' : 'text-text'}`}>{money.format(base.capacityNet)}<span className="ml-2 text-[13px] font-semibold text-quiet">net, at the loaded rate</span></div>
-            <p className="note mt-1">Gross {money.format(base.capacityGross)} recovered, minus {money.format(base.capacitySpent)} of people's time Synapse itself consumes. Shown so nobody double-counts it as cash.</p>
+            <p className="note mt-1">Gross {money.format(base.capacityGross)} recovered, minus {money.format(base.capacitySpent)} of people's time Shellback itself consumes. Shown so nobody double-counts it as cash.</p>
             <div id="roiCapacityLanes" className="mt-3 space-y-1 text-[13px]">
               {capLanes.map((l) => <div key={l.id} data-roi-lane-row={l.id} className="flex justify-between gap-3 border-b border-stroke/60 py-1"><span><span className="text-text">{l.label}</span><small className="block text-[11px] text-quiet">{l.detail}</small></span><b className={l.value < 0 ? 'text-amber' : ''}>{l.value < 0 ? '−' : ''}{money.format(Math.abs(l.value))}</b></div>)}
             </div>
@@ -107,7 +107,7 @@ export function RoiView() {
       <Notice>How to make this defensible: measure adoption from the pilot; take outside-expert hours and rates from contract records; get the cost of one real credential lapse; run a two-week diary for the "asking around" minutes. Mark each as <b>Measured</b> above. Never present capacity as savings, and never present a number with more than half its inputs assumed.</Notice>
 
       <section id="roiSheet" data-print-sheet aria-hidden="true">
-        <h1>Synapse ROI scenario — assumptions</h1>
+        <h1>Shellback ROI scenario — assumptions</h1>
         <p className="sheet-mute">Printed {new Date().toISOString().slice(0, 10)}. {assumedPct}% of inputs are assumed, {measuredCount} measured. Capacity is hours at the loaded rate, not cash.</p>
         <h2>Result</h2>
         <table><tbody>

@@ -1,5 +1,5 @@
 /**
- * TechStack "Lifecycle rules" against the compiled dist/ and the Node twin of Serve-Synapse.ps1
+ * TechStack "Lifecycle rules" against the compiled dist/ and the Node twin of Start-Shellback.ps1
  * (tools/serve.mjs implements the same presence rule). --leaving-ms shortens the grace; the 60 s
  * timeout means a stop within seconds can only come from the pagehide beacon. The PowerShell rule is covered by
  * tests/ps/Lifecycle.Tests.ps1 on the Windows CI runner.
@@ -12,7 +12,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Browser } from 'playwright';
 
-const root = process.env.SYNAPSE_ROOT ?? process.cwd();
+const root = process.env.SHELLBACK_ROOT ?? process.env.SYNAPSE_ROOT ?? process.cwd();
 const { chromium } = createRequire(path.join(root, 'package.json'))('playwright') as typeof import('playwright');
 
 let browser: Browser;
@@ -21,7 +21,7 @@ after(async () => { await browser?.close(); });
 
 interface Served { proc: ChildProcess; url: string; exited: Promise<number | null>; isRunning: () => boolean }
 async function serve(extra: string[] = []): Promise<Served> {
-  const proc = spawn(process.execPath, [path.join(root, 'tools/serve.mjs'), '--port', '0', ...extra], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, SYNAPSE_AUTO_STOP: '' } });
+  const proc = spawn(process.execPath, [path.join(root, 'tools/serve.mjs'), '--port', '0', ...extra], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, SHELLBACK_AUTO_STOP: '' } });
   let running = true;
   const exited = new Promise<number | null>((resolve) => proc.on('exit', (code) => { running = false; resolve(code); }));
   const url = await new Promise<string>((resolve, reject) => {
@@ -93,7 +93,7 @@ test('lifecycle routes refuse other origins and GET; --stay keeps running', asyn
   try {
     const origin = s.url.replace(/\/$/, '');
     const post = (p: string, headers: Record<string, string>) => fetch(s.url + p.slice(1), { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: '{"leaving":true}' });
-    assert.equal((await post('/api/session/stop', { Origin: 'http://evil.example', 'X-Synapse-Intent': 'end-session' })).status, 403);
+    assert.equal((await post('/api/session/stop', { Origin: 'http://evil.example', 'X-Shellback-Intent': 'end-session' })).status, 403);
     assert.equal((await post('/api/session/stop', { Origin: origin })).status, 403, 'End session needs its intent header');
     assert.equal((await post('/api/heartbeat', { Origin: 'http://evil.example' })).status, 403);
     assert.equal((await fetch(s.url + 'api/heartbeat')).status, 405);
@@ -108,7 +108,7 @@ test('standalone edition has no server and no End session control', async () => 
   const page = await context.newPage();
   const requests: string[] = [];
   page.on('request', (r) => { if (r.url().includes('/api/')) requests.push(r.url()); });
-  await page.goto(pathToFileURL(path.join(root, 'dist/Synapse-Standalone.html')).href);
+  await page.goto(pathToFileURL(path.join(root, 'dist/Shellback-Standalone.html')).href);
   await page.locator('#metricSkills').waitFor();
   assert.equal(await page.locator('#endSessionBtn').count(), 0);
   assert.deepEqual(requests, []);

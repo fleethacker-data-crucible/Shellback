@@ -14,7 +14,7 @@ import { ExploreView } from './views/ExploreView';
 import { TeamView } from './views/TeamView';
 import { ProgramView } from './views/ProgramView';
 import { PulseDrawer } from './components/PulseDrawer';
-import { SynapseMark } from './components/SynapseMark';
+import { ShellbackMark } from './components/ShellbackMark';
 import { endSession, hasLocalServer } from './lib/session';
 
 const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string; hint: string }> = [
@@ -70,30 +70,30 @@ export function App() {
       const pass = await dialogs.prompt('Choose a passphrase for this backup.', { title: 'Encrypt backup', label: 'Passphrase', password: true, minLength: 8 });
       if (pass === null) return;
       try {
-        downloadJson(await encryptJson(payload, pass, 'synapse-workspace'), `synapse-workspace-${stamp}.encrypted.json`);
+        downloadJson(await encryptJson(payload, pass, 'synapse-workspace'), `shellback-workspace-${stamp}.encrypted.json`);
         flash('Encrypted backup created. Keep the passphrase somewhere safe.');
       } catch (err) { flash(err instanceof Error ? err.message : 'Encryption failed.'); }
       return;
     }
-    downloadJson(payload, `synapse-workspace-${stamp}.json`);
+    downloadJson(payload, `shellback-workspace-${stamp}.json`);
     flash('Local JSON export created. Protect this file like other personal records.');
   }
 
   async function quit() {
     const ok = await dialogs.confirm(
-      <>Stop the local Synapse server now? Your workspace is already saved in this browser. Open Synapse again later with <code>Launch-Synapse.bat</code>.</>,
-      { title: 'End this Synapse session?', confirmLabel: 'End session' },
+      <>Stop the local Shellback server now? Your workspace is already saved in this browser. Open Shellback again later with <code>Launch-Shellback.bat</code>.</>,
+      { title: 'End this Shellback session?', confirmLabel: 'End session' },
     );
     if (!ok) return;
     if (await endSession()) setEnded(true);
-    else flash('The local server did not answer. It may already be stopped; tools\\Stop-Synapse.ps1 stops any that are left.');
+    else flash('The local server did not answer. It may already be stopped; tools\\Stop-Shellback.ps1 stops any that are left.');
   }
 
   if (ended) {
     return (
       <main id="sessionEnded" className="mx-auto max-w-[60ch] px-6 py-16">
-        <h1 className="text-[22px]">Synapse session ended</h1>
-        <p className="mt-3 text-muted">The local server has stopped. Your workspace stays saved in this browser. You can close this tab; run <code>Launch-Synapse.bat</code> to start again.</p>
+        <h1 className="text-[22px]">Shellback session ended</h1>
+        <p className="mt-3 text-muted">The local server has stopped. Your workspace stays saved in this browser. You can close this tab; run <code>Launch-Shellback.bat</code> to start again.</p>
       </main>
     );
   }
@@ -105,7 +105,7 @@ export function App() {
     try {
       let data = await readJsonFile(file, 2_000_000);
       if (isEncryptedEnvelope(data)) {
-        const pass = await dialogs.prompt(`"${file.name}" is an encrypted Synapse file. Enter its passphrase to continue.`, { title: 'Decrypt file', label: 'Passphrase', password: true });
+        const pass = await dialogs.prompt(`"${file.name}" is an encrypted Shellback file. Enter its passphrase to continue.`, { title: 'Decrypt file', label: 'Passphrase', password: true });
         if (pass === null) return;
         data = await decryptJson(data, pass);
       }
@@ -126,8 +126,8 @@ export function App() {
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">Skip to content</a>
       <aside aria-label="Main navigation" className={cn('fixed inset-y-0 left-0 z-40 flex w-[255px] flex-col border-r border-stroke bg-gradient-to-br from-side to-bg px-[15px] py-[26px] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex items-center gap-3 px-[13px] pb-9">
-          <SynapseMark size={38} className="shrink-0 drop-shadow-[0_0_12px_#5cf1cb55]" />
-          <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SYNAPSE</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-quiet">CAPABILITY INTELLIGENCE</small></div>
+          <ShellbackMark size={38} className="shrink-0 drop-shadow-[0_0_12px_#5cf1cb55]" />
+          <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SHELLBACK</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-quiet">CAPABILITY INTELLIGENCE</small></div>
         </div>
         <div className="px-[13px] pb-3 text-[10px] font-extrabold tracking-[0.1em] text-quiet">WORKSPACE <span className="mt-2 block text-mint">SYNTHETIC PILOT</span></div>
         <nav id="nav" aria-label="Application sections" className="flex flex-col gap-1">
@@ -145,7 +145,7 @@ export function App() {
           <div className="text-[10px] font-extrabold tracking-[0.1em] text-mint">● &nbsp; OFFLINE DEMO · NO AUTHENTICATED ACCOUNT</div>
           <p className="mt-2 text-[11px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
           <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}>↥ Export my workspace</Button>
-          {hasLocalServer() && <Button id="endSessionBtn" variant="ghost" size="sm" full className="mt-2" title="Stop the local Synapse server (it also stops by itself when this tab closes)" onClick={quit}>⏻ End session</Button>}
+          {hasLocalServer() && <Button id="endSessionBtn" variant="ghost" size="sm" full className="mt-2" title="Stop the local Shellback server (it also stops by itself when this tab closes)" onClick={quit}>⏻ End session</Button>}
           <div role="radiogroup" aria-label="Theme" id="themeSwitch" className="mt-3 flex gap-1 rounded-md border border-stroke bg-bg/40 p-1">
             {(['system', 'dark', 'light'] as Theme[]).map((t) => <button key={t} type="button" role="radio" aria-checked={settings.theme === t} data-theme-choice={t} className={cn('flex-1 rounded-sm px-2 py-1 text-[11px] font-bold capitalize text-quiet hover:text-text', settings.theme === t && 'bg-panel2 text-text')} onClick={() => setSettings({ theme: t })}>{t === 'system' ? 'Auto' : t}</button>)}
           </div>
@@ -167,7 +167,7 @@ export function App() {
               <span className="text-mint">●</span> Local demo · No login
             </button>
             <Button id="importBtn" onClick={() => fileRef.current?.click()}>↧ Import data</Button>
-            <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace}  aria-label="Import a Synapse file"/>
+            <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace}  aria-label="Import a Shellback file"/>
             <button type="button" className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-blue text-[12px] font-extrabold text-on-accent" data-view="profile" aria-label="Open my capability profile" title={`${ws.profile.displayName.trim() ? `${ws.profile.displayName.trim()} — your initials` : 'Your initials appear here once you set a display name (Team → Share your card)'} · open My profile`} onClick={() => navigate('profile')}>
               {ws.profile.displayName.trim() ? ws.profile.displayName.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'ME'}
             </button>
@@ -181,7 +181,7 @@ export function App() {
             <b>Stored data could not be validated and was set aside, not deleted.</b> Reason: {loadInfo.recovered.reason} A raw copy is kept under <code>{loadInfo.recovered.key}</code>; you can download it from Program → Trust &amp; data → Recovery.
           </Notice>
         )}
-        {loadInfo?.source === 'legacy-v1' && <Notice className="mb-4">Your earlier Synapse MVP data was found in this browser and upgraded to the new format. The original copy was left untouched.</Notice>}
+        {loadInfo?.source === 'legacy-v1' && <Notice className="mb-4">Your earlier Shellback MVP data was found in this browser and upgraded to the new format. The original copy was left untouched.</Notice>}
 
         {!ready ? <p className="text-muted">Loading local workspace…</p> : (
           <>
@@ -194,7 +194,7 @@ export function App() {
         )}
         <PulseDrawer />
         <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-stroke pt-4 text-[11px] text-quiet">
-          <span>SYNAPSE <b>v{__SYNAPSE_VERSION__}</b> · build {document.documentElement.dataset.build ?? 'dev'} · {document.documentElement.dataset.edition ?? 'dev'} edition</span>
+          <span>SHELLBACK <b>v{__SHELLBACK_VERSION__}</b> · build {document.documentElement.dataset.build ?? 'dev'} · {document.documentElement.dataset.edition ?? 'dev'} edition</span>
           <span>Designed for trust · Built for discovery · Synthetic demonstration</span>
         </footer>
       </main>

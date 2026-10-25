@@ -1,7 +1,7 @@
 /**
  * Intelligence provider seam.
  *
- * Synapse ships with exactly one built-in provider, `local-rules`: deterministic keyword matching
+ * Shellback ships with exactly one built-in provider, `local-rules`: deterministic keyword matching
  * that runs in the browser and makes no network calls. A model-backed provider hosted on an
  * authorized enterprise platform can be configured at run time as a *remote HTTP provider* that
  * speaks the small JSON contract below (see docs/INTELLIGENCE_PROVIDERS.md). Selecting a provider
@@ -106,14 +106,15 @@ export const localRulesProvider: IntelligenceProvider = {
 // ----------------------------------------------------------------------------- remote HTTP contract
 export const REMOTE_CONTRACT_VERSION = 1;
 
+/** `synapse` is the stored id of the contract kind (saved in users' settings); kept for compatibility. */
 export type RemoteKind = 'openai' | 'synapse';
-export const REMOTE_KIND_LABEL: Record<RemoteKind, string> = { openai: 'OpenAI-compatible gateway (chat completions)', synapse: 'Synapse contract endpoint (platform-implemented)' };
+export const REMOTE_KIND_LABEL: Record<RemoteKind, string> = { openai: 'OpenAI-compatible gateway (chat completions)', synapse: 'Shellback contract endpoint (platform-implemented)' };
 
 export interface RemoteProviderConfig {
-  /** openai: endpoint is the API base (…/v1); synapse: endpoint accepts the Synapse contract POST. */
+  /** openai: endpoint is the API base (…/v1); synapse: endpoint accepts the Shellback contract POST. */
   kind?: RemoteKind;
   label: string;
-  /** Absolute https URL. Example: https://ai.example.mil/v1  or  https://ai.example.mil/synapse */
+  /** Absolute https URL. Example: https://ai.example.mil/v1  or  https://ai.example.mil/shellback */
   endpoint: string;
   /** Opaque model / deployment name forwarded verbatim. */
   model?: string;
@@ -187,7 +188,7 @@ export function createRemoteProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     let json: unknown;
     try { json = await res.json(); } catch { throw new Error('The provider did not return JSON.'); }
     const env = remoteEnvelope.safeParse(json);
-    if (!env.success) throw new Error('The provider response does not follow the Synapse contract.');
+    if (!env.success) throw new Error('The provider response does not follow the Shellback contract.');
     if (!env.data.ok) throw new Error(`Provider error: ${env.data.error}`);
     const parsed = schema.safeParse(env.data.result);
     if (!parsed.success) throw new Error('The provider result failed validation and was discarded.');
@@ -234,8 +235,8 @@ const trimSlash = (u: string) => u.replace(/\/+$/, '');
 
 /**
  * Talks to an OpenAI-shaped API (`/models`, `/chat/completions`) directly from the browser.
- * The API key is the bearer token the user sealed. The gateway must allow CORS from the Synapse
- * origin and the build must allow the host (SYNAPSE_INTEL_HOST); otherwise use tools/intel-adapter.mjs.
+ * The API key is the bearer token the user sealed. The gateway must allow CORS from the Shellback
+ * origin and the build must allow the host (SHELLBACK_INTEL_HOST); otherwise use tools/intel-adapter.mjs.
  */
 export function createOpenAIProvider(cfg: RemoteProviderConfig, deps: RemoteDeps): IntelligenceProvider {
   const base = trimSlash(cfg.endpoint);

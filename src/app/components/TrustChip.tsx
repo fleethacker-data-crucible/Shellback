@@ -11,7 +11,7 @@ const COPY: Record<TrustKind, { label: string; title: string; body: ReactNode }>
   'self-reported': {
     label: 'Self-reported',
     title: 'What self-reported means',
-    body: <>Everything in Synapse starts with the employee's own attestation. It is not independently verified and does not establish a qualification, clearance or readiness. Treat it as a conversation starter, not a record of truth.</>,
+    body: <>Everything in Shellback starts with the employee's own attestation. It is not independently verified and does not establish a qualification, clearance or readiness. Treat it as a conversation starter, not a record of truth.</>,
   },
   aggregate: {
     label: 'Aggregate only',

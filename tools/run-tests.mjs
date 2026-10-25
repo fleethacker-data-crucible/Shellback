@@ -18,7 +18,7 @@ const esbuild = await import(pathToFileURL(require.resolve('esbuild', { paths: [
 const suite = process.argv[2] === 'e2e' ? 'e2e' : 'unit';
 const testDir = path.join(root, 'tests', suite);
 const entries = fs.readdirSync(testDir).filter((f) => f.endsWith('.test.ts')).map((f) => path.join(testDir, f));
-const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'synapse-tests-'));
+const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shellback-tests-'));
 // Keep the original directory depth so `new URL('../../examples/…', import.meta.url)` resolves from tests/unit.
 const outUnit = path.join(outDir, 'tests', suite);
 
@@ -34,7 +34,7 @@ fs.symlinkSync(path.join(root, 'examples'), path.join(outDir, 'examples'), 'junc
 
 const files = fs.readdirSync(outUnit).filter((f) => f.endsWith('.mjs')).map((f) => path.join(outUnit, f));
 // e2e bundles live in a temp dir, so let them resolve playwright from the repo / NODE_PATH.
-const env = { ...process.env, NODE_PATH: [path.join(root, 'node_modules'), ...nodePaths].join(path.delimiter), SYNAPSE_ROOT: root };
+const env = { ...process.env, NODE_PATH: [path.join(root, 'node_modules'), ...nodePaths].join(path.delimiter), SHELLBACK_ROOT: root };
 const r = spawnSync(process.execPath, ['--test', '--test-reporter=tap', '--test-concurrency=1', ...files], { env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 process.stdout.write(r.stdout ?? '');
 process.stderr.write(r.stderr ?? '');

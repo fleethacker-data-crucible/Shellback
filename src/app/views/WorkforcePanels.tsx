@@ -53,7 +53,7 @@ function QualForge() {
           <Button id="wfModuleCreate" variant="primary" className="mt-3" onClick={() => { const r = act((d) => A.addStudyModule(d, form)); if (r !== undefined) { setForm({ ...form, title: '', source: '', question: '', answer: '', scenario: '' }); setSelectedId(null); setRevealed(false); } }}>Create study guide</Button>
           <hr className="my-5 border-stroke" />
           <h4 className="text-[14px]">Import approved plain-text PQS-style outline</h4>
-          <p className="note">Paste nonsensitive, authorized task lines such as "1.1 Explain the turnover process." Synapse creates draft questions only; it never fabricates reference answers or qualification sign-offs.</p>
+          <p className="note">Paste nonsensitive, authorized task lines such as "1.1 Explain the turnover process." Shellback creates draft questions only; it never fabricates reference answers or qualification sign-offs.</p>
           <Field label="Skill domain for imported tasks" htmlFor="wfOutlineSkill"><Select id="wfOutlineSkill" value={outline.skill} onChange={(v) => setOutline({ ...outline, skill: v })} options={SKILL_OPTIONS_SHORT} /></Field>
           <Field label="Approved outline excerpt (up to 12,000 characters)" htmlFor="wfOutlineText"><Textarea id="wfOutlineText" rows={4} maxLength={12000} value={outline.text} onChange={(v) => setOutline({ ...outline, text: v })} placeholder={'1.1 Describe the incident turnover process\n1.2 Explain escalation requirements'} /></Field>
           <Button id="wfOutlineImport" className="mt-3" onClick={importOutline}>Convert outline into review-required study drafts</Button>
@@ -274,7 +274,7 @@ export function KnowledgePanel() {
           <h4 className="mt-4 text-[14px]">Search and controlled export</h4>
           <Field label="Search records" htmlFor="wfKnowledgeSearch"><Input id="wfKnowledgeSearch" type="search" value={query} onChange={setQuery} placeholder="Search title, practice, skill..." /></Field>
           <Checkbox id="wfApprovedOnly" className="mt-2" checked={approvedOnly} onChange={setApprovedOnly}>Owner-marked reviewed records only</Checkbox>
-          <Button id="wfKnowledgeExport" className="mt-3" onClick={() => { try { downloadJson(buildKnowledgePackage(ws), `synapse-approved-knowledge-${ws.meta.updated}.json`); flash('Exported owner-marked reviewed records only. This is not an authority accreditation.'); } catch (err) { flash(err instanceof Error ? err.message : String(err)); } }}>Export reviewed knowledge package</Button>
+          <Button id="wfKnowledgeExport" className="mt-3" onClick={() => { try { downloadJson(buildKnowledgePackage(ws), `shellback-approved-knowledge-${ws.meta.updated}.json`); flash('Exported owner-marked reviewed records only. This is not an authority accreditation.'); } catch (err) { flash(err instanceof Error ? err.message : String(err)); } }}>Export reviewed knowledge package</Button>
         </Panel>
       </div>
       <Panel>
