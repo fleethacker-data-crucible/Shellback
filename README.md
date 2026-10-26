@@ -67,7 +67,7 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 - **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SHELLBACK_INTEL_HOST`). Contract and a loopback adapter for OpenAI-compatible gateways in `docs/INTELLIGENCE_PROVIDERS.md`. Sample fictional résumés for trying intake: `examples/resumes/` (PDF).
 - **Supervisor brief:** Team → Coverage writes a plain-language summary from aggregate numbers only (shown before generation). Never names, ranks or scores a person.
 - **Themes & print:** Auto / dark / light; printable capability summary (Profile → Skills) and team workshop sheet.
-- **Organization codes:** enter your code (e.g. `1513.1`) and Shellback derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
+- **Organization codes:** enter your code (e.g. `9911.1`) and Shellback derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
 

@@ -443,10 +443,10 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
   await nav(page, 'profile', 'skills');
   await page.locator('#manualSkill').selectOption('aws-architecture');
   await page.locator('#manualAdd').click();
-  await page.locator('#orgCode').fill('Code 1513.7');
+  await page.locator('#orgCode').fill('Code 9911.7');
   await page.locator('#orgTitle').fill('Engineer');
   await page.locator('#orgSave').click();
-  assert.match(await page.locator('#orgChain').innerText(), /DEPARTMENT 1500.*DIVISION 1510.*BRANCH 1513.*SECTION 1513\.7/s);
+  assert.match(await page.locator('#orgChain').innerText(), /DEPARTMENT 9900.*DIVISION 9910.*BRANCH 9911.*SECTION 9911\.7/s);
   await page.locator('[data-stage="rally"] [data-energy="energizing"]').click();
   await page.locator('[data-stage="finish"] [data-energy="draining"]').click();
   assert.equal(await page.locator('[data-stage="rally"] [data-energy="energizing"]').getAttribute('aria-checked'), 'true');
@@ -454,15 +454,15 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
   await page.locator('#shareToggle').check({ force: true });
   await nav(page, 'team', 'coverage');
   assert.ok(!(await page.locator('#contributionMap').innerText()).includes('My local profile'));
-  assert.ok(!(await page.locator('#orgTree').innerText()).includes('1513.7'));
+  assert.ok(!(await page.locator('#orgTree').innerText()).includes('9911.7'));
   await nav(page, 'profile', 'skills');
   await page.locator('#shareOrgLocally').check();
   await page.locator('#shareContributionLocally').check();
   await nav(page, 'team', 'coverage');
   assert.ok((await page.locator('#contributionMap [data-stage-row="rally"]').innerText()).includes('My local profile'));
-  await page.locator('[data-org-unit="1513.7"]').click();
+  await page.locator('[data-org-unit="9911.7"]').click();
   assert.match(await page.locator('#orgRollup').innerText(), /Fewer than 3 people here/);
-  await page.locator('[data-org-unit="1500"]').click();
+  await page.locator('[data-org-unit="9900"]').click();
   assert.ok((await page.locator('#orgUnitBars').innerText()).includes('Cloud & Infrastructure'));
   // Mission requirement with a stage
   await page.locator('[data-testid="tab-missions"]').click();
@@ -479,7 +479,7 @@ test('org code and contribution preferences: opt-in, roll-up, mission stage', as
     (async () => { await page.locator('#exportPeer').click(); await confirmDialog(page); await page.locator('dialog [data-dialog="choice-plain"]').click(); })(),
   ]);
   const card = JSON.parse(readFileSync((await download.path())!, 'utf8'));
-  assert.equal(card.orgCode, '1513.7');
+  assert.equal(card.orgCode, '9911.7');
   assert.equal(card.contribution.stages.rally, 'energizing');
   assert.equal(card.qualificationClaims, undefined);
   assert.deepEqual(errors, []);
@@ -724,14 +724,14 @@ test('two-axis contribution: energy + fluency → quadrant, tags and example per
 test('draft teammates: build a team from résumés, drafts stay out of coverage until included, employee imports draft as suggestions', async () => {
   const { page, errors } = await open(baseUrl);
   await nav(page, 'team', 'roster');
-  await page.locator('#teamName').fill('Code 1513');
+  await page.locator('#teamName').fill('Code 9911');
   await page.locator('#createTeam').click();
   // Draft from a PDF résumé
   await page.locator('#draftFile').setInputFiles(path.join(root, 'examples/resumes/Jordan_Reyes_Data_Analyst.pdf'));
   await page.locator('#draftPreview').waitFor();
   assert.equal(await page.locator('#draftName').inputValue(), 'Jordan Reyes', 'name guessed from the first line');
   assert.ok((await page.locator('[data-draft-skill="sql-pipelines"]').count()) === 1);
-  await page.locator('#draftOrg').fill('1513.2');
+  await page.locator('#draftOrg').fill('9911.2');
   await page.locator('#draftAdd').click();
   await page.locator('#teamMemberList [data-member-attested="false"]').waitFor();
   assert.match(await page.locator('#teamMemberList').innerText(), /Jordan Reyes[\s\S]*Draft · not attested/i);
@@ -765,7 +765,7 @@ test('draft teammates: build a team from résumés, drafts stay out of coverage 
   await page.locator('dialog [data-dialog="confirm"]').click();
   await page.locator('[data-confirm="sql-pipelines"]').waitFor();
   assert.equal(await page.locator('#profileCount').innerText(), '0', 'nothing confirmed automatically');
-  const ws = await waitStored(page, (w) => w.profile.orgCode === '1513.2');
+  const ws = await waitStored(page, (w) => w.profile.orgCode === '9911.2');
   assert.equal(ws.profile.shareId, draft.id, 'the employee inherits the draft id so their real card replaces the draft');
   assert.deepEqual(errors, []);
 });
