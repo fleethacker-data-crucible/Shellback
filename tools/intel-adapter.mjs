@@ -6,7 +6,7 @@
  *   node tools/intel-adapter.mjs
  *
  * Environment (set in the shell that starts it; nothing is written to disk):
- *   INTEL_UPSTREAM_URL   e.g. https://api.genai.example.mil/v1/chat/completions   (required)
+ *   INTEL_UPSTREAM_URL   e.g. https://api.ai-gateway.example.com/v1/chat/completions   (required)
  *   INTEL_API_KEY        bearer token for the upstream                             (required)
  *   INTEL_MODEL          default model/deployment name                            (optional; Shellback may override)
  *   INTEL_PORT           default 8790

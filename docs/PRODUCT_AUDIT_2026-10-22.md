@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-22  
 **Scope:** source, workflows, local persistence, privacy model, interaction design, offline packaging and browser tests.  
-**Status:** practical implementation review of the current local-first MVP; **not** an independent security assessment, approved Navy deployment, or authoritative qualification audit.
+**Status:** practical implementation review of the current local-first MVP; **not** an independent security assessment, approved operational deployment, or authoritative qualification audit.
 
 ## Executive assessment
 
@@ -18,7 +18,7 @@ Each signal needs clear source, status, correction and consent boundaries.
 
 | Area | Prior behavior | Change |
 | --- | --- | --- |
-| Credential extraction | Résumé keyword scan looked exclusively for taxonomy skills | Local recognition of a conservative catalog of common IT, cloud, project and Navy warfare qualification terms; canonicalized suggestions, not automatic credentials |
+| Credential extraction | Résumé keyword scan looked exclusively for taxonomy skills | Local recognition of a conservative catalog of common IT, cloud, project and military warfare qualification terms; canonicalized suggestions, not automatic credentials |
 | Credential correction | New entries were entirely manual | Matched résumé phrase is shown; employee must open **Review & edit** and explicitly save or dismiss; avoids duplicates, no invented expiry |
 | Credential privacy | Intake did not expose credential extraction status | Only matched phrase and canonical reference are stored, never a résumé paragraph; raw résumé text stays in the input field, not in workspace JSON |
 | Confidence pulse placement | Multi-field pulse was wedged beside résumé entry | Moved to contextual sidebar on the **Skills spider web**, with a direct action from each confirmed skill and an option to progress to the next unrated skill |
@@ -32,10 +32,10 @@ Each signal needs clear source, status, correction and consent boundaries.
 
 ### P0 — must address before use with real personnel data
 
-1. **Authentication and data protection.** The standalone app does not have authentication, server roles, revocation, device encryption, or secure multiuser separation. `localStorage` is readable by other users of the same browser profile. Never represent the offline demo as a protected personnel system. For a real pilot, design an approved identity/CAC/SSO path, encryption, authorization, audit, retention, controlled backups and deployment approval.
+1. **Authentication and data protection.** The standalone app does not have authentication, server roles, revocation, device encryption, or secure multiuser separation. `localStorage` is readable by other users of the same browser profile. Never represent the offline demo as a protected personnel system. For a real pilot, design an approved identity/smart card/SSO path, encryption, authorization, audit, retention, controlled backups and deployment approval.
 2. **Evidence integrity.** Confirmed skills, self-rated confidence and self-entered credentials are not independently verified. Create evidence objects with `asserted_by`, `source`, `reviewed_by`, dates, status, revocation, and verifiable authority. Distinguish **claimed / reviewed / verified / expired** at every layer; do not use a single readiness score for personnel actions.
 3. **Consent / secondary use.** Explicitly define what an export reveals, who is allowed to re-share it, whether colleagues can refuse participation, and how corrections/withdrawals are handled. Current files can be retained indefinitely after export and cannot be remotely recalled.
-4. **Approved data boundary.** Text field + JSON export are unencrypted data paths. Do not import sensitive operational records, classified material, or CUI until the hosting, authorization and storage design is approved.
+4. **Approved data boundary.** Text field + JSON export are unencrypted data paths. Do not import sensitive operational records or other sensitive or regulated data until the hosting, authorization and storage design is approved.
 
 ### P1 — high-value product changes
 
