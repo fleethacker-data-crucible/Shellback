@@ -17,6 +17,12 @@ Shellback is an employee-centered capability discovery and development prototype
 
 This version is a full rebuild on the project's [TechStack](TechStack): React 19 + TypeScript, Tailwind CSS 4, IndexedDB storage, a Web Worker for résumé scanning, a service worker for offline caching, Web Crypto export encryption, and a PowerShell 5.1 loopback server. It is compiled off the workstation and shipped as plain JS/CSS. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and for the places where this build differs from the TechStack table.
 
+| Night watch (dark) | Chart room (light) |
+| --- | --- |
+| ![Shellback home in the Night watch theme](docs/screenshots/home-night-watch.png) | ![Shellback home in the Chart room theme](docs/screenshots/home-chart-room.png) |
+
+Home with the fictional employee Jordan Brooks loaded from the built-in examples (`node tools/screenshots.mjs` regenerates both pictures with mock data only).
+
 ## Run it (workstation: no install, no admin)
 
 | Option | How | Notes |
@@ -129,12 +135,13 @@ src/workers/    résumé scan Web Worker
 src/app/        React UI: state store + actions, UI kit, visualizations, nine views
 src/styles/     Tailwind 4 theme and visualization styles
 public/         HTML template and service worker template
-tools/          build.mjs, run-tests.mjs, serve.mjs, Start-Shellback.ps1, Stop-Shellback.ps1, Shellback-Process.ps1
+tools/          build.mjs, run-tests.mjs, serve.mjs, screenshots.mjs, Start-Shellback.ps1, Stop-Shellback.ps1, Shellback-Process.ps1
 tests/unit/     node:test suites for core logic and actions
 tests/e2e/      Playwright smoke tests against the compiled served and standalone editions
 examples/       fictional employee workspaces and peer cards (also bundled as in-app personas)
 assets/brand/   emblem (dark and light); not yet wired into the app UI
 dist/           compiled, committed output shipped to workstations
+docs/screenshots/ README screenshots (tools/screenshots.mjs)
 ```
 
 License: prototype source provided as-is for evaluation. Third-party code is bundled into `dist/` under each package's license (React, d3, zod, clsx, class-variance-authority, tailwind-merge, Tailwind CSS: all MIT or ISC).
