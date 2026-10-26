@@ -2,7 +2,7 @@
 
 Record the skills you can attest to, see them on a map, and share only what you choose with your team.
 
-> **Screenshots:** captured with demo data and scanned by the Chief of Staff (team directive 10). Steps marked *Screenshot pending* still need a new capture; their image links do not resolve yet.
+> **Screenshots:** captured with demo data and scanned by the Chief of Staff (team directive 10).
 
 ## Before you start
 
@@ -23,9 +23,7 @@ Shellback opens on **Home** with your next step. *Local demo · No login* is alw
 
 In **My profile**, paste or upload a résumé. Shellback suggests skills and credentials, and never stores the résumé text.
 
-*Screenshot pending: a new capture is needed for this step.*
-
-![Shellback My profile intake after scanning a fictional sample résumé, with skill suggestions to confirm or dismiss.](../assets/walkthrough/02-resume-intake.png)
+![Shellback My capability profile, Intake tab: a fictional sample résumé is pasted in and 16 skill suggestions wait to be confirmed or dismissed.](../assets/walkthrough/02-resume-intake.png)
 
 ### 3. Confirm your skills
 
@@ -59,4 +57,4 @@ In **Team**, import peer cards, choose the active team and open the **Coverage**
 
 ## About these images
 
-Images live in [`docs/assets/walkthrough/`](../assets/walkthrough/), named `NN-<screen>.png` after the step they belong to. They are 1440x900 at 100% scale in the dark (Auto theme on a dark system) theme, and show demo data only.
+Images live in [`docs/assets/walkthrough/`](../assets/walkthrough/), named `NN-<screen>.png` after the step they belong to. They were captured at 1440x900 at 100% scale (step 3 is cropped to 1440x760) in the dark (Auto theme on a dark system) theme, and show demo data only.
