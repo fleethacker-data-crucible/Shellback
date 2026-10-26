@@ -6,6 +6,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+defaults:
+  run:
+    # Every run step is Windows PowerShell 5.1 (org rule for Windows runners). npm.cmd / npx.cmd
+    # skip npm.ps1 and the execution policy; the exit code decides, not stderr.
+    shell: powershell
 jobs:
   # Job name kept as "browser-smoke" so existing branch-protection rules keep matching.
   # Runs on the self-hosted Windows workstation runner, which also lets CI exercise the
@@ -19,21 +24,45 @@ jobs:
         with:
           node-version: '22'
       - name: Install build and test dependencies (off-workstation build step)
-        run: npm install --no-audit --no-fund
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd install --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (core, strict)
-        run: npm run typecheck:core
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run typecheck:core
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (whole app with React types)
-        run: npm run typecheck
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run typecheck
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (tests)
-        run: npm run typecheck:tests
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run typecheck:tests
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Unit tests
-        run: npm run test:unit
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run test:unit
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Committed dist/ matches a fresh build
-        run: npm run build:check
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run build:check
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Install Playwright Chromium
-        run: npx playwright install chromium
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npx.cmd playwright install chromium
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Browser smoke tests (served + standalone editions)
-        run: npm run test:e2e
+        run: |
+          $ErrorActionPreference = 'Continue'
+          npm.cmd run test:e2e
+          if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: PowerShell 5.1 loopback server (Start-Shellback.ps1)
         shell: powershell
         run: |
