@@ -14,15 +14,16 @@ import { ExploreView } from './views/ExploreView';
 import { TeamView } from './views/TeamView';
 import { ProgramView } from './views/ProgramView';
 import { PulseDrawer } from './components/PulseDrawer';
-import { ShellbackMark } from './components/ShellbackMark';
+import { Emblem } from './components/Emblem';
+import { Icon, type IconName } from './components/icons';
 import { endSession, hasLocalServer } from './lib/session';
 
-const NAV: ReadonlyArray<{ id: ViewId; icon: string; label: string; title: string; hint: string }> = [
-  { id: 'home', icon: '⌂', label: 'Home', title: 'Home', hint: 'Your journey and next step' },
-  { id: 'profile', icon: '◉', label: 'My profile', title: 'My capability profile', hint: 'Intake · skills · credentials · growth' },
-  { id: 'explore', icon: '◈', label: 'Explore', title: 'Explore', hint: 'Spider web · galaxy' },
-  { id: 'team', icon: '▥', label: 'Team', title: 'Team', hint: 'Sharing · coverage · missions · mentors · knowledge' },
-  { id: 'program', icon: '⬡', label: 'Program', title: 'Program', hint: 'Trust & data · ROI' },
+const NAV: ReadonlyArray<{ id: ViewId; icon: IconName; label: string; title: string; hint: string }> = [
+  { id: 'home', icon: 'home', label: 'Home', title: 'Home', hint: 'Your journey and next step' },
+  { id: 'profile', icon: 'profile', label: 'My profile', title: 'My capability profile', hint: 'Intake · skills · credentials · growth' },
+  { id: 'explore', icon: 'explore', label: 'Explore', title: 'Explore', hint: 'Spider web · galaxy' },
+  { id: 'team', icon: 'team', label: 'Team', title: 'Team', hint: 'Sharing · coverage · missions · mentors · knowledge' },
+  { id: 'program', icon: 'program', label: 'Program', title: 'Program', hint: 'Trust & data · ROI' },
 ];
 
 export function App() {
@@ -91,8 +92,9 @@ export function App() {
 
   if (ended) {
     return (
-      <main id="sessionEnded" className="mx-auto max-w-[60ch] px-6 py-16">
-        <h1 className="text-[22px]">Shellback session ended</h1>
+      <main id="sessionEnded" className="mx-auto flex max-w-[60ch] flex-col items-center px-6 py-12 text-center">
+        <Emblem size={280} />
+        <h1 className="mt-4 text-[28px]">Shellback session ended</h1>
         <p className="mt-3 text-muted">The local server has stopped. Your workspace stays saved in this browser. You can close this tab; run <code>Launch-Shellback.bat</code> to start again.</p>
       </main>
     );
@@ -122,32 +124,32 @@ export function App() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen pb-7">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">Skip to content</a>
-      <aside aria-label="Main navigation" className={cn('fixed inset-y-0 left-0 z-40 flex w-[255px] flex-col border-r border-stroke bg-gradient-to-br from-side to-bg px-[15px] py-[26px] transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
-        <div className="flex items-center gap-3 px-[13px] pb-9">
-          <ShellbackMark size={38} className="shrink-0 drop-shadow-[0_0_12px_#5cf1cb55]" />
-          <div><strong className="block text-[20px] font-extrabold tracking-[0.14em]">SHELLBACK</strong><small className="block text-[8px] font-extrabold tracking-[0.15em] text-quiet">CAPABILITY INTELLIGENCE</small></div>
+      <aside aria-label="Main navigation" className={cn('fixed top-0 bottom-7 left-0 z-40 flex w-[240px] flex-col overflow-y-auto border-r border-stroke bg-side py-3 transition-transform lg:sticky lg:h-[calc(100vh-28px)] lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
+        {/* The full emblem with its wordmark (UNIFIED-UI 5 and 8). */}
+        <div className="flex flex-col items-center border-b border-stroke px-3 pb-2">
+          <Emblem size={184} />
+          <small className="text-[12px] font-bold tracking-[0.12em] text-quiet">CAPABILITY INTELLIGENCE</small>
         </div>
-        <div className="px-[13px] pb-3 text-[10px] font-extrabold tracking-[0.1em] text-quiet">WORKSPACE <span className="mt-2 block text-mint">SYNTHETIC PILOT</span></div>
-        <nav id="nav" aria-label="Application sections" className="flex flex-col gap-1">
+        <div className="px-4 pb-2 pt-3 text-[12px] font-bold tracking-[0.1em] text-quiet">WORKSPACE <span className="text-mint">· SYNTHETIC PILOT</span></div>
+        <nav id="nav" aria-label="Application sections" className="fl-nav flex flex-col gap-px">
           {NAV.map((n) => (
             <button key={n.id} type="button" data-view={n.id} aria-current={view === n.id ? 'page' : undefined}
-              className={cn('flex items-center gap-3 rounded-md px-[13px] py-2 text-left text-[13px] font-bold text-muted transition-colors hover:bg-text/5 hover:text-text', view === n.id && 'bg-mint/10 text-mint')}
+              className={cn('flex min-h-10 items-center gap-3 px-4 py-1.5 text-left text-[14px] font-semibold text-muted transition-colors hover:bg-panel2 hover:text-text', view === n.id && 'bg-panel2 text-mint')}
               onClick={() => { setMenuOpen(false); navigate(n.id); }}>
-              <span className="w-4 text-center text-[13px]" aria-hidden="true">{n.icon}</span>
-              <span className="flex-1"><span className="block">{n.label}</span><small className="block text-[10px] font-semibold text-quiet">{n.hint}</small></span>
-              {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[11px] font-extrabold text-on-accent">{toReview}</span>}
+              <Icon name={n.icon} size={20} className="shrink-0" />
+              <span className="flex-1"><span className="block">{n.label}</span><small className="block text-[12px] font-normal text-quiet">{n.hint}</small></span>
+              {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[12px] font-bold text-on-accent">{toReview}</span>}
             </button>
           ))}
         </nav>
-        <div className="mt-auto px-[13px] pt-6">
-          <div className="text-[10px] font-extrabold tracking-[0.1em] text-mint">● &nbsp; OFFLINE DEMO · NO AUTHENTICATED ACCOUNT</div>
-          <p className="mt-2 text-[11px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
-          <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}>↥ Export my workspace</Button>
-          {hasLocalServer() && <Button id="endSessionBtn" variant="ghost" size="sm" full className="mt-2" title="Stop the local Shellback server (it also stops by itself when this tab closes)" onClick={quit}>⏻ End session</Button>}
+        <div className="mt-auto border-t border-stroke px-4 pt-3">
+          <p className="text-[12px] text-quiet">Your work stays in this browser unless you explicitly export it. This pilot does not establish qualifications or clearances.</p>
+          <Button id="exportBtn" full className="mt-3" disabled={!ready} onClick={exportWorkspace}><Icon name="export" />Export my workspace</Button>
+          {hasLocalServer() && <Button id="endSessionBtn" variant="ghost" size="sm" full className="mt-2" title="Stop the local Shellback server (it also stops by itself when this tab closes)" onClick={quit}><Icon name="power" />End session</Button>}
           <div role="radiogroup" aria-label="Theme" id="themeSwitch" className="mt-3 flex gap-1 rounded-md border border-stroke bg-bg/40 p-1">
-            {(['system', 'dark', 'light'] as Theme[]).map((t) => <button key={t} type="button" role="radio" aria-checked={settings.theme === t} data-theme-choice={t} className={cn('flex-1 rounded-sm px-2 py-1 text-[11px] font-bold capitalize text-quiet hover:text-text', settings.theme === t && 'bg-panel2 text-text')} onClick={() => setSettings({ theme: t })}>{t === 'system' ? 'Auto' : t}</button>)}
+            {(['system', 'dark', 'light'] as Theme[]).map((t) => <button key={t} type="button" role="radio" aria-checked={settings.theme === t} data-theme-choice={t} title={t === 'system' ? 'Follow Windows' : t === 'dark' ? 'Night watch' : 'Chart room'} className={cn('flex min-h-8 flex-1 items-center justify-center gap-1 rounded-sm px-1 text-[12px] font-semibold text-quiet hover:text-text', settings.theme === t && 'bg-panel2 text-text')} onClick={() => setSettings({ theme: t })}><Icon name={t === 'system' ? 'themeSystem' : t === 'dark' ? 'themeDark' : 'themeLight'} />{t === 'system' ? 'Auto' : t === 'dark' ? 'Night' : 'Chart'}</button>)}
           </div>
         </div>
       </aside>
@@ -156,17 +158,17 @@ export function App() {
       <main id="main" className="min-w-0 flex-1 px-4 pb-10 pt-4 md:px-7">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMenuOpen(true)}>☰</Button>
+            <Button size="icon" className="lg:hidden" aria-label="Open navigation" onClick={() => setMenuOpen(true)}><Icon name="menu" /></Button>
             <div>
               <div className="eyebrow">DATA CRUCIBLE <span className="text-mint">/</span> WORKFORCE INTELLIGENCE</div>
-              <h1 id="pageTitle" className="text-[20px] md:text-[24px]">{current.title}</h1>
+              <h1 id="pageTitle" className="text-[20px]">{current.title}</h1>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="demo-identity inline-flex items-center gap-2 rounded-full border border-stroke px-3 py-1 text-[12px] font-bold text-muted hover:text-text" data-view="program" title="This offline demo has no authenticated sign-in" onClick={() => navigate({ view: 'program', tab: 'governance' })}>
               <span className="text-mint">●</span> Local demo · No login
             </button>
-            <Button id="importBtn" onClick={() => fileRef.current?.click()}>↧ Import data</Button>
+            <Button id="importBtn" onClick={() => fileRef.current?.click()}><Icon name="import" />Import data</Button>
             <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace}  aria-label="Import a Shellback file"/>
             <button type="button" className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-blue text-[12px] font-extrabold text-on-accent" data-view="profile" aria-label="Open my capability profile" title={`${ws.profile.displayName.trim() ? `${ws.profile.displayName.trim()} — your initials` : 'Your initials appear here once you set a display name (Team → Share your card)'} · open My profile`} onClick={() => navigate('profile')}>
               {ws.profile.displayName.trim() ? ws.profile.displayName.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'ME'}
@@ -193,11 +195,14 @@ export function App() {
           </>
         )}
         <PulseDrawer />
-        <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t border-stroke pt-4 text-[11px] text-quiet">
-          <span>SHELLBACK <b>v{__SHELLBACK_VERSION__}</b> · build {document.documentElement.dataset.build ?? 'dev'} · {document.documentElement.dataset.edition ?? 'dev'} edition</span>
-          <span>Designed for trust · Built for discovery · Synthetic demonstration</span>
-        </footer>
       </main>
+      {/* Status bar (UNIFIED-UI 5): engine state as a dot and a word, the address, session, version. */}
+      <footer aria-label="Status" className="fixed inset-x-0 bottom-0 z-40 flex h-7 items-center gap-4 overflow-hidden whitespace-nowrap border-t border-stroke bg-side px-4 text-[12px] text-quiet">
+        <span className="flex items-center gap-1.5"><span aria-hidden="true" className={cn('inline-block h-2 w-2 rounded-full', hasLocalServer() ? 'bg-ok' : 'bg-blue')} />{hasLocalServer() ? 'Running' : 'Standalone file'}</span>
+        <span className="font-mono">{location.host || 'file://'}</span>
+        <span>Local demo · no login · synthetic data</span>
+        <span className="ml-auto">Shellback v{__SHELLBACK_VERSION__} · build {document.documentElement.dataset.build ?? 'dev'} · {document.documentElement.dataset.edition ?? 'dev'} edition</span>
+      </footer>
     </div>
   );
 }

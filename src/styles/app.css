@@ -1,75 +1,65 @@
 @import "tailwindcss";
+@import "../../vendor/fleet/fleet.css";
 
 /* ---------------------------------------------------------------------------
-   Design tokens (shadcn-style semantic palette, dark-first). Tailwind 4 reads
-   the @theme block and generates utilities such as bg-panel, text-mint, border-stroke.
+   Design tokens, built on the shared Fleet tokens (vendor/fleet/fleet.css, docs/UNIFIED-UI.md).
+   Night watch / Chart room come from <html data-theme>, and <html data-app="shellback"> sets the
+   mint signature accent. The names below are Shellback's; Tailwind 4 reads the @theme block and
+   generates utilities such as bg-panel, text-mint, border-stroke. Only the data hues (purple,
+   orange) are Shellback's own.
    --------------------------------------------------------------------------- */
 @theme {
-  --font-sans: Inter, "Segoe UI", system-ui, Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-sans: var(--fl-font-body);
+  --font-mono: var(--fl-font-mono);
+  --font-display: var(--fl-font-display);
 
-  --color-bg: #070e1c;
-  --color-side: #0b1424;
-  --color-panel: #111d30;
-  --color-panel2: #14243a;
-  --color-stroke: #29394f;
-  --color-text: #f1f6ff;
-  --color-muted: #96aabd;
-  --color-quiet: #72889e;
-  --color-mint: #5cf1cb;
-  --color-blue: #67abff;
-  --color-purple: #ac91fb;
-  --color-orange: #ffb06d;
-  --color-amber: #fac58e;
-  --color-danger: #ff7d8f;
-  --color-ok: #7de0a3;
-  --color-on-accent: #062219;
+  --color-bg: var(--fl-background);
+  --color-side: var(--fl-sidebar);
+  --color-panel: var(--fl-card);
+  --color-panel2: var(--fl-muted);
+  --color-stroke: var(--fl-border);
+  --color-control: var(--fl-control-border);
+  --color-text: var(--fl-foreground);
+  --color-muted: var(--fl-muted-foreground);
+  --color-quiet: var(--fl-muted-foreground);
+  --color-mint: var(--fl-accent);
+  --color-brass: var(--fl-brass);
+  --color-blue: var(--fl-info);
+  --color-purple: var(--sb-purple);
+  --color-orange: var(--sb-orange);
+  --color-amber: var(--fl-warning);
+  --color-danger: var(--fl-danger);
+  --color-ok: var(--fl-success);
+  --color-on-accent: var(--fl-accent-ink);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Fleet radii: 6 controls, 10 cards, 14 dialogs. */
+  --radius-sm: 6px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
-  --shadow-panel: 0 18px 50px -30px rgba(0, 0, 0, 0.8);
-  --shadow-glow: 0 0 0 1px rgba(92, 241, 203, 0.25), 0 0 28px -6px rgba(92, 241, 203, 0.45);
+  --shadow-panel: var(--fl-shadow);
+  --shadow-glow: 0 0 0 1px color-mix(in srgb, var(--fl-accent) 30%, transparent);
 }
 
-/* Light theme: same semantic tokens, re-pointed. The galaxy and spider-web canvases stay dark on purpose
-   (they are a night sky); everything around them follows the theme. */
-:root[data-theme="light"] {
-  color-scheme: light;
-  --color-bg: #f3f6fb;
-  --color-side: #e9eef7;
-  --color-panel: #ffffff;
-  --color-panel2: #eef2f8;
-  --color-stroke: #cdd7e6;
-  --color-text: #0f1b2d;
-  --color-muted: #3f5168;
-  --color-quiet: #596b80;
-  --color-mint: #0b7a66;
-  --color-blue: #1f5fbd;
-  --color-purple: #6246c7;
-  --color-orange: #a4530c;
-  --color-amber: #8f570a;
-  --color-danger: #b82e44;
-  --color-ok: #1b7a43;
-  --color-on-accent: #ffffff;
-  --shadow-panel: 0 10px 30px -22px rgba(15, 27, 45, 0.35);
-  --shadow-glow: 0 0 0 1px rgba(14, 143, 120, 0.3), 0 0 20px -8px rgba(14, 143, 120, 0.35);
-}
+:root { --sb-purple: #ac91fb; --sb-orange: #ffb06d; }
+/* Chart room. The galaxy and spider-web canvases stay dark on purpose (they are a night sky);
+   everything around them follows the theme. */
+:root[data-theme="light"] { --sb-purple: #6246c7; --sb-orange: #a4530c; }
 :root[data-theme="light"] .galaxy-svg, :root[data-theme="light"] .galaxy-surface { color-scheme: dark; }
 :root[data-theme="light"] .radar-ring { stroke: #b9c7da; }
 :root[data-theme="light"] .radar-ring-4 { stroke: #9fb1c9; }
 :root[data-theme="light"] .radar-axis { stroke: #c8d4e4; }
 
 @layer base {
-  :root { color-scheme: dark; }
-  html { scroll-behavior: smooth; }
-  body { @apply m-0 bg-bg text-text font-sans text-[14px] leading-[1.55] antialiased; }
+  /* Keep anything scrolled into view clear of the fixed 28 px status bar. */
+  html { scroll-behavior: smooth; scroll-padding-bottom: 40px; }
+  body { @apply m-0 bg-bg text-text font-sans text-[14px] leading-[1.5] antialiased; }
   button, input, textarea, select { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  :focus-visible { outline: 2px solid var(--color-mint); outline-offset: 3px; }
-  h1, h2, h3, h4 { @apply m-0 font-extrabold tracking-tight; }
+  :focus-visible { outline: 2px solid var(--fl-brass); outline-offset: 2px; }
+  h1, h2, h3, h4 { @apply m-0 font-bold; }
+  h1 { font-family: var(--fl-font-display); font-weight: 600; }
   p { @apply m-0; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
@@ -78,12 +68,19 @@
 }
 
 @layer components {
-  .eyebrow { @apply text-[10px] font-extrabold tracking-[0.16em] text-quiet uppercase; }
+  .eyebrow { @apply text-[12px] font-bold tracking-[0.12em] text-quiet uppercase; }
   .field-label { @apply block text-[12px] font-bold text-muted mt-3 mb-1; }
   .control {
-    @apply w-full rounded-sm border border-stroke bg-bg/70 px-3 py-2 text-[13px] text-text placeholder:text-quiet;
-    @apply focus:border-mint/70 focus:outline-none focus:ring-2 focus:ring-mint/25 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply w-full rounded-sm border border-control bg-bg/70 px-3 py-2 text-[14px] text-text placeholder:text-quiet;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
+
+  /* Fleet sidebar navigation (UNIFIED-UI 6): accent text and a 3 px accent bar on the active item. */
+  .fl-nav button { border-left: 3px solid transparent; }
+  .fl-nav button[aria-current="page"] { color: var(--fl-accent); border-left-color: var(--fl-accent); }
+
+  /* Theme-specific artwork: the Night watch or Chart room version of the emblem. */
+  :root[data-theme="light"] .only-dark, :root:not([data-theme="light"]) .only-light { display: none; }
   select.control {
     max-width: 100%; text-overflow: ellipsis;
     appearance: none; padding-right: 2rem;
