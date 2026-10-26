@@ -86,7 +86,7 @@ export function DraftTeammatePanel({ teamId, onAdded }: { teamId: string | undef
       </PanelHeading>
       <div className="grid gap-3 md:grid-cols-3">
         <Field label="Display name" htmlFor="draftName"><Input id="draftName" value={name} onChange={setName} maxLength={70} placeholder="e.g. Jordan Reyes" /></Field>
-        <Field label="Org code (optional)" htmlFor="draftOrg"><Input id="draftOrg" value={orgCode} onChange={setOrgCode} maxLength={20} placeholder="e.g. 1513.2" /></Field>
+        <Field label="Org code (optional)" htmlFor="draftOrg"><Input id="draftOrg" value={orgCode} onChange={setOrgCode} maxLength={20} placeholder="e.g. 9911.2" /></Field>
         <Field label="Title (optional)" htmlFor="draftTitle"><Input id="draftTitle" value={orgTitle} onChange={setOrgTitle} maxLength={80} placeholder="e.g. Data Analyst" /></Field>
       </div>
       <div className="mt-3 flex flex-wrap items-end gap-2">

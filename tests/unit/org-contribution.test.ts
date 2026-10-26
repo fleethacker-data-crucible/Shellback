@@ -7,29 +7,29 @@ import { buildPeerCard } from '../../src/core/share';
 import { defaultTeams, missionCoverage, participants, selfParticipant } from '../../src/core/analytics';
 import * as A from '../../src/app/state/actions';
 
-test('org codes nest by prefix: 1500 → 1510 → 1513 → 1513.1', () => {
-  assert.deepEqual(orgAncestors('1513.1'), ['1513', '1510', '1500']);
-  assert.deepEqual(orgAncestors('1513'), ['1510', '1500']);
+test('org codes nest by prefix: 9900 → 9910 → 9911 → 9911.1', () => {
+  assert.deepEqual(orgAncestors('9911.1'), ['9911', '9910', '9900']);
+  assert.deepEqual(orgAncestors('9911'), ['9910', '9900']);
   assert.deepEqual(orgAncestors('246'), ['240', '200']);
-  assert.deepEqual(orgAncestors('1500'), []);
-  assert.equal(orgLevelName('1500'), 'Department');
-  assert.equal(orgLevelName('1510'), 'Division');
-  assert.equal(orgLevelName('1513'), 'Branch');
-  assert.equal(orgLevelName('1513.2'), 'Section');
-  assert.equal(normalizeOrgCode(' Code 1513.1 '), '1513.1');
-  assert.ok(isWithin('1513.1', '1500'));
-  assert.ok(!isWithin('1520', '1510'));
+  assert.deepEqual(orgAncestors('9900'), []);
+  assert.equal(orgLevelName('9900'), 'Department');
+  assert.equal(orgLevelName('9910'), 'Division');
+  assert.equal(orgLevelName('9911'), 'Branch');
+  assert.equal(orgLevelName('9911.2'), 'Section');
+  assert.equal(normalizeOrgCode(' Code 9911.1 '), '9911.1');
+  assert.ok(isWithin('9911.1', '9900'));
+  assert.ok(!isWithin('9920', '9910'));
 });
 
 test('org tree is derived from the codes people carry, with roll-up counts', () => {
-  const people = [{ orgCode: '1513', name: 'a' }, { orgCode: '1513.1', name: 'b' }, { orgCode: '1520', name: 'c' }, { orgCode: '1500', name: 'd' }, { orgCode: '', name: 'none' }];
+  const people = [{ orgCode: '9911', name: 'a' }, { orgCode: '9911.1', name: 'b' }, { orgCode: '9920', name: 'c' }, { orgCode: '9900', name: 'd' }, { orgCode: '', name: 'none' }];
   const tree = buildOrgTree(people);
   assert.equal(tree.length, 1);
-  assert.equal(tree[0]!.code, '1500');
+  assert.equal(tree[0]!.code, '9900');
   assert.equal(tree[0]!.all.length, 4, 'everyone with a code rolls up to the department');
   const codes = flattenOrg(tree).map((n) => n.code);
-  assert.deepEqual(codes, ['1500', '1510', '1513', '1513.1', '1520']);
-  const branch = flattenOrg(tree).find((n) => n.code === '1513')!;
+  assert.deepEqual(codes, ['9900', '9910', '9911', '9911.1', '9920']);
+  const branch = flattenOrg(tree).find((n) => n.code === '9911')!;
   assert.equal(branch.direct.length, 1);
   assert.equal(branch.all.length, 2);
 });
@@ -54,7 +54,7 @@ test('stage coverage counts only people who shared preferences; observations sta
 test('org and contribution are shared only behind their own opt-ins (local and on cards)', () => {
   const w = newWorkspace(); w.teams = defaultTeams();
   A.confirmSkill(w, 'sql-pipelines');
-  A.setOrg(w, '1513', 'Branch Head');
+  A.setOrg(w, '9911', 'Branch Head');
   A.setContributionStage(w, 'rally', 'energizing');
   w.profile.consent = true;
   let me = selfParticipant(w)!;
@@ -62,16 +62,16 @@ test('org and contribution are shared only behind their own opt-ins (local and o
   assert.deepEqual(me.contribution.stages, {});
   w.profile.shareOrgLocally = true; w.profile.shareContributionLocally = true;
   me = selfParticipant(w)!;
-  assert.equal(me.orgCode, '1513');
+  assert.equal(me.orgCode, '9911');
   assert.equal(me.contribution.stages.rally, 'energizing');
   const plain = buildPeerCard(w, 'Pat', { confidence: false, mentoring: false, credentials: false, org: false, contribution: false }, 'sp-0123456789');
   assert.ok(!('orgCode' in plain) && !('contribution' in plain));
   const full = buildPeerCard(w, 'Pat', { confidence: false, mentoring: false, credentials: false, org: true, contribution: true }, 'sp-0123456789');
-  assert.equal(full.orgCode, '1513');
+  assert.equal(full.orgCode, '9911');
   const imported = parsePeerCard(JSON.parse(JSON.stringify(full)));
   assert.equal(imported.orgTitle, 'Branch Head');
   assert.equal(imported.contribution.stages.rally, 'energizing');
-  assert.equal(parsePeerCard({ ...full, orgCode: 'Code 1513.1', contribution: { stages: { rally: 'bogus', finish: 'draining' } } }).orgCode, '1513.1');
+  assert.equal(parsePeerCard({ ...full, orgCode: 'Code 9911.1', contribution: { stages: { rally: 'bogus', finish: 'draining' } } }).orgCode, '9911.1');
   assert.deepEqual(parsePeerCard({ ...full, contribution: { stages: { rally: 'bogus', finish: 'draining' } } }).contribution.stages, { finish: 'draining' });
 });
 

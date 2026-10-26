@@ -97,7 +97,7 @@ test('local team brief is aggregate-only and names no one', () => {
 
 function sampleBrief(): TeamBriefInput {
   return {
-    teamName: 'Code 1513',
+    teamName: 'Code 9911',
     people: 6,
     domainCounts: DOMAINS.map((_, i) => (i < 3 ? 4 : i < 6 ? 1 : 0)),
     thinSkills: ['Threat Modeling'],

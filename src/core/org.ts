@@ -1,6 +1,6 @@
 /**
  * Organization codes. Shipyard units are identified by hierarchical codes where a child's code
- * starts with its parent's: 1500 (department) → 1510 (division) → 1513 (branch) → 1513.1 (section).
+ * starts with its parent's: 9900 (department) → 9910 (division) → 9911 (branch) → 9911.1 (section).
  * The tree is derived from the codes people enter, so no fixed org chart has to be shipped and
  * every yard's numbering works. Titles (Department Head, Branch Head, …) are free text.
  */
@@ -10,7 +10,7 @@ export function normalizeOrgCode(raw: unknown): string {
   return String(raw ?? '').toUpperCase().replace(/^\s*(?:CODE|C)\s*/, '').replace(/[^A-Z0-9.]/g, '').replace(/\.+/g, '.').replace(/^\.|\.$/g, '').slice(0, 24);
 }
 
-/** Every ancestor of a code, nearest first: 1513.2 → 1513, 1510, 1500. */
+/** Every ancestor of a code, nearest first: 9911.2 → 9911, 9910, 9900. */
 export function orgAncestors(code: string): string[] {
   const c = normalizeOrgCode(code);
   if (!c) return [];
@@ -19,11 +19,11 @@ export function orgAncestors(code: string): string[] {
   let base = c;
   while (base.includes('.')) { base = base.slice(0, base.lastIndexOf('.')); out.push(base); }
   // Numeric prefix nesting: zero out trailing digits one at a time, keeping at least the two
-  // leading digits, so 1513 → 1510 → 1500 and 246 → 240 → 200 (a code's top level is X00 / XX00).
+  // leading digits, so 9911 → 9910 → 9900 and 246 → 240 → 200 (a code's top level is X00 / XX00).
   const m = /^(\d+)$/.exec(base);
   if (m) {
     const digits = m[1]!;
-    // 3-digit codes nest to X00 (246 → 240 → 200); longer codes to XX00 (1513 → 1510 → 1500); 2-digit codes are roots.
+    // 3-digit codes nest to X00 (246 → 240 → 200); longer codes to XX00 (9911 → 9910 → 9900); 2-digit codes are roots.
     const minKeep = digits.length <= 2 ? digits.length : digits.length === 3 ? 1 : digits.length - 2;
     for (let keep = digits.length - 1; keep >= minKeep; keep--) {
       const parent = digits.slice(0, keep) + '0'.repeat(digits.length - keep);
