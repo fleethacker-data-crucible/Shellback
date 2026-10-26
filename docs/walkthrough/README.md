@@ -29,11 +29,9 @@ In **My profile**, paste or upload a résumé. Shellback suggests skills and cre
 
 ### 3. Confirm your skills
 
-Confirm or dismiss each suggestion, and optionally add a 0 to 4 confidence rating.
+On the **Skills** tab of **My profile**, confirm or dismiss each suggestion, or add skills yourself. Select **Rate** to add an optional 0 to 4 confidence rating.
 
-*Screenshot pending: a new capture is needed for this step.*
-
-![Shellback My profile skills list with five confirmed skills and one confidence rating.](../assets/walkthrough/03-confirm-skills.png)
+![Shellback My capability profile, Skills tab, with five confirmed skills and AWS Architecture self-rated 3 of 4.](../assets/walkthrough/03-confirm-skills.png)
 
 ### 4. Explore the spider web
 
