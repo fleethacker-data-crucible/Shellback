@@ -84,7 +84,7 @@ export function CredentialsView({ embedded = false }: { embedded?: boolean }) {
             <Button id="addCredential" variant="primary" onClick={save}>{editingId ? 'Save changes' : 'Save credential'}</Button>
             <Button id="credClearForm" onClick={clear}>{editingId ? 'Cancel' : 'Clear form'}</Button>
           </div>
-          <p className="note mt-3">Do not enter credential numbers, personal IDs, classified work details, or restricted records. <TrustChip kind="self-reported" extra="A verified credential here still means you told Shellback it was verified; an authoritative feed (see docs) would be needed to confirm it independently." /></p>
+          <p className="note mt-3">Do not enter credential numbers, personal IDs, sensitive or regulated work details, or restricted records. <TrustChip kind="self-reported" extra="A verified credential here still means you told Shellback it was verified; an authoritative feed (see docs) would be needed to confirm it independently." /></p>
         </Panel>
         <Panel>
           <PanelHeading title="My credentials">Sorted by renewal date. Status comes from the dates and how you said you know; it is never a judgement of you.</PanelHeading>

@@ -119,9 +119,9 @@ export const CREDENTIAL_CATALOG: readonly CredentialDef[] = [
   C('ckad', 'Certified Kubernetes Application Developer (CKAD)', 'CNCF', [String.raw`Certified\s+Kubernetes\s+Application\s+Developer`], ['CKAD']),
   C('osha30', 'OSHA 30-Hour Training', 'OSHA-authorized provider', [String.raw`OSHA\s*[- ]?\s*30(?:[- ]?hour)?(?:\s+(?:training|certificate|card))?`], []),
   C('osha10', 'OSHA 10-Hour Training', 'OSHA-authorized provider', [String.raw`OSHA\s*[- ]?\s*10(?:[- ]?hour)?(?:\s+(?:training|certificate|card))?`], []),
-  C('esws', 'Enlisted Surface Warfare Specialist (ESWS)', 'Self-reported Navy qualification', [String.raw`Enlisted\s+Surface\s+Warfare\s+Specialist`], ['ESWS']),
-  C('eaws', 'Enlisted Aviation Warfare Specialist (EAWS)', 'Self-reported Navy qualification', [String.raw`Enlisted\s+Aviation\s+Warfare\s+Specialist`], ['EAWS']),
-  C('eidws', 'Enlisted Information Dominance Warfare Specialist (EIDWS)', 'Self-reported Navy qualification', [String.raw`Enlisted\s+Information\s+Dominance\s+Warfare\s+Specialist`], ['EIDWS']),
+  C('esws', 'Enlisted Surface Warfare Specialist (ESWS)', 'Self-reported service qualification', [String.raw`Enlisted\s+Surface\s+Warfare\s+Specialist`], ['ESWS']),
+  C('eaws', 'Enlisted Aviation Warfare Specialist (EAWS)', 'Self-reported service qualification', [String.raw`Enlisted\s+Aviation\s+Warfare\s+Specialist`], ['EAWS']),
+  C('eidws', 'Enlisted Information Dominance Warfare Specialist (EIDWS)', 'Self-reported service qualification', [String.raw`Enlisted\s+Information\s+Dominance\s+Warfare\s+Specialist`], ['EIDWS']),
 ];
 
 const boundary = (p: string, flags: string) => new RegExp('(^|[^A-Za-z0-9])(' + p + ')(?=$|[^A-Za-z0-9])', flags);

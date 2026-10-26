@@ -30,7 +30,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Connection test with a synthetic payload, result shown inline | ✅ | |
 | CSP `connect-src` is `'self'` in the shipped build; a remote host must be added at build time (`SHELLBACK_INTEL_HOST`) so a misconfigured browser cannot leak data | ✅ | `tools/build.mjs` |
 | Provider contract documented (`docs/INTELLIGENCE_PROVIDERS.md`) | ✅ | |
-| GenAI.mil / Advana adapter implementations | 🚫 | Owned by the program's AI integration lead; Shellback only exposes the seam |
+| Organization AI endpoint / enterprise data-platform adapter implementations | 🚫 | Owned by the program's AI integration lead; Shellback only exposes the seam |
 
 ## Phase C — First intelligent features ✅
 
@@ -55,7 +55,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Item | Status | Notes |
 |---|---|---|
 | Edit credentials in place; issue date; verifier; provenance (`claimed` / `reviewed` / `verified`; *expired* derived from dates) | ✅ | additive schema fields, peer cards unchanged |
-| Advana as an authoritative credential source: adapter design only | ✅ | `docs/INTELLIGENCE_PROVIDERS.md` § Authoritative sources |
+| An enterprise data platform as an authoritative credential source: adapter design only | ✅ | `docs/INTELLIGENCE_PROVIDERS.md` § Authoritative sources |
 | Accessibility pass: names on every control, contrast ≥ 4.5:1 in both themes, keyboard-only e2e | ✅ | |
 | Light theme (system or manual) | ✅ | `data-theme` on `<html>` |
 | Printable capability summary | ✅ | Profile → Skills → Print summary |

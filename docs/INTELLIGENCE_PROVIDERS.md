@@ -26,7 +26,7 @@ For an OpenAI-compatible gateway the browser talks to it directly, so the gatewa
 The shipped build's Content-Security-Policy is `connect-src 'self'`. A browser will refuse any request to another origin regardless of what is configured in the UI. To allow a provider host, build with:
 
 ```powershell
-$env:SHELLBACK_INTEL_HOST = "https://ai.example.mil"   # comma-separate several origins
+$env:SHELLBACK_INTEL_HOST = "https://ai.example.com"   # comma-separate several origins
 npm run build
 ```
 

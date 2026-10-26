@@ -114,7 +114,7 @@ export interface RemoteProviderConfig {
   /** openai: endpoint is the API base (…/v1); synapse: endpoint accepts the Shellback contract POST. */
   kind?: RemoteKind;
   label: string;
-  /** Absolute https URL. Example: https://ai.example.mil/v1  or  https://ai.example.mil/shellback */
+  /** Absolute https URL. Example: https://ai.example.com/v1  or  https://ai.example.com/shellback */
   endpoint: string;
   /** Opaque model / deployment name forwarded verbatim. */
   model?: string;

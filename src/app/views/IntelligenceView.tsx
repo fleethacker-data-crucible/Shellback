@@ -98,7 +98,7 @@ export function IntelligenceView() {
           <label className={`cursor-pointer rounded-md border p-4 ${s.provider === 'remote-http' ? 'border-amber/60 bg-amber/5' : 'border-stroke'} ${!remoteReady ? 'opacity-70' : ''}`}>
             <input type="radio" name="intelProvider" value="remote-http" data-provider="remote-http" className="mr-2 accent-mint" disabled={!remoteReady || dirty} checked={s.provider === 'remote-http'} onChange={() => useProvider('remote-http')} />
             <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">{!endpointOk ? 'step 1: enter the endpoint' : kind === 'openai' && !s.tokenEnvelope ? 'step 2: add the API key' : !modelReady ? 'step 3: choose a model' : 'finish the steps below'}</Pill> : dirty ? <Pill className="ml-2">step 4: save, then select</Pill> : null}
-            <p className="note mt-1">An AI gateway your organization has authorized (for example an IL5-accredited service). You choose the model; Shellback sends only what the table at the bottom lists.</p>
+            <p className="note mt-1">An AI gateway your organization has authorized (for example a service accredited for your data). You choose the model; Shellback sends only what the table at the bottom lists.</p>
           </label>
         </div>
       </Panel>
@@ -113,10 +113,10 @@ export function IntelligenceView() {
               <Field label="Kind of endpoint" htmlFor="intelKind">
                 <Select id="intelKind" value={kind} onChange={(v) => { setRemote({ kind: v as RemoteKind, model: '' }); setModels(null); }} options={(Object.keys(REMOTE_KIND_LABEL) as RemoteKind[]).map((k) => ({ value: k, label: REMOTE_KIND_LABEL[k] }))} />
               </Field>
-              <Field label="Display name" htmlFor="intelLabel"><Input id="intelLabel" value={s.remote.label} onChange={(v) => setRemote({ label: v })} placeholder="e.g. GenAI (accredited)" maxLength={80} /></Field>
+              <Field label="Display name" htmlFor="intelLabel"><Input id="intelLabel" value={s.remote.label} onChange={(v) => setRemote({ label: v })} placeholder="e.g. AI endpoint (accredited)" maxLength={80} /></Field>
             </div>
             <Field label={kind === 'openai' ? 'API base URL (usually ends in /v1)' : 'Endpoint URL (accepts the Shellback contract POST)'} htmlFor="intelEndpoint" hint={endpointError ?? (kind === 'openai' ? 'Shellback will call <base>/models and <base>/chat/completions.' : 'See docs/INTELLIGENCE_PROVIDERS.md for the contract.')}>
-              <Input id="intelEndpoint" value={s.remote.endpoint} onChange={(v) => { setRemote({ endpoint: v.trim() }); setModels(null); }} placeholder={kind === 'openai' ? 'https://ai.example.mil/v1' : 'https://ai.example.mil/shellback'} maxLength={500} />
+              <Input id="intelEndpoint" value={s.remote.endpoint} onChange={(v) => { setRemote({ endpoint: v.trim() }); setModels(null); }} placeholder={kind === 'openai' ? 'https://ai.example.com/v1' : 'https://ai.example.com/shellback'} maxLength={500} />
             </Field>
             {endpointOk && !hostAllowed && (
               <Notice tone="warn" className="mt-2">

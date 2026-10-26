@@ -1,6 +1,6 @@
 # Shellback: local development
 
-## On a workstation (no CAC, no install)
+## On a workstation (no smart card, no install)
 
 Run `Launch-Shellback.bat` on your **personal Windows PC**. Don't run it on a managed system to get around organizational security controls.
 
@@ -14,7 +14,7 @@ Run `Launch-Shellback.bat` on your **personal Windows PC**. Don't run it on a ma
   - It sends `nosniff`, `no-referrer`, COOP/CORP, a `frame-ancestors 'none'` CSP and `no-store` headers.
 - **Options:** `Launch-Shellback.bat -Port 8765 -NoBrowser --stay --replace`. Arguments are passed through to the PowerShell script.
 - **No PowerShell?** The launcher falls back to opening `dist\Shellback-Standalone.html` directly.
-- **Boundaries:** there is no real login or CAC in this MVP, and browser storage is not an enterprise authorization boundary. Don't enter CUI, classified material, real credentials or real personnel information.
+- **Boundaries:** there is no real login or smart card in this MVP, and browser storage is not an enterprise authorization boundary. Don't enter sensitive or regulated data, real credentials or real personnel information.
 
 ## On a build machine
 
@@ -36,7 +36,7 @@ Commit the regenerated `dist\` together with the source change. CI rejects a PR 
 The default build is network-silent (`connect-src 'self'`). To let Program → Intelligence talk to an authorized AI platform, set the origin(s) before building; the browser blocks every other host no matter what is typed into the UI.
 
 ```powershell
-$env:SHELLBACK_INTEL_HOST = "https://ai.example.mil"   # comma-separate several
+$env:SHELLBACK_INTEL_HOST = "https://ai.example.com"   # comma-separate several
 npm run build
 ```
 
