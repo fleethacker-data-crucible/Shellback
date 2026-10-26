@@ -204,7 +204,7 @@ export function DataLeavesTable() {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-[13px]" id="intelDataTable">
-        <thead><tr className="text-left text-[11px] uppercase tracking-wider text-quiet"><th className="py-1 pr-3">Task</th><th className="py-1 pr-3">Sent</th><th className="py-1">Never sent</th></tr></thead>
+        <thead><tr className="text-left text-[12px] uppercase tracking-wider text-quiet"><th className="py-1 pr-3">Task</th><th className="py-1 pr-3">Sent</th><th className="py-1">Never sent</th></tr></thead>
         <tbody>{rows.map(([t, sent, never]) => <tr key={t} className="border-t border-stroke align-top"><td className="py-2 pr-3 font-bold">{t}</td><td className="py-2 pr-3 text-muted">{sent}</td><td className="py-2 text-muted">{never}</td></tr>)}</tbody>
       </table>
     </div>
