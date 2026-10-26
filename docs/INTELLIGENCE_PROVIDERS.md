@@ -116,7 +116,7 @@ Local fuzzy mapping always runs too; a valid remote mapping overrides it per inp
 {
   "task": "team-brief",
   "input": {
-    "teamName": "Code 1513",
+    "teamName": "Code 9911",
     "people": 6,
     "domainCounts": [4, 4, 4, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0],   // people per domain, DOMAINS order
     "thinSkills": ["Threat Modeling"],                        // skills held by exactly one person

@@ -280,10 +280,10 @@ function OrgCard() {
   return (
     <Panel id="orgCard">
       <PanelHeading eyebrow="WHERE I SIT" title="Organization code">
-        Optional. Codes nest by prefix (1500 → 1510 → 1513 → 1513.1), so Shellback can roll team coverage up through departments, divisions and branches without a fixed org chart.
+        Optional. Codes nest by prefix (9900 → 9910 → 9911 → 9911.1), so Shellback can roll team coverage up through departments, divisions and branches without a fixed org chart.
       </PanelHeading>
       <div className="grid gap-3 md:grid-cols-[200px_1fr_auto] md:items-end">
-        <Field label="My code" htmlFor="orgCode"><Input id="orgCode" value={code} onChange={setCode} maxLength={24} placeholder="e.g. 1513" /></Field>
+        <Field label="My code" htmlFor="orgCode"><Input id="orgCode" value={code} onChange={setCode} maxLength={24} placeholder="e.g. 9911" /></Field>
         <Field label="Title (optional)" htmlFor="orgTitle"><Input id="orgTitle" value={title} onChange={setTitle} maxLength={80} placeholder="e.g. Branch Head, Engineer" /></Field>
         <Button id="orgSave" variant={dirty ? 'primary' : 'secondary'} disabled={!dirty} onClick={() => update((d) => { setOrg(d, code, title); return 'Organization code saved.'; })}>Save</Button>
       </div>
