@@ -73,7 +73,7 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 
 ## Privacy and data semantics
 
-This is a synthetic demonstration. **Do not enter real Navy personnel records, qualification data, sensitive details, clearance information, or actual résumé PII into this pilot on a shared or unapproved workstation.** Browser storage is not a secure multi-user data store, and the navigation is not an authorization boundary. There is no login; *Local demo · No login* is shown at all times.
+This is a synthetic demonstration. **Do not enter real personnel records, qualification data, sensitive details, clearance information, or actual résumé PII into this pilot on a shared or unapproved workstation.** Browser storage is not a secure multi-user data store, and the navigation is not an authorization boundary. There is no login; *Local demo · No login* is shown at all times.
 
 Shellback is **not** an authoritative readiness, competency, credential, personnel or performance system. It does not crawl activity, ingest email or code, track employees, or infer skill decay. Missing data means **unknown**, not low proficiency.
 

@@ -1,6 +1,6 @@
 # Fictional employee exchange lab
 
-Every person below is **completely fictional**. Names, experience, credentials, confidence answers, availability, and training claims are invented for testing. None represents an actual Navy employee, qualification record, background check, or validated competency.
+Every person below is **completely fictional**. Names, experience, credentials, confidence answers, availability, and training claims are invented for testing. None represents an actual employee, qualification record, background check, or validated competency.
 
 | Fictional employee | Scenario | Confirmed skills | Workspace files |
 | --- | --- | ---: | --- |

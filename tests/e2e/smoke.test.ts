@@ -491,9 +491,9 @@ test('intelligence: local by default, four-step remote setup, CSP-blocked hosts 
   assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
   assert.equal(await page.locator('[data-provider="remote-http"]').isDisabled(), true, 'remote cannot be chosen before it is configured');
   // Step 1: endpoint validation + build allow-list warning
-  await page.locator('#intelEndpoint').fill('http://ai.example.mil/v1');
+  await page.locator('#intelEndpoint').fill('http://ai.example.com/v1');
   assert.match(await page.locator('#intelRemote').innerText(), /https/);
-  await page.locator('#intelEndpoint').fill('https://ai.example.mil/v1');
+  await page.locator('#intelEndpoint').fill('https://ai.example.com/v1');
   assert.match(await page.locator('#intelRemote').innerText(), /This build does not allow connections to that host/);
   await page.locator('#intelLabel').fill('Enterprise AI');
   assert.equal(await page.locator('[data-step="1"]').getAttribute('data-done'), 'true');
@@ -510,7 +510,7 @@ test('intelligence: local by default, four-step remote setup, CSP-blocked hosts 
   // Step 3: Load models fails fast (CSP blocks the host) and says why; typing a model still works
   await page.locator('#intelLoadModels').click();
   await page.locator('#intelModelsError').waitFor();
-  assert.match(await page.locator('#intelModelsError').innerText(), /Could not reach https:\/\/ai\.example\.mil/);
+  assert.match(await page.locator('#intelModelsError').innerText(), /Could not reach https:\/\/ai\.example\.com/);
   await page.locator('#intelModel').fill('gpt-test');
   assert.equal(await page.locator('[data-step="3"]').getAttribute('data-done'), 'true');
   // Step 4 + save + select
@@ -535,7 +535,7 @@ test('intelligence: local by default, four-step remote setup, CSP-blocked hosts 
   await page.locator('dialog [data-dialog="confirm"]').click();
   await page.locator('#intelSaveToken').waitFor();
   assert.equal(await page.locator('[data-provider="local-rules"]').isChecked(), true);
-  const unexpected = errors.filter((e) => !/ai\.example\.mil|Content Security Policy|Failed to fetch|net::ERR/i.test(e));
+  const unexpected = errors.filter((e) => !/ai\.example\.com|Content Security Policy|Failed to fetch|net::ERR/i.test(e));
   assert.deepEqual(unexpected, []);
 });
 
