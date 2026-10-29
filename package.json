@@ -4,7 +4,7 @@
   "private": true,
   "description": "Shellback \u2014 employee-centered workforce capability intelligence. Local-first React + TypeScript app served from 127.0.0.1 by PowerShell 5.1.",
   "type": "module",
-  "license": "SEE LICENSE IN README.md",
+  "license": "MIT",
   "engines": {
     "node": ">=22.6"
   },
