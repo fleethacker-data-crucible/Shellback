@@ -78,7 +78,7 @@ The confidence pulse is a side drawer that opens from any skill, anywhere.
 - **Intelligence (configurable):** Local rules by default (nothing leaves the workstation). An authorized remote provider can be configured under Program → Intelligence (endpoint, encrypted bearer token, connection test). The page lists exactly what each task sends; the shipped CSP blocks every host unless the build allows it (`SHELLBACK_INTEL_HOST`). Contract and a loopback adapter for OpenAI-compatible gateways in `docs/INTELLIGENCE_PROVIDERS.md`. Sample fictional résumés for trying intake: `examples/resumes/` (PDF).
   - **Intelligence router:** remote providers will move behind the Fleet intelligence router, [Fairlead](https://github.com/fleethacker-data-crucible/Fairlead), so Shellback defaults to the router instead of a hand-entered endpoint; local rules stay the default and nothing changes until then. See [TechStack](TechStack), "Intelligence router".
 - **Supervisor brief:** Team → Coverage writes a plain-language summary from aggregate numbers only (shown before generation). Never names, ranks or scores a person.
-- **Themes & print:** Auto / dark / light; printable capability summary (Profile → Skills) and team workshop sheet.
+- **Themes & print:** Auto / Night watch (dark) / Chart room (light); printable capability summary (Profile → Skills) and team workshop sheet.
 - **Organization codes:** enter your code (e.g. `9911.1`) and Shellback derives the department → division → branch → section tree by prefix and rolls coverage up through it. Nothing is shared without its own opt-in.
 - **Encrypted exports (optional):** workspace backups and peer cards can be passphrase-protected with AES-256-GCM (PBKDF2-SHA-256, 310k iterations).
 - **No silent data loss:** stored data that fails validation is moved to a recovery area you can download from (Trust & governance → Recovery). Imports skip malformed records, list them as warnings, and keep everything else.
@@ -140,7 +140,7 @@ tools/          build.mjs, run-tests.mjs, serve.mjs, screenshots.mjs, Start-Shel
 tests/unit/     node:test suites for core logic and actions
 tests/e2e/      Playwright smoke tests against the compiled served and standalone editions
 examples/       fictional employee workspaces and peer cards (also bundled as in-app personas)
-assets/brand/   emblem (dark and light); not yet wired into the app UI
+assets/brand/   emblem (dark and light); a copy in src/app/assets/ is shown in the sidebar and on Home
 dist/           compiled, committed output shipped to workstations
 docs/screenshots/ README screenshots (tools/screenshots.mjs)
 ```
