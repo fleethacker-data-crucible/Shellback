@@ -145,4 +145,4 @@ dist/           compiled, committed output shipped to workstations
 docs/screenshots/ README screenshots (tools/screenshots.mjs)
 ```
 
-License: prototype source provided as-is for evaluation. Third-party code is bundled into `dist/` under each package's license (React, d3, zod, clsx, class-variance-authority, tailwind-merge, Tailwind CSS: all MIT or ISC).
+License: MIT. See [LICENSE](LICENSE). Third-party code is bundled into `dist/` under each package's license (React, d3, zod, clsx, class-variance-authority, tailwind-merge, Tailwind CSS: all MIT or ISC).
