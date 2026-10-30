@@ -2,7 +2,7 @@
  * Network-first: while the local server is running the newest build is always used (no
  * "one load behind" after an update); the cache answers only when the server is not reachable.
  * Successful responses refresh the cache so the offline copy tracks the latest build. */
-const BUILD_ID = 'c95861e55c38';
+const BUILD_ID = '93c4bc4e7a1f';
 const CACHE = `shellback-${BUILD_ID}`;
 // activate deletes every other cache of this origin, including the pre-rename `synapse-<build>` ones.
 const PRECACHE = ["./","./index.html","./assets/app.js","./assets/app.css"];
