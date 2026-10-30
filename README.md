@@ -140,7 +140,7 @@ tools/          build.mjs, run-tests.mjs, serve.mjs, screenshots.mjs, Start-Shel
 tests/unit/     node:test suites for core logic and actions
 tests/e2e/      Playwright smoke tests against the compiled served and standalone editions
 examples/       fictional employee workspaces and peer cards (also bundled as in-app personas)
-assets/brand/   emblem (dark and light); a copy in src/app/assets/ is shown in the sidebar and on Home
+assets/brand/   emblem (dark and light); src/app/components/Emblem.tsx shows a copy from src/app/assets/ in the sidebar and on Home
 dist/           compiled, committed output shipped to workstations
 docs/screenshots/ README screenshots (tools/screenshots.mjs)
 ```

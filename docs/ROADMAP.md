@@ -15,7 +15,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | "Show nearby pathways" ghosts (off by default; Confirmed view still shows exactly your attestations) | ✅ | ghosts use `.sky-ghost-node`, never `.sky-skill-node` |
 | Arrow-key navigation between stars, Enter/Space selects | ✅ | |
 | Domain hubs show confirmed / suggested counts | ✅ | |
-| New brand mark (five-star constellation tracing an S) + favicon | ✅ | `src/app/components/ShellbackMark.tsx` |
+| New brand mark (five-star constellation tracing an S) + favicon | 🔧 | The app shows the emblem (`src/app/components/Emblem.tsx`); the favicon is `src/app/assets/icon-96.png`. `ShellbackMark.tsx` exists but nothing imports it yet |
 | Home hero decoration no longer clips off the page | ✅ | |
 | Spider web "confirmed floor" ring | ✅ | |
 | `TrustChip` ("Self-reported ⓘ" etc.) replacing repeated disclaimers | ✅ | `src/app/components/TrustChip.tsx` |
