@@ -1,30 +1,30 @@
 {
   "name": "shellback",
   "version": "1.0.0",
-  "buildId": "862cf6e5e31a",
+  "buildId": "af9a6af5c600",
   "intelHosts": [
     "http://127.0.0.1:8776"
   ],
   "files": {
     "index.html": {
       "bytes": 32690,
-      "sha256": "acaba69fc2ae7d30c91f259fedb53dc3b96eec72bbb5f73eb7bb9c008c523210"
+      "sha256": "a5f7aa10ae469087daee95b9db539e4b9aa23e059e9e1785b91fbb1e1dfcffbf"
     },
     "assets/app.js": {
-      "bytes": 1230894,
-      "sha256": "8a0762682688846054b131c2fec909e61aeed87a17c190464276f8d5fa4a17b1"
+      "bytes": 1241957,
+      "sha256": "441c39df77519b4707599574ea5bf1b5d9cd6b9596a3d1d5e2a3e28d8cc55dc8"
     },
     "assets/app.css": {
-      "bytes": 61970,
-      "sha256": "b62f8e352a6f4c3332defbd33fb48302643f32b02e6d97e9b5596063048b4820"
+      "bytes": 62014,
+      "sha256": "e3db24975502f53650e18b00fcdabf3f5e6d43079a515bf60459bd14c0f4f67c"
     },
     "sw.js": {
       "bytes": 1508,
-      "sha256": "2e99d21a27b857095a29707979257d2851201bbd0a652303f6b2d43440ee217b"
+      "sha256": "0e0ddbb1c9fa039725188a66e4b71404289a821256bc8420ed483151444255fc"
     },
     "Shellback-Standalone.html": {
-      "bytes": 1325551,
-      "sha256": "d25bcd52e8dd2cbe04fd1d9fd3e3912eeb5a096e1b781f1c606befaacb2b98bd"
+      "bytes": 1336658,
+      "sha256": "454c05cabfee3f3ba707da2e408d4aa3eaeaa39557449196c94cc4240fb2b316"
     }
   }
 }
