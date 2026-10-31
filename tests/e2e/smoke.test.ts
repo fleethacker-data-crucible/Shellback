@@ -806,3 +806,17 @@ test('HR feed: the roster import creates unverified drafts from the synthetic fe
   assert.match(await page.locator('#teamExchangeStatus').innerText(), /as drafts \(not attested\)\. 1 row skipped/);
   assert.deepEqual(errors, []);
 });
+
+test('evaluation set: runs Local rules over the synthetic gold résumés and shows provider-level scores only', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  await page.locator('#evalRun').click();
+  await page.locator('#evalResult').waitFor();
+  const precision = parseInt((await page.locator('#evalSkillsPrecision').innerText()).replace('%', ''), 10);
+  const recall = parseInt((await page.locator('#evalSkillsRecall').innerText()).replace('%', ''), 10);
+  assert.ok(precision >= 90 && recall >= 80, `precision ${precision}% recall ${recall}%`);
+  assert.ok((await page.locator('#evalTable tbody tr').count()) >= 8);
+  assert.match(await page.locator('[data-case="paraphrase"]').innerText(), /Mentoring/, 'paraphrased evidence shows as missed');
+  assert.doesNotMatch(await page.locator('#intelEvaluation').innerText(), /rank|score of a person/i);
+  assert.deepEqual(errors, []);
+});

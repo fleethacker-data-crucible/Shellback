@@ -1,16 +1,16 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * Shellback intelligence adapter — a tiny loopback bridge between Shellback's provider contract (v1)
+ * Shellback intelligence adapter â€” a tiny loopback bridge between Shellback's provider contract (v1)
  * and any OpenAI-compatible chat-completions endpoint (enterprise gateways usually are).
  *
  *   node tools/intel-adapter.mjs
  *
  * Environment (set in the shell that starts it; nothing is written to disk):
- *   INTEL_UPSTREAM_URL   e.g. https://api.ai-gateway.example.com/v1/chat/completions   (required)
+ *   INTEL_UPSTREAM_URL   e.g. https://api.github.com/v1/chat/completions   (required)
  *   INTEL_API_KEY        bearer token for the upstream                             (required)
  *   INTEL_MODEL          default model/deployment name                            (optional; Shellback may override)
  *   INTEL_PORT           default 8790
- *   INTEL_TOKEN          optional shared secret Shellback must present (Program → Intelligence → bearer token)
+ *   INTEL_TOKEN          optional shared secret Shellback must present (Program â†’ Intelligence â†’ bearer token)
  *   NODE_EXTRA_CA_CERTS  (standard Node variable) PEM bundle for an internal CA, if the gateway uses one
  *
  * The adapter listens on 127.0.0.1 only. Shellback must be built with
@@ -32,9 +32,9 @@ const SYSTEM = `You help employees see their own capabilities. You never score, 
 Answer ONLY with the JSON object requested, no prose, no code fences.`;
 
 const prompts = {
-  'scan-resume': (p) => `Taxonomy (id — name — domain):\n${p.taxonomy.map((t) => `${t.id} — ${t.name} — ${t.domain}`).join('\n')}\n\nRésumé text:\n"""\n${p.text}\n"""\n\nAlready confirmed ids (exclude): ${p.confirmed.join(', ') || 'none'}\n\nReturn {"skills": [taxonomy ids clearly evidenced by the text, max 25], "credentials": [{"name": certification or qualification actually HELD (not pursued), "authority": issuer or "", "matched": the exact phrase}]}. Only include skills with real evidence; prefer precision over recall.`,
-  'map-skills': (p) => `Taxonomy (id — name — domain):\n${p.taxonomy.map((t) => `${t.id} — ${t.name} — ${t.domain}`).join('\n')}\n\nMap each of these free-text skill names to the single best taxonomy id, or null if nothing fits:\n${p.names.map((n) => `- ${n}`).join('\n')}\n\nReturn {"mapped": [{"input": name exactly as given, "skillId": id or null, "score": 0..1}]}.`,
-  'team-brief': (p) => `Write a short, plain-language brief (3–6 short paragraphs, plain text, blank line between paragraphs) for a supervisor from these AGGREGATE team numbers. Never name or imply an individual. Treat everything as self-reported and as a conversation starter, not an assessment. End with one suggested next step that involves asking the team.\n\n${JSON.stringify(p.input, null, 2)}\n\nReturn {"text": "..."}.`,
+  'scan-resume': (p) => `Taxonomy (id â€” name â€” domain):\n${p.taxonomy.map((t) => `${t.id} â€” ${t.name} â€” ${t.domain}`).join('\n')}\n\nRÃ©sumÃ© text:\n"""\n${p.text}\n"""\n\nAlready confirmed ids (exclude): ${p.confirmed.join(', ') || 'none'}\n\nReturn {"skills": [taxonomy ids clearly evidenced by the text, max 25], "credentials": [{"name": certification or qualification actually HELD (not pursued), "authority": issuer or "", "matched": the exact phrase}]}. Only include skills with real evidence; prefer precision over recall.`,
+  'map-skills': (p) => `Taxonomy (id â€” name â€” domain):\n${p.taxonomy.map((t) => `${t.id} â€” ${t.name} â€” ${t.domain}`).join('\n')}\n\nMap each of these free-text skill names to the single best taxonomy id, or null if nothing fits:\n${p.names.map((n) => `- ${n}`).join('\n')}\n\nReturn {"mapped": [{"input": name exactly as given, "skillId": id or null, "score": 0..1}]}.`,
+  'team-brief': (p) => `Write a short, plain-language brief (3â€“6 short paragraphs, plain text, blank line between paragraphs) for a supervisor from these AGGREGATE team numbers. Never name or imply an individual. Treat everything as self-reported and as a conversation starter, not an assessment. End with one suggested next step that involves asking the team.\n\n${JSON.stringify(p.input, null, 2)}\n\nReturn {"text": "..."}.`,
 };
 
 async function upstream(model, user) {
@@ -65,7 +65,7 @@ http.createServer(async (req, res) => {
       const body = JSON.parse(raw);
       if (body.contract !== 1) return send(res, 200, { ok: false, error: `unsupported contract ${body.contract}` });
       const p = body.payload ?? {};
-      if (p.task === 'ping') return send(res, 200, { ok: true, result: { detail: `adapter ok → ${new URL(UPSTREAM).host}${MODEL ? ` (${MODEL})` : ''}` } });
+      if (p.task === 'ping') return send(res, 200, { ok: true, result: { detail: `adapter ok â†’ ${new URL(UPSTREAM).host}${MODEL ? ` (${MODEL})` : ''}` } });
       if (p.task === 'list-models') {
         // GET <base>/models where base is the upstream URL minus /chat/completions
         const modelsUrl = UPSTREAM.replace(/\/chat\/completions\/?$/, '') + '/models';
@@ -86,4 +86,4 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: false, error: String(err.message).slice(0, 380) });
     }
   });
-}).listen(PORT, '127.0.0.1', () => console.log(`Shellback intelligence adapter on http://127.0.0.1:${PORT}  →  ${UPSTREAM}${SHARED ? '  (shared token required)' : ''}`));
+}).listen(PORT, '127.0.0.1', () => console.log(`Shellback intelligence adapter on http://127.0.0.1:${PORT}  â†’  ${UPSTREAM}${SHARED ? '  (shared token required)' : ''}`));
