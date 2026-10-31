@@ -1,6 +1,6 @@
 # Shellback roadmap
 
-Status as of 2026-10-24. Phases are ordered by what unblocks the next thing; each one ships as its own PR and leaves `main` green on the Windows self-hosted runner.
+Status as of 2026-10-30. Phases are ordered by what unblocks the next thing; each one ships as its own PR and leaves `main` green on the Windows self-hosted runner.
 
 Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in scope for Shellback
 
@@ -67,8 +67,8 @@ Replaced the single energizing/neutral/draining answer per stage with two axes �
 ## Later
 
 - Multi-workspace / role switching for supervisors who are also employees.
-- Signed peer cards (detached signature, local trust list).
 - 🔧 Import from HR systems: a CSV feed import is built and tested against a synthetic feed only. It creates unverified drafts with no skills. Not connected to a real HR system, which needs an approved feed (see docs/HR-FEED.md).
+- ✅ Signed peer cards: a detached ECDSA P-256 signature over a card, a local trust list the reader labels, and a check that reports `trusted`, `untrusted-key` or `invalid`. Shipped in `src/core/signing.ts`, `src/app/views/SignedCardsPanel.tsx`; keys never leave the browser in the clear. Proves a card is unchanged since a key signed it, not who holds the key.
 - Localisation.
 
 ## Guardrails that do not change by phase
