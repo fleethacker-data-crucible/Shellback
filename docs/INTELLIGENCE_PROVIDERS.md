@@ -139,6 +139,13 @@ Shellback can send model calls to Fairlead, the Fleet router on this computer, a
 - Every request to the router carries `X-Fairlead-Privacy: local`, which asks Fairlead to use local engines only. Fairlead has to honour that header; Shellback cannot check it from the browser.
 - The browser makes the call, so Fairlead must allow the Shellback origin with CORS.
 - Tested against a fake router (`tests/unit/fairlead.test.ts`) and in the browser e2e suite. Not yet run against a live Fairlead.
+## Evaluation set
+
+`examples/evaluation/gold-resumes.json` holds fictional résumé snippets with the skills and credential keys a careful reader expects (including a negation trap, a credential still being pursued, a paraphrase case and a no-evidence case). Program → Intelligence → *Evaluation set* runs the active provider over it and reports precision and recall for skills and credentials, plus what each case missed or added. A remote provider is asked to confirm first, because the snippets are sent to it (they are synthetic and say nothing about the user).
+
+`src/core/evaluation.ts` is the same logic without the UI (`evaluateProvider`, `compareReports`), and `tests/unit/evaluation.test.ts` pins the Local rules baseline. The scores describe a provider on fictional text. They are never computed for a person.
+
+Not done: running the set against a real model. That needs a configured provider and key, so there is no recorded remote baseline yet.
 
 ## Rules a provider must keep
 

@@ -27,41 +27,49 @@ jobs:
         with:
           node-version: '22'
       - name: Install build and test dependencies (off-workstation build step)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd install --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (core, strict)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck:core
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (whole app with React types)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (tests)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck:tests
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Unit tests
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run test:unit
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Committed dist/ matches a fresh build
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run build:check
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Install Playwright Chromium
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npx.cmd playwright install chromium
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Browser smoke tests (served + standalone editions)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run test:e2e
@@ -72,7 +80,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Write-Host "PowerShell $($PSVersionTable.PSVersion) / CLR $($PSVersionTable.CLRVersion)"
           Write-Host "Execution policies:"; Get-ExecutionPolicy -List | Format-Table -AutoSize | Out-String | Write-Host
-          $port = 18765
+          # Ask the OS for a free loopback port. A server left on a fixed port by an earlier run
+          # answered the checks below with 404 and failed the job (the runner reported "Port 18765 is busy").
+          $probe = New-Object System.Net.Sockets.TcpListener -ArgumentList ([System.Net.IPAddress]::Loopback), 0
+          $probe.Start()
+          $port = $probe.LocalEndpoint.Port
+          $probe.Stop()
           $out = Join-Path $env:RUNNER_TEMP 'shellback-ps.out.txt'
           $err = Join-Path $env:RUNNER_TEMP 'shellback-ps.err.txt'
           $script = (Resolve-Path 'tools\Start-Shellback.ps1').Path
