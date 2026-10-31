@@ -6,6 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../state/store';
+import { fairleadPreset } from '../../core/fairlead';
 import { useDialogs } from '../components/ui/dialogs';
 import { Button, Field, Input, Notice, Panel, PanelHeading, Pill, SectionIntro, Select, Textarea } from '../components/ui/primitives';
 import { REMOTE_KIND_LABEL, TEAM_BRIEF_FIELDS, validateEndpoint, type RemoteKind } from '../../core/intelligence';
@@ -109,6 +110,7 @@ export function IntelligenceView() {
         </PanelHeading>
         <div className="space-y-5">
           <Step n={1} title="Where is it?" done={endpointOk}>
+            <Button id="intelUseFairlead" size="sm" className="mb-3" onClick={() => { setRemote(fairleadPreset()); setModels(null); }}>Use the Fairlead router on this computer</Button>
             <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
               <Field label="Kind of endpoint" htmlFor="intelKind">
                 <Select id="intelKind" value={kind} onChange={(v) => { setRemote({ kind: v as RemoteKind, model: '' }); setModels(null); }} options={(Object.keys(REMOTE_KIND_LABEL) as RemoteKind[]).map((k) => ({ value: k, label: REMOTE_KIND_LABEL[k] }))} />
