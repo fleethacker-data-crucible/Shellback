@@ -1,3 +1,4 @@
+import { parseRole, type Role } from '../core/roles';
 /** UI settings live in localStorage (TechStack: IndexedDB for data, localStorage for settings). */
 export type ViewId = 'home' | 'profile' | 'explore' | 'team' | 'program';
 export const VIEW_IDS: readonly ViewId[] = ['home', 'profile', 'explore', 'team', 'program'];
@@ -21,6 +22,7 @@ export interface Settings {
   galaxyMode: 'confirmed' | 'pathways';
   reducedMotion: boolean;
   theme: Theme;
+  role: Role;
 }
 export type Theme = 'system' | 'dark' | 'light';
 export const THEMES: readonly Theme[] = ['system', 'dark', 'light'];
@@ -28,7 +30,7 @@ export const THEMES: readonly Theme[] = ['system', 'dark', 'light'];
 // Former-name key, kept so existing users keep their settings (see storage/idb.ts).
 const KEY = 'synapse-settings-v3';
 export const DEFAULT_SETTINGS: Settings = {
-  view: 'home', profileTab: 'intake', exploreTab: 'web', teamTab: 'roster', programTab: 'governance', galaxyMode: 'confirmed', reducedMotion: false, theme: 'system',
+  view: 'home', profileTab: 'intake', exploreTab: 'web', teamTab: 'roster', programTab: 'governance', galaxyMode: 'confirmed', reducedMotion: false, theme: 'system', role: 'supervisor',
 };
 
 const pick = <T extends string>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback);
@@ -47,6 +49,7 @@ export function loadSettings(): Settings {
       galaxyMode: v.galaxyMode === 'pathways' ? 'pathways' : 'confirmed',
       reducedMotion: v.reducedMotion === true,
       theme: pick(v.theme, THEMES, 'system'),
+      role: parseRole(v.role),
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

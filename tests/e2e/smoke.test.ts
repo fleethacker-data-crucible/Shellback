@@ -796,3 +796,19 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.ok(toastVisible);
   assert.deepEqual(errors, []);
 });
+
+test('role switching: as employee the team keeps sharing only; as supervisor the team sections return', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team');
+  assert.equal(await page.locator('[data-role-choice="supervisor"]').getAttribute('aria-checked'), 'true', 'supervisor is the default');
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 1);
+  await page.locator('[data-role-choice="employee"]').click();
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 0, 'team sections are hidden as employee');
+  assert.equal(await page.locator('#exportPeer').count(), 1, 'sharing still works as employee');
+  await page.reload();
+  await page.locator('#pageTitle').waitFor();
+  assert.equal(await page.locator('[data-role-choice="employee"]').getAttribute('aria-checked'), 'true', 'the choice is remembered');
+  await page.locator('[data-role-choice="supervisor"]').click();
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 1);
+  assert.deepEqual(errors, []);
+});
