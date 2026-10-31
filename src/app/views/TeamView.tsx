@@ -9,6 +9,7 @@ import { ROLES, resolveTeamSection, teamSectionsFor } from '../../core/roles';
 import { useAction } from '../state/hooks';
 import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, selectTeam, setIncludeDrafts, togglePriority } from '../state/actions';
 import { DraftTeammatePanel } from './DraftTeammatePanel';
+import { SignedCardsPanel } from './SignedCardsPanel';
 import type { TeamTab } from '../../storage/settings';
 import { KnowledgePanel, MentorsPanel, MissionsPanel } from './WorkforcePanels';
 import { ContributionMap, OrgRollup, RecommendationsPanel } from './TeamInsightPanels';
@@ -217,6 +218,7 @@ export function TeamView() {
         </Panel>
       </div>
       <DraftTeammatePanel teamId={team?.id} onAdded={setSelectedPeer} />
+      <SignedCardsPanel />
       </>)}
 
       {tab === 'coverage' && (<>
