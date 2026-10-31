@@ -27,41 +27,49 @@ jobs:
         with:
           node-version: '22'
       - name: Install build and test dependencies (off-workstation build step)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd install --no-audit --no-fund
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (core, strict)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck:core
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (whole app with React types)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Typecheck (tests)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run typecheck:tests
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Unit tests
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run test:unit
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Committed dist/ matches a fresh build
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run build:check
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Install Playwright Chromium
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npx.cmd playwright install chromium
           if ($LASTEXITCODE -ne 0) { throw "exit code $LASTEXITCODE" }   # also catches a command that never ran
       - name: Browser smoke tests (served + standalone editions)
+        shell: powershell
         run: |
           $ErrorActionPreference = 'Continue'
           npm.cmd run test:e2e
