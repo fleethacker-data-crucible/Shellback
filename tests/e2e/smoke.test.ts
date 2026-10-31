@@ -8,7 +8,8 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Browser, Page } from 'playwright';
@@ -833,5 +834,67 @@ test('intelligence: the Fairlead preset fills the router address and the build a
   await page.locator('#intelUseFairlead').click();
   assert.equal(await page.locator('#intelEndpoint').inputValue(), 'http://127.0.0.1:8776/v1');
   assert.doesNotMatch(await page.locator('#intelRemote').innerText(), /does not allow connections/);
+  assert.deepEqual(errors, []);
+});
+
+test('signed peer cards: sign, tamper detection, trust list persists', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team', 'roster');
+  await page.locator('#makeKeyBtn').click();
+  await page.locator('#dialog-input').fill('Casey (example)');
+  await confirmDialog(page);
+  await page.locator('#dialog-input').fill('correct horse battery');
+  await confirmDialog(page);
+  await page.locator('#signKeyId').waitFor();
+  const fingerprint = (await page.locator('#signKeyId').innerText()).replace(/\s/g, '');
+  assert.match(fingerprint, /^[0-9a-f]{16}$/);
+
+  const cardPath = fixture('casey-rivera-peer-card.json');
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    (async () => {
+      await page.locator('#signCardFile').setInputFiles(cardPath);
+      await page.locator('#dialog-input').fill('correct horse battery');
+      await confirmDialog(page);
+    })(),
+  ]);
+  const sigPath = await download.path();
+  assert.match(download.suggestedFilename(), /\.sig\.json$/);
+  const sig = JSON.parse(readFileSync(sigPath!, 'utf8'));
+  assert.equal(sig.format, 'shellback-card-signature');
+  assert.equal(sig.keyId, fingerprint);
+  assert.ok(!JSON.stringify(sig).includes('"skills"'), 'a detached signature carries no card content');
+
+  // Wrong passphrase refuses to sign.
+  await page.locator('#signCardFile').setInputFiles(cardPath);
+  await page.locator('#dialog-input').fill('not the passphrase');
+  await confirmDialog(page);
+  await page.waitForFunction(() => /Could not sign/.test(document.querySelector('#flash')?.textContent ?? ''));
+
+  // Unchanged card: valid, key not trusted yet → trust it with a label → persists across reload.
+  await page.locator('#verifyFiles').setInputFiles([cardPath, sigPath!]);
+  await page.locator('#verifyResult[data-status="untrusted-key"]').waitFor();
+  await page.locator('#trustKeyBtn').click();
+  await page.locator('#dialog-input').fill('Casey, confirmed by phone');
+  await confirmDialog(page);
+  await page.locator('#verifyResult[data-status="trusted"]').waitFor();
+  assert.match(await page.locator('#trustList').innerText(), /Casey, confirmed by phone/);
+
+  // An edited card is invalid even though its key is trusted.
+  const edited = { ...readFixture('casey-rivera-peer-card.json'), name: 'Casey Rivera (edited)' };
+  const editedPath = path.join(os.tmpdir(), `shellback-edited-${process.pid}.json`);
+  writeFileSync(editedPath, JSON.stringify(edited));
+  await page.locator('#verifyFiles').setInputFiles([editedPath, sigPath!]);
+  await page.locator('#verifyResult[data-status="invalid"]').waitFor();
+  assert.match(await page.locator('#verifyResult').innerText(), /changed since it was signed/);
+
+  await page.reload();
+  await page.locator('#pageTitle').waitFor();
+  await nav(page, 'team', 'roster');
+  await page.locator('#verifyFiles').setInputFiles([cardPath, sigPath!]);
+  await page.locator('#verifyResult[data-status="trusted"]').waitFor();
+  await page.locator('#trustList button', { hasText: 'Remove' }).click();
+  await page.locator('#verifyFiles').setInputFiles([cardPath, sigPath!]);
+  await page.locator('#verifyResult[data-status="untrusted-key"]').waitFor();
   assert.deepEqual(errors, []);
 });
