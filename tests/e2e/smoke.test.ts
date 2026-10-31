@@ -796,3 +796,16 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.ok(toastVisible);
   assert.deepEqual(errors, []);
 });
+
+test('voice: the summary is on screen, speaking falls back to text, dictation stays off until allowed', async () => {
+  const { page, errors } = await open(baseUrl);
+  assert.match(await page.locator('#voiceSummary').innerText(), /confirmed|not confirmed/);
+  assert.equal(await page.locator('#dictateStart').isDisabled(), true, 'dictation needs the explicit opt-in');
+  await page.locator('#dictateAllow').check();
+  assert.equal(await page.locator('#dictateStart').isDisabled(), false);
+  assert.equal(await page.locator('#skillsNote').isVisible(), true, 'the typed note box is always there');
+  await page.locator('#voiceRead').click();
+  await page.locator('#voiceStatus[role="status"]').waitFor();
+  assert.match(await page.locator('#voiceStatus').innerText(), /No voice is installed|no speech output|Reading the summary aloud/);
+  assert.deepEqual(errors, []);
+});
