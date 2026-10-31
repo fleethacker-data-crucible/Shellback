@@ -796,3 +796,13 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.ok(toastVisible);
   assert.deepEqual(errors, []);
 });
+
+test('HR feed: the roster import creates unverified drafts from the synthetic feed and says what was skipped', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team', 'roster');
+  await page.locator('#importHrFile').setInputFiles(path.join(root, 'examples', 'hr', 'hr-feed-synthetic.csv'));
+  await confirmDialog(page);
+  await page.locator('#teamExchangeStatus').filter({ hasText: 'Imported 5 HR records' }).waitFor();
+  assert.match(await page.locator('#teamExchangeStatus').innerText(), /as drafts \(not attested\)\. 1 row skipped/);
+  assert.deepEqual(errors, []);
+});

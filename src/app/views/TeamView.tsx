@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { DOMAINS, skillName } from '../../core/taxonomy';
 import { activeTeam, aggregate, benchSignals, coverageGaps, participants, MIN_AGGREGATE, DEMO_TEAM_ID } from '../../core/analytics';
-import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard, type Member } from '../../core/schema';
+import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard, today, type Member } from '../../core/schema';
 import { buildPeerCard, describeCard } from '../../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../../core/crypto';
 import { useStore } from '../state/store';
@@ -18,7 +18,8 @@ import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
 import { BarRow, Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Stat, Tabs } from '../components/ui/primitives';
 import { SKILL_OPTIONS_SHORT } from '../lib/options';
-import { downloadJson, readJsonFile } from '../lib/files';
+import { downloadJson, readFileText, readJsonFile } from '../lib/files';
+import { parseHrFeed } from '../../core/hr-import';
 
 export function TeamView() {
   const { ws, update, flash, settings, navigate } = useStore();
@@ -37,6 +38,7 @@ export function TeamView() {
   const [priority, setPriority] = useState('aws-architecture');
   const [status, setStatus] = useState('');
   const importRef = useRef<HTMLInputElement | null>(null);
+  const importHrRef = useRef<HTMLInputElement | null>(null);
   const note = (m: string) => { setStatus(m); flash(m); };
 
   async function exportCard() {
@@ -85,6 +87,25 @@ export function TeamView() {
     for (const p of parsed) { const o = act((d) => importMember(d, team.id, p.member)); if (o) imported++; }
     if (parsed[0]) setSelectedPeer(parsed[0].member.id);
     note(`Imported ${imported} card${imported === 1 ? '' : 's'}${problems.length ? `; ${problems.length} skipped` : ''}. Information is unverified.`);
+  }
+  /** HR feed: records become unverified drafts. Nothing is attested on the person's behalf. */
+  async function importHr(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || !team) return;
+    try {
+      const res = parseHrFeed(await readFileText(f, 512_000), today());
+      if (!res.members.length) { note(`Nothing to import. ${res.warnings.join(' ')}`); return; }
+      const n = res.members.length;
+      const ok = await dialogs.confirm(
+        <>Import <b>{n}</b> HR record{n === 1 ? '' : 's'} into "{team.name}" as unverified drafts? They carry the organisation code, job title and certification names HR holds, and no skills. A record with an id already in this team replaces it.
+          {res.warnings.length > 0 && <><br />Skipped: {res.warnings.join(' ')}</>}</>,
+        { title: 'Import HR feed', confirmLabel: `Import ${n}` },
+      );
+      if (!ok) return;
+      update((d) => { for (const m of res.members) importMember(d, team.id, m); });
+      note(`Imported ${n} HR record${n === 1 ? '' : 's'} as drafts (not attested).${res.warnings.length ? ` ${res.warnings.length} row${res.warnings.length === 1 ? '' : 's'} skipped.` : ''}`);
+    } catch (err) { note(`HR feed not imported: ${err instanceof Error ? err.message : String(err)}`); }
   }
   /** Read one file into a member (peer card or draft), asking for a passphrase when encrypted. Returns null if the user cancels. */
   async function readCard(f: File): Promise<{ member: Member; draft: boolean } | null> {
@@ -205,6 +226,8 @@ export function TeamView() {
             <Button id="exportPeer" variant="primary" onClick={exportCard}>Export opt-in card ↗</Button>
             <Button id="importPeerBtn" onClick={() => importRef.current?.click()}>Import peer cards ↧</Button>
             <input ref={importRef} hidden type="file" id="importPeerFile" multiple accept=".json,application/json" aria-label="Import peer cards" onChange={importCard} />
+            <Button id="importHrBtn" onClick={() => importHrRef.current?.click()}>Import HR feed (CSV) ↧</Button>
+            <input ref={importHrRef} hidden type="file" id="importHrFile" accept=".csv,text/csv" aria-label="Import an HR feed" onChange={importHr} />
           </div>
           <p id="teamExchangeStatus" role="status" className="note mt-2">{status}</p>
           <p className="note mt-3">Your card id stays the same across exports (so teammates' copies update instead of duplicating){ws.profile.shareId ? `: ${ws.profile.shareId}` : '.'}</p>
@@ -267,3 +290,4 @@ export function TeamView() {
     </section>
   );
 }
+
