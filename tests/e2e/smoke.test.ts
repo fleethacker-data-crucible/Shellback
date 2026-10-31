@@ -798,12 +798,19 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.deepEqual(errors, []);
 });
 
-test('intelligence: the Fairlead preset fills the router address and the build allows it', async () => {
+test('role switching: as employee the team keeps sharing only; as supervisor the team sections return', async () => {
   const { page, errors } = await open(baseUrl);
-  await nav(page, 'program', 'intelligence');
-  await page.locator('#intelUseFairlead').click();
-  assert.equal(await page.locator('#intelEndpoint').inputValue(), 'http://127.0.0.1:8776/v1');
-  assert.doesNotMatch(await page.locator('#intelRemote').innerText(), /does not allow connections/);
+  await nav(page, 'team');
+  assert.equal(await page.locator('[data-role-choice="supervisor"]').getAttribute('aria-checked'), 'true', 'supervisor is the default');
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 1);
+  await page.locator('[data-role-choice="employee"]').click();
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 0, 'team sections are hidden as employee');
+  assert.equal(await page.locator('#exportPeer').count(), 1, 'sharing still works as employee');
+  await page.reload();
+  await page.locator('#pageTitle').waitFor();
+  assert.equal(await page.locator('[data-role-choice="employee"]').getAttribute('aria-checked'), 'true', 'the choice is remembered');
+  await page.locator('[data-role-choice="supervisor"]').click();
+  assert.equal(await page.locator('[data-testid="tab-coverage"]').count(), 1);
   assert.deepEqual(errors, []);
 });
 
@@ -818,6 +825,15 @@ test('evaluation set: runs Local rules over the synthetic gold résumés and sho
   assert.ok((await page.locator('#evalTable tbody tr').count()) >= 8);
   assert.match(await page.locator('[data-case="paraphrase"]').innerText(), /Mentoring/, 'paraphrased evidence shows as missed');
   assert.doesNotMatch(await page.locator('#intelEvaluation').innerText(), /rank|score of a person/i);
+  assert.deepEqual(errors, []);
+});
+
+test('intelligence: the Fairlead preset fills the router address and the build allows it', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  await page.locator('#intelUseFairlead').click();
+  assert.equal(await page.locator('#intelEndpoint').inputValue(), 'http://127.0.0.1:8776/v1');
+  assert.doesNotMatch(await page.locator('#intelRemote').innerText(), /does not allow connections/);
   assert.deepEqual(errors, []);
 });
 

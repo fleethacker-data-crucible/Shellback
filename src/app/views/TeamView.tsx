@@ -5,6 +5,7 @@ import { draftToMember, isDraftCard, parseDraftCard, parsePeerCard, type Member 
 import { buildPeerCard, describeCard } from '../../core/share';
 import { decryptJson, encryptJson, isEncryptedEnvelope } from '../../core/crypto';
 import { useStore } from '../state/store';
+import { ROLES, resolveTeamSection, teamSectionsFor } from '../../core/roles';
 import { useAction } from '../state/hooks';
 import { createTeam, deleteTeam, ensureShareId, importMember, removeMember, selectTeam, setIncludeDrafts, togglePriority } from '../state/actions';
 import { DraftTeammatePanel } from './DraftTeammatePanel';
@@ -17,13 +18,13 @@ import { TeamBriefPanel } from './TeamBriefPanel';
 import { orgLevelName } from '../../core/org';
 import { STAGE_DEFS, hasContribution } from '../../core/contribution';
 import { useDialogs } from '../components/ui/dialogs';
-import { BarRow, Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Stat, Tabs } from '../components/ui/primitives';
+import { BarRow, Button, Checkbox, Empty, Field, Input, Panel, PanelHeading, Pill, Select, SectionIntro, Stat, Tabs, cn } from '../components/ui/primitives';
 import { SKILL_OPTIONS_SHORT } from '../lib/options';
 import { downloadJson, readJsonFile } from '../lib/files';
 
 export function TeamView() {
-  const { ws, update, flash, settings, navigate } = useStore();
-  const tab = settings.teamTab;
+  const { ws, update, flash, settings, navigate, setSettings } = useStore();
+  const tab = resolveTeamSection(settings.role, settings.teamTab);
   const act = useAction();
   const dialogs = useDialogs();
   const team = activeTeam(ws);
@@ -144,12 +145,17 @@ export function TeamView() {
           </Field>
           <span className="pb-2 text-[12px] text-muted"><b className="text-text">{agg.n}</b> people{team?.id === DEMO_TEAM_ID ? ' · fictional demo' : ''}{agg.allowed ? '' : ` · coverage unlocks at ${MIN_AGGREGATE}`}</span>
         </div>
+        <div role="radiogroup" aria-label="Acting as" id="roleSwitch" className="mt-3 inline-flex gap-1 rounded-md border border-stroke bg-bg/40 p-1">
+          {ROLES.map((r) => <button key={r} type="button" role="radio" aria-checked={settings.role === r} data-role-choice={r} className={cn('rounded px-3 py-1 text-[13px] font-semibold', settings.role === r ? 'bg-panel2 text-mint' : 'text-muted')} onClick={() => setSettings({ role: r, teamTab: resolveTeamSection(r, settings.teamTab) })}>{r === 'employee' ? 'As employee' : 'As supervisor'}</button>)}
+        </div>
         <Tabs<TeamTab> label="Team sections" value={tab} onChange={(t) => navigate({ view: 'team', tab: t })} items={[
           { id: 'roster', label: 'Roster & sharing', testId: 'tab-roster' },
-          { id: 'coverage', label: 'Coverage', testId: 'tab-coverage' },
-          { id: 'missions', label: 'Missions', testId: 'tab-missions' },
-          { id: 'mentors', label: 'Mentors', testId: 'tab-mentors' },
-          { id: 'knowledge', label: 'Knowledge', testId: 'tab-knowledge' },
+          ...(teamSectionsFor(settings.role).includes('coverage') ? [
+          { id: 'coverage' as TeamTab, label: 'Coverage', testId: 'tab-coverage' },
+          { id: 'missions' as TeamTab, label: 'Missions', testId: 'tab-missions' },
+          { id: 'mentors' as TeamTab, label: 'Mentors', testId: 'tab-mentors' },
+          { id: 'knowledge' as TeamTab, label: 'Knowledge', testId: 'tab-knowledge' },
+          ] : []),
         ]} />
       </div>
 
