@@ -131,6 +131,14 @@ Local fuzzy mapping always runs too; a valid remote mapping overrides it per inp
 
 The input is **aggregate-only by construction**: it has no names, no per-person rows, no org codes and no free text from anyone. The UI shows the exact input to the supervisor before the brief is requested.
 
+## Evaluation set
+
+`examples/evaluation/gold-resumes.json` holds fictional résumé snippets with the skills and credential keys a careful reader expects (including a negation trap, a credential still being pursued, a paraphrase case and a no-evidence case). Program → Intelligence → *Evaluation set* runs the active provider over it and reports precision and recall for skills and credentials, plus what each case missed or added. A remote provider is asked to confirm first, because the snippets are sent to it (they are synthetic and say nothing about the user).
+
+`src/core/evaluation.ts` is the same logic without the UI (`evaluateProvider`, `compareReports`), and `tests/unit/evaluation.test.ts` pins the Local rules baseline. The scores describe a provider on fictional text. They are never computed for a person.
+
+Not done: running the set against a real model. That needs a configured provider and key, so there is no recorded remote baseline yet.
+
 ## Rules a provider must keep
 
 1. Outputs are suggestions for the employee to confirm or dismiss, never conclusions.
