@@ -29,11 +29,14 @@ const check = process.argv.includes('--check');
 // Optional: origins a remote intelligence provider may be contacted at. Anything else is blocked by CSP.
 // SHELLBACK_INTEL_HOST first; SYNAPSE_INTEL_HOST (the former name) still works as a fallback.
 const intelHostEnv = process.env.SHELLBACK_INTEL_HOST ?? process.env.SYNAPSE_INTEL_HOST ?? '';
-const intelHosts = (intelHostEnv).split(',').map((s) => s.trim()).filter(Boolean).map((h) => {
+// The Fleet intelligence router on this computer (src/core/fairlead.ts). Loopback only, always allowed.
+const FAIRLEAD_ORIGIN = 'http://127.0.0.1:8776';
+const envIntelHosts = (intelHostEnv).split(',').map((s) => s.trim()).filter(Boolean).map((h) => {
   const u = new URL(h.includes('://') ? h : `https://${h}`);
   if (u.protocol !== 'https:' && !['127.0.0.1', 'localhost'].includes(u.hostname)) throw new Error(`SHELLBACK_INTEL_HOST must be https: ${h}`);
   return u.origin;
 });
+const intelHosts = [...new Set([FAIRLEAD_ORIGIN, ...envIntelHosts])];
 const outArg = process.argv.indexOf('--out');
 // --out <dir>: write a host-specific build (e.g. with SHELLBACK_INTEL_HOST) somewhere other than the committed dist/.
 const outDir = check ? fs.mkdtempSync(path.join(os.tmpdir(), 'shellback-dist-')) : path.resolve(root, outArg > -1 ? process.argv[outArg + 1] ?? 'dist' : 'dist');
