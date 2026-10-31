@@ -72,7 +72,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Write-Host "PowerShell $($PSVersionTable.PSVersion) / CLR $($PSVersionTable.CLRVersion)"
           Write-Host "Execution policies:"; Get-ExecutionPolicy -List | Format-Table -AutoSize | Out-String | Write-Host
-          $port = 18765
+          # Ask the OS for a free loopback port. A server left on a fixed port by an earlier run
+          # answered the checks below with 404 and failed the job (the runner reported "Port 18765 is busy").
+          $probe = New-Object System.Net.Sockets.TcpListener -ArgumentList ([System.Net.IPAddress]::Loopback), 0
+          $probe.Start()
+          $port = $probe.LocalEndpoint.Port
+          $probe.Stop()
           $out = Join-Path $env:RUNNER_TEMP 'shellback-ps.out.txt'
           $err = Join-Path $env:RUNNER_TEMP 'shellback-ps.err.txt'
           $script = (Resolve-Path 'tools\Start-Shellback.ps1').Path
