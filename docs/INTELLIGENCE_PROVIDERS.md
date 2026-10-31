@@ -131,6 +131,14 @@ Local fuzzy mapping always runs too; a valid remote mapping overrides it per inp
 
 The input is **aggregate-only by construction**: it has no names, no per-person rows, no org codes and no free text from anyone. The UI shows the exact input to the supervisor before the brief is requested.
 
+## Fairlead router (Fleet intelligence router)
+
+Shellback can send model calls to Fairlead, the Fleet router on this computer, at `http://127.0.0.1:8776/v1`. Program → Intelligence → *Use the Fairlead router on this computer* fills in the endpoint. Then choose a model and enter the app's client key, as for any OpenAI-compatible gateway.
+
+- The build allows `http://127.0.0.1:8776` in `connect-src` by default, so the router needs no `SHELLBACK_INTEL_HOST`. No other host is allowed by default.
+- Every request to the router carries `X-Fairlead-Privacy: local`, which asks Fairlead to use local engines only. Fairlead has to honour that header; Shellback cannot check it from the browser.
+- The browser makes the call, so Fairlead must allow the Shellback origin with CORS.
+- Tested against a fake router (`tests/unit/fairlead.test.ts`) and in the browser e2e suite. Not yet run against a live Fairlead.
 ## Evaluation set
 
 `examples/evaluation/gold-resumes.json` holds fictional résumé snippets with the skills and credential keys a careful reader expects (including a negation trap, a credential still being pursued, a paraphrase case and a no-evidence case). Program → Intelligence → *Evaluation set* runs the active provider over it and reports precision and recall for skills and credentials, plus what each case missed or added. A remote provider is asked to confirm first, because the snippets are sent to it (they are synthetic and say nothing about the user).
