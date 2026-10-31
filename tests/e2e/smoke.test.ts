@@ -797,6 +797,15 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.deepEqual(errors, []);
 });
 
+test('intelligence: the Fairlead preset fills the router address and the build allows it', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  await page.locator('#intelUseFairlead').click();
+  assert.equal(await page.locator('#intelEndpoint').inputValue(), 'http://127.0.0.1:8776/v1');
+  assert.doesNotMatch(await page.locator('#intelRemote').innerText(), /does not allow connections/);
+  assert.deepEqual(errors, []);
+});
+
 test('evaluation set: runs Local rules over the synthetic gold résumés and shows provider-level scores only', async () => {
   const { page, errors } = await open(baseUrl);
   await nav(page, 'program', 'intelligence');
