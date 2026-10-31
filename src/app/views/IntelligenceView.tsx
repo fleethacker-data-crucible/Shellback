@@ -6,6 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../state/store';
+import { EvaluationPanel } from './EvaluationPanel';
 import { useDialogs } from '../components/ui/dialogs';
 import { Button, Field, Input, Notice, Panel, PanelHeading, Pill, SectionIntro, Select, Textarea } from '../components/ui/primitives';
 import { REMOTE_KIND_LABEL, TEAM_BRIEF_FIELDS, validateEndpoint, type RemoteKind } from '../../core/intelligence';
@@ -180,6 +181,8 @@ export function IntelligenceView() {
         <PanelHeading eyebrow="WHAT LEAVES THIS WORKSTATION" title="Per task, with the remote provider selected">Local rules send nothing for any task. The same table is shown on Trust &amp; data.</PanelHeading>
         <DataLeavesTable />
       </Panel>
+
+      <EvaluationPanel />
     </section>
   );
 }

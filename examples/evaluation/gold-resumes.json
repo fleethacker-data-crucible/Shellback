@@ -1,0 +1,70 @@
+{
+  "format": "shellback-evaluation-set",
+  "version": 1,
+  "description": "Synthetic gold résumé snippets with the skills and credentials a careful human reader would expect a provider to suggest. Fictional text only; no real people, employers or credential numbers.",
+  "cases": [
+    {
+      "id": "data-engineer",
+      "title": "Data engineer, explicit skill names",
+      "text": "Data engineer for a fictional logistics company. Built SQL pipelines and ETL jobs in Python. Defined data quality checks and data modeling standards for the warehouse.\nCertifications: AWS Certified Cloud Practitioner.",
+      "expectedSkills": ["sql-pipelines", "etl-elt", "python-development", "data-quality", "data-modeling"],
+      "expectedCredentials": ["aws-cp"]
+    },
+    {
+      "id": "cloud-architect",
+      "title": "Cloud architect with a credential in progress",
+      "text": "Cloud architect. Led AWS architecture reviews, wrote infrastructure as code with Terraform, designed cloud networking and managed identity & access for three accounts.\nCertifications: AWS Certified Solutions Architect - Professional; CompTIA Security+.\nPursuing CISSP.",
+      "expectedSkills": ["aws-architecture", "infrastructure-as-code", "cloud-networking", "identity-access"],
+      "expectedCredentials": ["aws-sap", "security-plus"]
+    },
+    {
+      "id": "negation-trap",
+      "title": "Negated and absent skills must not be suggested",
+      "text": "Comfortable reading dashboards but no Power BI experience. Not familiar with Python development. Strong in statistical analysis and data visualization for survey results.",
+      "expectedSkills": ["statistical-analysis", "data-visualization"],
+      "expectedCredentials": []
+    },
+    {
+      "id": "shipyard-planner",
+      "title": "Maintenance planner",
+      "text": "Maintenance planner. Ran qualification planning, work package readiness and fleet sustainment reviews. Wrote technical work instructions for repeat evolutions.\nCertifications: OSHA 30-Hour Training.",
+      "expectedSkills": ["qualification-planning", "work-package-readiness", "fleet-sustainment", "technical-work-instructions"],
+      "expectedCredentials": ["osha30"]
+    },
+    {
+      "id": "paraphrase",
+      "title": "Paraphrased evidence (keyword matching is expected to miss some)",
+      "text": "Coached junior staff every week and taught new hires how the build works. Organized the sprint ceremonies for two squads.",
+      "expectedSkills": ["mentoring", "agile-facilitation"],
+      "expectedCredentials": []
+    },
+    {
+      "id": "security-analyst",
+      "title": "Security analyst",
+      "text": "Security analyst. Owned security controls, threat modeling, vulnerability triage, security documentation and access reviews for a fictional records system.\nCertifications: CompTIA CySA+.",
+      "expectedSkills": ["security-controls", "threat-modeling", "vulnerability-triage", "security-documentation", "access-reviews"],
+      "expectedCredentials": ["cysa"]
+    },
+    {
+      "id": "no-evidence",
+      "title": "No work evidence at all",
+      "text": "Hobbies include gardening, chess and long-distance cycling. References available on request.",
+      "expectedSkills": [],
+      "expectedCredentials": []
+    },
+    {
+      "id": "devops-engineer",
+      "title": "Delivery automation",
+      "text": "Maintained GitHub Actions CI/CD pipelines and Git workflows. Added test automation, PowerShell automation for deployments and API design reviews.",
+      "expectedSkills": ["ci-cd-pipelines", "git-workflows", "test-automation", "powershell-automation", "api-design"],
+      "expectedCredentials": []
+    },
+    {
+      "id": "delivery-lead",
+      "title": "Delivery lead with project credentials",
+      "text": "Delivery lead. Kept the risk register, ran roadmap planning and agile facilitation for a fictional product team.\nCertifications: Project Management Professional (PMP); Certified ScrumMaster.",
+      "expectedSkills": ["risk-register", "roadmap-planning", "agile-facilitation"],
+      "expectedCredentials": ["pmp", "csm"]
+    }
+  ]
+}

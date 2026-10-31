@@ -40,7 +40,7 @@ Legend: ✅ shipped · 🔧 in progress · ⏳ planned · 🚫 explicitly not in
 | Model-proposed skills appear as amber suggestions, same confirm/dismiss flow | ✅ | provider `scanResume` → `ScanResponse` |
 | Taxonomy mapping of free-text skill names (local fuzzy match; provider may improve) | ✅ | `core/mapping.ts` |
 | Supervisor **Team brief**: aggregate-only inputs shown verbatim before anything is sent, never names or ranks a person | ✅ | Local rules writes a deterministic brief; a remote provider can rewrite it |
-| Evaluation set for provider quality (gold résumés → expected skills) | ⏳ | after a real provider exists |
+| Evaluation set for provider quality (gold résumés → expected skills) | ✅ | `src/core/evaluation.ts`, `examples/evaluation/gold-resumes.json`, Program → Intelligence; Local rules baseline pinned in unit tests. Not yet run against a real model (none is configured) |
 
 ## Phase D — Contribution preferences, round two ✅
 
