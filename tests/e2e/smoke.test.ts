@@ -820,3 +820,12 @@ test('evaluation set: runs Local rules over the synthetic gold résumés and sho
   assert.doesNotMatch(await page.locator('#intelEvaluation').innerText(), /rank|score of a person/i);
   assert.deepEqual(errors, []);
 });
+
+test('intelligence: the Fairlead preset fills the router address and the build allows it', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'program', 'intelligence');
+  await page.locator('#intelUseFairlead').click();
+  assert.equal(await page.locator('#intelEndpoint').inputValue(), 'http://127.0.0.1:8776/v1');
+  assert.doesNotMatch(await page.locator('#intelRemote').innerText(), /does not allow connections/);
+  assert.deepEqual(errors, []);
+});
