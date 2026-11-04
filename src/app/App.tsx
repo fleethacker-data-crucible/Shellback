@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useStore } from './state/store';
+import { navKey, t } from './lib/i18n';
 import { useDialogs } from './components/ui/dialogs';
 import { Button, Notice, cn } from './components/ui/primitives';
 import { pendingCredentialCandidates } from './state/actions';
@@ -125,7 +126,7 @@ export function App() {
 
   return (
     <div className="flex min-h-screen pb-7">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">Skip to content</a>
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-sm focus:bg-mint focus:px-3 focus:py-2 focus:text-bg">{t('app.skip')}</a>
       <aside aria-label="Main navigation" className={cn('fixed top-0 bottom-7 left-0 z-40 flex w-[240px] flex-col overflow-y-auto border-r border-stroke bg-side py-3 transition-transform lg:sticky lg:h-[calc(100vh-28px)] lg:translate-x-0', menuOpen ? 'translate-x-0' : '-translate-x-full')}>
         {/* The full emblem with its wordmark (UNIFIED-UI 5 and 8). */}
         <div className="flex flex-col items-center border-b border-stroke px-3 pb-2">
@@ -139,7 +140,7 @@ export function App() {
               className={cn('flex min-h-10 items-center gap-3 px-4 py-1.5 text-left text-[14px] font-semibold text-muted transition-colors hover:bg-panel2 hover:text-text', view === n.id && 'bg-panel2 text-mint')}
               onClick={() => { setMenuOpen(false); navigate(n.id); }}>
               <Icon name={n.icon} size={20} className="shrink-0" />
-              <span className="flex-1"><span className="block">{n.label}</span><small className="block text-[12px] font-normal text-quiet">{n.hint}</small></span>
+              <span className="flex-1"><span className="block">{t(navKey(n.id))}</span><small className="block text-[12px] font-normal text-quiet">{n.hint}</small></span>
               {n.id === 'profile' && toReview > 0 && <span id="profileNavBadge" aria-label={`${toReview} suggestions to review`} className="rounded-full bg-amber px-2 text-[12px] font-bold text-on-accent">{toReview}</span>}
             </button>
           ))}

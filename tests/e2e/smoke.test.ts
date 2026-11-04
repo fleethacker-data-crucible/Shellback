@@ -812,6 +812,22 @@ test('voice: the summary is on screen, speaking falls back to text, dictation st
   assert.deepEqual(errors, []);
 });
 
+test('radar: every label keeps its full name for assistive technology, and a plain-text summary gives a keyboard path to each domain', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'explore', 'web');
+  const labels = page.locator('text.radar-label[role="button"]');
+  const count = await labels.count();
+  assert.ok(count >= 13, `expected the 13 domains, found ${count}`);
+  for (let i = 0; i < count; i++) {
+    const name = await labels.nth(i).getAttribute('aria-label');
+    assert.match(name ?? '', /confirmed, \d+ suggested, /, `label ${i} has its full accessible name`);
+  }
+  assert.equal(await page.locator('[data-radar-summary]').count(), count, 'the summary lists every domain');
+  await page.locator('[data-radar-summary="0"] button').focus();
+  await page.keyboard.press('Enter');
+  assert.deepEqual(errors, []);
+});
+
 test('role switching: as employee the team keeps sharing only; as supervisor the team sections return', async () => {
   const { page, errors } = await open(baseUrl);
   await nav(page, 'team');
