@@ -45,7 +45,8 @@ export function SpiderWeb({ items, small = false, uid, onSelect, ariaLabel }: Pr
   const ringPath = (f: number) => lineRadial<number>().angle((_, i) => (i * 2 * Math.PI) / n).radius(() => f * r).curve(curveLinearClosed)(items.map(() => 0)) ?? '';
 
   return (
-    <svg className="radar-svg" viewBox={`${small ? -130 : -150} 0 ${w + (small ? 260 : 300)} ${h}`} role="img" aria-label={ariaLabel ?? 'Spider web built from confirmed capabilities. Confidence only adjusts glow and node prominence.'}>
+    <>
+    <svg className="radar-svg" viewBox={`${small ? -130 : -150} 0 ${w + (small ? 260 : 300)} ${h}`} role="group" aria-label={ariaLabel ?? 'Spider web built from confirmed capabilities. Confidence only adjusts glow and node prominence.'}>
       <defs>
         <radialGradient id={`radar-deep-${uid}`}><stop stopColor="#143a57" stopOpacity=".68" /><stop offset=".7" stopColor="#0a263e" stopOpacity=".2" /><stop offset="1" stopColor="#071324" stopOpacity="0" /></radialGradient>
         <linearGradient id={`radar-fill-${uid}`} x1="0%" y1="0%" x2="100%" y2="100%"><stop stopColor="#6bf3dd" stopOpacity=".45" /><stop offset=".6" stopColor="#4b9dd0" stopOpacity=".27" /><stop offset="1" stopColor="#4b82bc" stopOpacity=".12" /></linearGradient>
@@ -73,7 +74,7 @@ export function SpiderWeb({ items, small = false, uid, onSelect, ariaLabel }: Pr
                 <title>{`${item.claimed} confirmed capability mentions; ${item.pending} awaiting review`}</title>
               </circle>
             )}
-            <text className="radar-label" tabIndex={0} role="button" data-radar-index={i} textAnchor={anchor} dominantBaseline="middle" x={tx.toFixed(2)} y={ty.toFixed(2)}
+            <text className="radar-label" tabIndex={0} role="button" data-radar-index={i} aria-label={`${item.name}: ${item.claimed} confirmed, ${item.pending} suggested, ${confidence}`} textAnchor={anchor} dominantBaseline="middle" x={tx.toFixed(2)} y={ty.toFixed(2)}
               onClick={() => onSelect?.(i)} onKeyDown={(e: { key: string; preventDefault(): void }) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(i); } }}>
               <title>{`${item.name} · ${item.claimed} confirmed · ${item.pending} suggested · ${confidence}`}</title>{label}
             </text>
@@ -109,5 +110,18 @@ export function SpiderWeb({ items, small = false, uid, onSelect, ariaLabel }: Pr
       })}
       <text className="radar-footnote" x={cx} y={h - 10} textAnchor="middle">WEB = ATTESTED SKILLS · SHINE = VOLUNTARY CONFIDENCE (0–4)</text>
     </svg>
+    {/* Plain-text summary: full domain names and counts, with a keyboard path to each domain. */}
+    <ul id={`radar-summary-${uid}`} className="mt-2 grid gap-1 text-[13px] sm:grid-cols-2">
+      {items.map((item, i) => {
+        const rating = item.value == null ? 'not rated' : `${item.value.toFixed(1)}/4 self-reported`;
+        return (
+          <li key={item.id ?? item.name} data-radar-summary={i}>
+            {onSelect ? <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => onSelect(i)}>{item.name}</button> : item.name}
+            {`: ${item.claimed} confirmed, ${item.pending} suggested, confidence ${rating}`}
+          </li>
+        );
+      })}
+    </ul>
+  </>
   );
 }
