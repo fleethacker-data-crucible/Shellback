@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
+
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -795,6 +796,19 @@ test('confidence pulse: validation is shown inside the drawer and the toast stay
   assert.match(await page.locator('#pulseNotice').innerText(), /needed|Choose|Saved/);
   const toastVisible = await page.evaluate(() => { const el = document.getElementById('flash')!; return el.matches(':popover-open') || !el.hasAttribute('popover'); });
   assert.ok(toastVisible);
+  assert.deepEqual(errors, []);
+});
+
+test('voice: the summary is on screen, speaking falls back to text, dictation stays off until allowed', async () => {
+  const { page, errors } = await open(baseUrl);
+  assert.match(await page.locator('#voiceSummary').innerText(), /confirmed|not confirmed/);
+  assert.equal(await page.locator('#dictateStart').isDisabled(), true, 'dictation needs the explicit opt-in');
+  await page.locator('#dictateAllow').check();
+  assert.equal(await page.locator('#dictateStart').isDisabled(), false);
+  assert.equal(await page.locator('#skillsNote').isVisible(), true, 'the typed note box is always there');
+  await page.locator('#voiceRead').click();
+  await page.locator('#voiceStatus[role="status"]').waitFor();
+  assert.match(await page.locator('#voiceStatus').innerText(), /No voice is installed|no speech output|Reading the summary aloud/);
   assert.deepEqual(errors, []);
 });
 
