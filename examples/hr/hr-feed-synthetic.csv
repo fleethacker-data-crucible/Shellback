@@ -1,0 +1,7 @@
+employee_id,display_name,org_code,job_title,certifications
+HR-1001,Avery Stone,ENG-DATA,Data analyst,"AWS Certified Cloud Practitioner; Power BI Data Analyst Associate (PL-300)"
+HR-1002,Blair Okonkwo,OPS-FLEET,Maintenance planner,OSHA 30-Hour Training
+HR-1003,Casey Lind,SEC-RISK,Security analyst,
+HR-1004,Drew Marlow,ENG-DATA,Data engineer,
+HR-1005,"Ellis Duarte, Jr.",OPS-FLEET,Planner,
+HR-1006,,ENG-DATA,Blank name row,

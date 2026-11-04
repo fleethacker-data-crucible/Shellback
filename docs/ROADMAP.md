@@ -67,8 +67,8 @@ Replaced the single energizing/neutral/draining answer per stage with two axes â
 ## Later
 
 - Multi-workspace / role switching for supervisors who are also employees.
+- ðŸ”§ Import from HR systems: a CSV feed import is built and tested against a synthetic feed only. It creates unverified drafts with no skills. Not connected to a real HR system, which needs an approved feed (see docs/HR-FEED.md).
 - âœ… Signed peer cards: a detached ECDSA P-256 signature over a card, a local trust list the reader labels, and a check that reports `trusted`, `untrusted-key` or `invalid`. Shipped in `src/core/signing.ts`, `src/app/views/SignedCardsPanel.tsx`; keys never leave the browser in the clear. Proves a card is unchanged since a key signed it, not who holds the key.
-- Import from HR systems once an authoritative feed is approved.
 - Localisation.
 
 ## Guardrails that do not change by phase
@@ -77,3 +77,4 @@ Replaced the single energizing/neutral/draining answer per stage with two axes â
 - Nothing leaves the workstation unless the user exports a file or has knowingly configured a remote provider.
 - Suggestions are never shown as skills until the employee confirms them.
 - Team views are aggregate-only and respect per-field consent.
+

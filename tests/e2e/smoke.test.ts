@@ -812,6 +812,16 @@ test('voice: the summary is on screen, speaking falls back to text, dictation st
   assert.deepEqual(errors, []);
 });
 
+test('HR feed: the roster import creates unverified drafts from the synthetic feed and says what was skipped', async () => {
+  const { page, errors } = await open(baseUrl);
+  await nav(page, 'team', 'roster');
+  await page.locator('#importHrFile').setInputFiles(path.join(root, 'examples', 'hr', 'hr-feed-synthetic.csv'));
+  await confirmDialog(page);
+  await page.locator('#teamExchangeStatus').filter({ hasText: 'Imported 5 HR records' }).waitFor();
+  assert.match(await page.locator('#teamExchangeStatus').innerText(), /as drafts \(not attested\)\. 1 row skipped/);
+  assert.deepEqual(errors, []);
+});
+
 test('radar: every label keeps its full name for assistive technology, and a plain-text summary gives a keyboard path to each domain', async () => {
   const { page, errors } = await open(baseUrl);
   await nav(page, 'explore', 'web');
