@@ -5,6 +5,7 @@ import { Button, Panel, PanelHeading, cn } from '../components/ui/primitives';
 import { Emblem } from '../components/Emblem';
 import { SpiderWeb } from '../viz/SpiderWeb';
 import { domainWebItems } from './SpiderWebView';
+import { VoicePanel } from './VoicePanel';
 
 const STATE_STYLE: Record<StepState, { mark: string; cls: string; label: string }> = {
   done: { mark: '✓', cls: 'border-mint/50 bg-mint/15 text-mint', label: 'Done' },
@@ -89,6 +90,7 @@ export function HomeView() {
           </dl>
           <p className="note mt-2"><span id="metricSkills">{SKILLS.length}</span> skills across <span id="metricDomains">{DOMAINS.length}</span> domains are available to explore.</p>
         </Panel>
+        <VoicePanel />
       </div>
     </section>
   );
