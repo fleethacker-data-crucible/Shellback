@@ -171,7 +171,7 @@ export function App() {
             </button>
             <Button id="importBtn" onClick={() => fileRef.current?.click()}><Icon name="import" />Import data</Button>
             <input ref={fileRef} id="importFile" hidden type="file" accept=".json,application/json" onChange={importWorkspace}  aria-label="Import a Shellback file"/>
-            <button type="button" className="h-9 w-9 rounded-full bg-gradient-to-br from-mint to-blue text-[12px] font-extrabold text-on-accent" data-view="profile" aria-label="Open my capability profile" title={`${ws.profile.displayName.trim() ? `${ws.profile.displayName.trim()} — your initials` : 'Your initials appear here once you set a display name (Team → Share your card)'} · open My profile`} onClick={() => navigate('profile')}>
+            <button type="button" className="h-9 w-9 rounded-full bg-mint text-[12px] font-extrabold text-on-accent" data-view="profile" aria-label="Open my capability profile" title={`${ws.profile.displayName.trim() ? `${ws.profile.displayName.trim()} — your initials` : 'Your initials appear here once you set a display name (Team → Share your card)'} · open My profile`} onClick={() => navigate('profile')}>
               {ws.profile.displayName.trim() ? ws.profile.displayName.trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : 'ME'}
             </button>
           </div>
