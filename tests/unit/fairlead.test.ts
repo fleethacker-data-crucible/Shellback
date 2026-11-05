@@ -42,10 +42,13 @@ test('a provider talks to a fake router: models, scan, local-only header and bea
       res.end('{}');
     });
   });
-  // The router address is fixed; the fake has to listen on it.
-  await new Promise<void>((ok, bad) => { server.once('error', bad); server.listen(8776, '127.0.0.1', () => ok()); });
+  // The fake listens on a free port, so a real router on 8776 (a developer machine) cannot break the test.
+  // The provider keeps the real router address; the fetch it is given redirects that origin to the fake.
+  await new Promise<void>((ok, bad) => { server.once('error', bad); server.listen(0, '127.0.0.1', () => ok()); });
+  const fakeOrigin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const toFake: typeof fetch = (input, init) => fetch(String(input).replace(FAIRLEAD_ORIGIN, fakeOrigin), init);
   try {
-    const provider = createOpenAIProvider({ ...fairleadPreset(), model: 'local-small' }, { fetch: (...a) => fetch(...a), token: () => 'client-key' });
+    const provider = createOpenAIProvider({ ...fairleadPreset(), model: 'local-small' }, { fetch: toFake, token: () => 'client-key' });
     const ping = await provider.ping();
     assert.equal(ping.ok, true, ping.detail);
     assert.match(ping.detail, /local-small/);
