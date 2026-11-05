@@ -16,6 +16,7 @@ jobs:
   # Runs on the self-hosted Windows workstation runner, which also lets CI exercise the
   # real PowerShell 5.1 loopback server that ships to workstations.
   browser-smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, Windows, X64]
     timeout-minutes: 25
     defaults:
