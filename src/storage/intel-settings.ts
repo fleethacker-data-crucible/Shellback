@@ -5,7 +5,8 @@
  * exported, and never included in a workspace backup.
  */
 import { decryptJson, encryptJson, isEncryptedEnvelope, type EncryptedEnvelope } from '../core/crypto';
-import { createConfiguredProvider, endpointOrigin, getProvider, localRulesProvider, registerProvider, unregisterProvider, type IntelligenceProvider, type RemoteProviderConfig } from '../core/intelligence';
+import { loopbackPageOrigin } from '../core/fairlead';
+import { createConfiguredProvider, endpointOrigin, getProvider, localRulesProvider, registerProvider, unregisterProvider, type IntelligenceProvider, type RemoteDeps, type RemoteProviderConfig } from '../core/intelligence';
 
 // Former-name key, kept so existing users keep their provider setup (see storage/idb.ts).
 export const INTEL_KEY = 'synapse-intel-v1';
@@ -71,18 +72,28 @@ export async function unlockToken(envelope: EncryptedEnvelope, passphrase: strin
 // ----------------------------------------------------------------------------- active provider
 let current: IntelSettings = typeof localStorage !== 'undefined' ? loadIntelSettings() : structuredClone(DEFAULT_INTEL);
 
+function liveRemoteDeps(timeoutMs?: number, sealedKeyLocked?: () => boolean): RemoteDeps {
+  return {
+    fetch: (...a) => fetch(...a),
+    token: () => unlockedToken,
+    ...(timeoutMs ? { timeoutMs } : {}),
+    pageOrigin: loopbackPageOrigin(),
+    sealedKeyLocked: sealedKeyLocked ?? (() => current.tokenEnvelope != null && unlockedToken == null),
+  };
+}
+
 /** (Re)register the remote provider from settings and return the one that is active. */
 export function applyIntelSettings(s: IntelSettings): IntelligenceProvider {
   current = s;
   saveIntelSettings(s);
   unregisterProvider('remote-http');
-  if (s.remote.endpoint) registerProvider(createConfiguredProvider(s.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
+  if (s.remote.endpoint) registerProvider(createConfiguredProvider(s.remote, liveRemoteDeps()));
   return activeProvider();
 }
 
 /** A provider for unsaved form values (connection test) that can still use the unlocked token. */
-export function previewProvider(cfg: RemoteProviderConfig): IntelligenceProvider {
-  return createConfiguredProvider(cfg, { fetch: (...a) => fetch(...a), token: () => unlockedToken, timeoutMs: 15_000 });
+export function previewProvider(cfg: RemoteProviderConfig, sealedLocked = false): IntelligenceProvider {
+  return createConfiguredProvider(cfg, liveRemoteDeps(15_000, () => sealedLocked));
 }
 
 export function currentIntelSettings(): IntelSettings { return current; }
@@ -93,4 +104,4 @@ export function activeProvider(): IntelligenceProvider {
 }
 
 // register on load so views can use activeProvider() immediately
-if (typeof localStorage !== 'undefined' && current.remote.endpoint) registerProvider(createConfiguredProvider(current.remote, { fetch: (...a) => fetch(...a), token: () => unlockedToken }));
+if (typeof localStorage !== 'undefined' && current.remote.endpoint) registerProvider(createConfiguredProvider(current.remote, liveRemoteDeps()));

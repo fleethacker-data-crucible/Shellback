@@ -20,7 +20,7 @@ import { runScan, credentialKey, type ScanRequest, type ScanResponse } from './s
 import { isSkillId, SKILL_BY_ID, DOMAINS, SKILLS } from './taxonomy';
 import { mapSkillNames, type MappedSkill } from './mapping';
 import { STAGE_DEFS } from './contribution';
-import { privacyHeaders } from './fairlead';
+import { fairleadTransport, privacyHeaders } from './fairlead';
 
 // ----------------------------------------------------------------------------- types
 export interface ProviderInfo {
@@ -144,7 +144,15 @@ const modelsResult = z.object({ models: z.array(z.string().min(1).max(120)).max(
 const openaiModels = z.object({ data: z.array(z.object({ id: z.string().min(1).max(120) })).max(1000) });
 const openaiChat = z.object({ choices: z.array(z.object({ message: z.object({ content: z.string().nullable().default('') }) })).min(1) });
 
-export interface RemoteDeps { fetch: typeof fetch; token: () => string | null; timeoutMs?: number }
+export interface RemoteDeps {
+  fetch: typeof fetch;
+  token: () => string | null;
+  timeoutMs?: number;
+  /** Loopback page origin when the local server can attach Fairlead's account token. */
+  pageOrigin?: string | null;
+  /** A key is sealed but locked: do not fall through to the account token. */
+  sealedKeyLocked?: () => boolean;
+}
 
 export function validateEndpoint(url: string): string | null {
   try {
@@ -253,15 +261,25 @@ export function createOpenAIProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     const bad = validateEndpoint(cfg.endpoint);
     if (bad) throw new Error(bad);
     const token = deps.token();
-    if (!token) throw new Error('No API key unlocked. Add or unlock the key under Program → Intelligence.');
+    if (!token && deps.sealedKeyLocked?.()) throw new Error('Unlock the key under Program → Intelligence. A sealed key is used instead of the account token.');
+    const transport = fairleadTransport(cfg.endpoint, path, token, deps.pageOrigin ?? null);
+    if ('error' in transport) throw new Error(transport.error);
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = ctrl ? setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45_000) : null;
     let res: Response;
+    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint) };
+    if (transport.sendBrowserToken && token) headers.authorization = `Bearer ${token}`;
     try {
-      res = await deps.fetch(`${base}${path}`, { ...init, headers: { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint), authorization: `Bearer ${token}` }, credentials: 'omit', referrerPolicy: 'no-referrer', ...(ctrl ? { signal: ctrl.signal } : {}) });
+      res = await deps.fetch(transport.url, { ...init, headers, credentials: 'omit', referrerPolicy: 'no-referrer', ...(ctrl ? { signal: ctrl.signal } : {}) });
     } catch (err) {
-      throw new Error(`Could not reach ${origin}: ${err instanceof Error ? err.message : String(err)}. Check that this build allows the host (Program → Intelligence) and that the gateway permits browser (CORS) requests; otherwise run the loopback adapter.`);
+      const where = transport.sendBrowserToken ? origin : (deps.pageOrigin ?? origin);
+      throw new Error(`Could not reach ${where}: ${err instanceof Error ? err.message : String(err)}. Check that this build allows the host (Program → Intelligence) and that the gateway permits browser (CORS) requests; otherwise run the loopback adapter.`);
     } finally { if (timer) clearTimeout(timer); }
+    if (!transport.sendBrowserToken && !res.ok) {
+      let detail = '';
+      try { detail = (await res.text()).replace(/\s+/g, ' ').trim().slice(0, 300); } catch { /* the status is enough */ }
+      throw new Error(detail || `The gateway answered ${res.status}.`);
+    }
     if (res.status === 401 || res.status === 403) throw new Error(`The gateway rejected the API key (${res.status}).`);
     if (res.status === 404) throw new Error(`${origin} answered 404 for ${path}. The endpoint should be the API base, usually ending in /v1.`);
     if (!res.ok) throw new Error(`The gateway answered ${res.status}.`);

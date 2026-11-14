@@ -6,7 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../state/store';
-import { fairleadPreset } from '../../core/fairlead';
+import { fairleadPreset, isFairleadOrigin, loopbackPageOrigin } from '../../core/fairlead';
 import { EvaluationPanel } from './EvaluationPanel';
 import { useDialogs } from '../components/ui/dialogs';
 import { Button, Field, Input, Notice, Panel, PanelHeading, Pill, SectionIntro, Select, Textarea } from '../components/ui/primitives';
@@ -26,9 +26,12 @@ export function IntelligenceView() {
   const endpointError = s.remote.endpoint ? validateEndpoint(s.remote.endpoint) : null;
   const endpointOk = !!s.remote.endpoint && !endpointError;
   const hostAllowed = endpointOk && isHostAllowed(s.remote.endpoint);
-  const keyReady = !!s.tokenEnvelope && tokenUnlocked();
+  const fairlead = isFairleadOrigin(s.remote.endpoint);
+  const fairleadLocal = fairlead && loopbackPageOrigin() !== null && !s.tokenEnvelope;
+  const sealedLocked = !!s.tokenEnvelope && !tokenUnlocked();
+  const keyReady = fairleadLocal || (!!s.tokenEnvelope && tokenUnlocked());
   const modelReady = kind === 'synapse' || !!s.remote.model;
-  const remoteReady = endpointOk && modelReady && (kind === 'synapse' || !!s.tokenEnvelope);
+  const remoteReady = endpointOk && modelReady && (kind === 'synapse' || !!s.tokenEnvelope || fairleadLocal);
   const live = activeProvider().describe();
   const saved = currentIntelSettings();
   const dirty = JSON.stringify(saved.remote) !== JSON.stringify(s.remote);
@@ -71,7 +74,7 @@ export function IntelligenceView() {
   async function loadModels(from: IntelSettings = s) {
     setBusy('models'); setModelsError(''); setModels(null);
     try {
-      const list = await previewProvider(from.remote).listModels!();
+      const list = await previewProvider(from.remote, !!from.tokenEnvelope && !tokenUnlocked()).listModels!();
       setModels(list);
       if (!list.length) setModelsError('The gateway returned no models for this key.');
       else if (!from.remote.model || !list.includes(from.remote.model)) setS((cur) => ({ ...cur, remote: { ...cur.remote, model: list[0] } }));
@@ -80,7 +83,7 @@ export function IntelligenceView() {
   }
   async function runTest() {
     setBusy('test'); setTest(null);
-    try { setTest(await previewProvider(s.remote).ping()); } finally { setBusy(''); }
+    try { setTest(await previewProvider(s.remote, sealedLocked).ping()); } finally { setBusy(''); }
   }
 
   return (
@@ -99,7 +102,7 @@ export function IntelligenceView() {
           </label>
           <label className={`cursor-pointer rounded-md border p-4 ${s.provider === 'remote-http' ? 'border-amber/60 bg-amber/5' : 'border-stroke'} ${!remoteReady ? 'opacity-70' : ''}`}>
             <input type="radio" name="intelProvider" value="remote-http" data-provider="remote-http" className="mr-2 accent-mint" disabled={!remoteReady || dirty} checked={s.provider === 'remote-http'} onChange={() => useProvider('remote-http')} />
-            <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">{!endpointOk ? 'step 1: enter the endpoint' : kind === 'openai' && !s.tokenEnvelope ? 'step 2: add the API key' : !modelReady ? 'step 3: choose a model' : 'finish the steps below'}</Pill> : dirty ? <Pill className="ml-2">step 4: save, then select</Pill> : null}
+            <strong>{s.remote.label || 'Remote provider'}</strong>{!remoteReady ? <Pill className="ml-2">{!endpointOk ? 'step 1: enter the endpoint' : kind === 'openai' && !s.tokenEnvelope && !fairleadLocal ? 'step 2: add the API key' : !modelReady ? 'step 3: choose a model' : 'finish the steps below'}</Pill> : dirty ? <Pill className="ml-2">step 4: save, then select</Pill> : null}
             <p className="note mt-1">An AI gateway your organization has authorized (for example a service accredited for your data). You choose the model; Shellback sends only what the table at the bottom lists.</p>
           </label>
         </div>
@@ -128,7 +131,7 @@ export function IntelligenceView() {
             )}
           </Step>
 
-          <Step n={2} title={kind === 'openai' ? 'Which key?' : 'Which token? (optional if the endpoint needs none)'} done={!!s.tokenEnvelope}>
+          <Step n={2} title={kind === 'openai' ? 'Which key?' : 'Which token? (optional if the endpoint needs none)'} done={!!s.tokenEnvelope || fairleadLocal}>
             <div className="flex flex-wrap items-center gap-2">
               {s.tokenEnvelope ? (
                 <>
@@ -140,6 +143,11 @@ export function IntelligenceView() {
               ) : <Button id="intelSaveToken" size="sm" variant="primary" onClick={addKey} disabled={!!busy}>{kind === 'openai' ? 'Add API key…' : 'Add bearer token…'}</Button>}
               <span className="note">Encrypted at rest with your passphrase; decrypted into memory only while this tab is open.</span>
             </div>
+            {fairlead && (fairleadLocal ? (
+              <p className="note mt-2" id="intelFairleadToken">On the served app, the local server reads Fairlead's account token for this Windows user and sends it with the label Shellback. Leave the key blank, or seal one here to use that key instead. Other providers still need a key.</p>
+            ) : !s.tokenEnvelope ? (
+              <p className="note mt-2" id="intelFairleadToken">This page has no local server, so the account token cannot be attached. Add a key, or open Shellback with Launch-Shellback.bat.</p>
+            ) : null)}
           </Step>
 
           <Step n={3} title="Which model?" done={modelReady}>
@@ -156,7 +164,7 @@ export function IntelligenceView() {
                   )}
                   <Field label="…or type it" htmlFor="intelModel"><Input id="intelModel" className="w-[260px]" value={s.remote.model ?? ''} onChange={(v) => setRemote({ model: v })} maxLength={120} placeholder="model or deployment name" /></Field>
                 </div>
-                {!keyReady && <p className="note mt-1">Add and unlock the key first; listing models needs it.</p>}
+                {!keyReady && <p className="note mt-1">{fairlead && !loopbackPageOrigin() ? 'Add and unlock a key, or open the served app so the account token can be used.' : 'Add and unlock the key first; listing models needs it.'}</p>}
                 {modelsError && <p id="intelModelsError" role="alert" className="mt-1 text-[12px] text-danger">{modelsError}</p>}
               </>
             )}

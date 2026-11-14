@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { FAIRLEAD_ORIGIN, FAIRLEAD_PRIVACY_HEADER, fairleadPreset, isFairleadOrigin, privacyHeaders } from '../../src/core/fairlead';
+import { FAIRLEAD_ORIGIN, FAIRLEAD_PRIVACY_HEADER, fairleadPreset, fairleadTransport, isFairleadOrigin, privacyHeaders } from '../../src/core/fairlead';
 import { createOpenAIProvider, validateEndpoint } from '../../src/core/intelligence';
 
 const root = process.env.SHELLBACK_ROOT ?? process.cwd();
@@ -26,6 +26,33 @@ test('the privacy header goes only to the router, never to other hosts', () => {
 test('the shipped build allows the router origin and no other host by default', () => {
   const manifest = JSON.parse(readFileSync(path.join(root, 'dist', 'build-manifest.json'), 'utf8')) as { intelHosts: string[] };
   assert.deepEqual(manifest.intelHosts, [FAIRLEAD_ORIGIN]);
+});
+
+test('the Fairlead preset with no browser key goes to the local server, and a sealed key still goes to the router', () => {
+  const viaServer = fairleadTransport(`${FAIRLEAD_ORIGIN}/v1`, '/models', null, 'http://127.0.0.1:8765');
+  assert.deepEqual(viaServer, { url: 'http://127.0.0.1:8765/api/fairlead/v1/models', sendBrowserToken: false });
+  const viaKey = fairleadTransport(`${FAIRLEAD_ORIGIN}/v1`, '/chat/completions', 'client-key', 'http://127.0.0.1:8765');
+  assert.equal('url' in viaKey && viaKey.url, `${FAIRLEAD_ORIGIN}/v1/chat/completions`);
+  assert.equal('sendBrowserToken' in viaKey && viaKey.sendBrowserToken, true);
+  const filePage = fairleadTransport(`${FAIRLEAD_ORIGIN}/v1`, '/models', null, null);
+  assert.equal('error' in filePage, true);
+  const other = fairleadTransport('https://ai.example.com/v1', '/models', null, 'http://127.0.0.1:8765');
+  assert.match('error' in other ? other.error : '', /No API key unlocked/);
+});
+
+test('a Fairlead call with no browser key asks the local server and does not send a bearer token', async () => {
+  const seen: Array<{ url: string; auth?: string; privacy?: string }> = [];
+  const fetchMock = (async (input: string | URL | Request, init?: RequestInit) => {
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    seen.push({ url: String(input), auth: headers.authorization, privacy: headers[FAIRLEAD_PRIVACY_HEADER] });
+    return new Response(JSON.stringify({ data: [{ id: 'local-small' }] }), { status: 200, headers: { 'content-type': 'application/json' } });
+  }) as typeof fetch;
+  const provider = createOpenAIProvider({ ...fairleadPreset(), model: 'local-small' }, { fetch: fetchMock, token: () => null, pageOrigin: 'http://127.0.0.1:8765' });
+  const ping = await provider.ping();
+  assert.equal(ping.ok, true, ping.detail);
+  assert.equal(seen[0]?.url, 'http://127.0.0.1:8765/api/fairlead/v1/models');
+  assert.equal(seen[0]?.auth, undefined);
+  assert.equal(seen[0]?.privacy, 'local');
 });
 
 test('a provider talks to a fake router: models, scan, local-only header and bearer key', async () => {

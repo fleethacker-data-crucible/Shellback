@@ -17,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stopRunningShellback } from './stop-running.mjs';
+import { discoverListenerPids, discoverProcessPaths, handleFairleadProxy, MAX_BODY_BYTES } from './fairlead-forward.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, fallback) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : fallback; };
@@ -81,6 +82,50 @@ function lifecycle(req, res, url, headers) {
   });
 }
 
+function readBody(req, max) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (chunk) => {
+      size += chunk.length;
+      if (size > max) { req.destroy(); reject(new Error('too large')); return; }
+      chunks.push(chunk);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function fairleadProxy(req, res, url, headers) {
+  const bound = server.address();
+  const p = typeof bound === 'object' && bound ? bound.port : port;
+  const originOk = [`http://127.0.0.1:${p}`, `http://localhost:${p}`].includes(req.headers.origin ?? '')
+    && [`127.0.0.1:${p}`, `localhost:${p}`].includes(req.headers.host ?? '');
+  let body = Buffer.alloc(0);
+  if (req.method === 'POST') {
+    try { body = await readBody(req, MAX_BODY_BYTES); }
+    catch { res.writeHead(413, { ...headers, 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Too large'); }
+  }
+  try {
+    const result = await handleFairleadProxy({
+      method: req.method ?? 'GET',
+      pathname: url.pathname,
+      body,
+      originOk,
+      env: process.env,
+      fetchImpl: globalThis.fetch,
+      listenerPids: () => discoverListenerPids(8776),
+      processPaths: (pid) => discoverProcessPaths(pid),
+    });
+    res.writeHead(result.status, { ...headers, 'Content-Type': result.contentType, 'Content-Length': result.body.length });
+    res.end(result.body);
+  } catch {
+    if (res.headersSent) return;
+    res.writeHead(502, { ...headers, 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Fairlead could not be reached.');
+  }
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   let rel;
@@ -97,6 +142,7 @@ const server = http.createServer((req, res) => {
     'Content-Security-Policy': "frame-ancestors 'none'",
   };
   if (url.pathname === '/api/heartbeat' || url.pathname === '/api/session/stop') return lifecycle(req, res, url, headers);
+  if (url.pathname.startsWith('/api/fairlead/')) return fairleadProxy(req, res, url, headers);
   if (!file.startsWith(rootDir + path.sep) && file !== rootDir) { res.writeHead(403, headers); return res.end('Forbidden'); }
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, headers); return res.end('Method not allowed'); }
   fs.stat(file, (err, stat) => {
