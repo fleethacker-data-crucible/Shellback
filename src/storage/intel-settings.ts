@@ -38,7 +38,7 @@ export function loadIntelSettings(): IntelSettings {
     const v = JSON.parse(raw) as Partial<IntelSettings> & { remote?: Partial<RemoteProviderConfig> };
     return {
       provider: v.provider === 'remote-http' ? 'remote-http' : 'local-rules',
-      remote: { kind: v.remote?.kind === 'synapse' ? 'synapse' : 'openai', label: str(v.remote?.label, 80), endpoint: str(v.remote?.endpoint, 500), model: str(v.remote?.model, 120), dataHandling: str(v.remote?.dataHandling, 600) },
+      remote: { kind: v.remote?.kind === 'synapse' ? 'synapse' : 'openai', label: str(v.remote?.label, 80), endpoint: str(v.remote?.endpoint, 500), model: str(v.remote?.model, 120), dataHandling: str(v.remote?.dataHandling, 600), cloudAllowed: v.remote?.cloudAllowed === true },
       tokenEnvelope: isEncryptedEnvelope(v.tokenEnvelope) ? v.tokenEnvelope : null,
     };
   } catch { return structuredClone(DEFAULT_INTEL); }
