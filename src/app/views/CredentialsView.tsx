@@ -6,6 +6,8 @@ import { useAction } from '../state/hooks';
 import { addCredential, deleteCredential, dismissCredentialCandidate, pendingCredentialCandidates, updateCredential, type CredentialInput } from '../state/actions';
 import { Button, Empty, Field, Input, Panel, PanelHeading, Pill, SectionIntro, Select, Textarea } from '../components/ui/primitives';
 import { TrustChip } from '../components/TrustChip';
+import { downloadJson } from '../lib/files';
+import { lazaretteSynapseImport } from '../../core/lazarette-import';
 
 const EMPTY: Required<CredentialInput> = { name: '', authority: '', expiry: '', issued: '', verifier: '', provenance: 'claimed', note: '' };
 const PROVENANCE: Array<{ value: CredentialProvenance; label: string; hint: string }> = [
@@ -87,7 +89,7 @@ export function CredentialsView({ embedded = false }: { embedded?: boolean }) {
           <p className="note mt-3">Do not enter credential numbers, personal IDs, sensitive or regulated work details, or restricted records. <TrustChip kind="self-reported" extra="A verified credential here still means you told Shellback it was verified; an authoritative feed (see docs) would be needed to confirm it independently." /></p>
         </Panel>
         <Panel>
-          <PanelHeading title="My credentials">Sorted by renewal date. Status comes from the dates and how you said you know; it is never a judgement of you.</PanelHeading>
+          <PanelHeading title="My credentials" action={<Button id="exportLazarette" size="sm" onClick={() => downloadJson(lazaretteSynapseImport(held), 'shellback-lazarette-credentials.json')}>Export for Lazarette</Button>}>Sorted by renewal date. Status comes from the dates and how you said you know; it is never a judgement of you. The Lazarette file has the name, issuer, and expiry only.</PanelHeading>
           <div id="credentialList" className="space-y-2">
             {held.length ? held.map((c) => {
               const r = renewalState(c);
