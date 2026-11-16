@@ -1,15 +1,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 import {
   allowedForward,
+  fairleadSocketOptions,
+  FORWARD_TIMEOUT_MS,
   handleFairleadProxy,
+  ID_TIMEOUT_MS,
   identityDecision,
   localTokenDisabled,
+  loopbackFairleadRequest,
+  MAX_RESPONSE_BYTES,
   parseFairleadId,
   parseProcNetTcp,
   pathsEqual,
+  pinnedContentType,
   readLocalTokenText,
   scrub,
 } from '../../tools/fairlead-forward.mjs';
@@ -67,56 +74,136 @@ test('proc net tcp keeps loopback listeners and skips other addresses', () => {
   assert.deepEqual(parseProcNetTcp(text, 8776), ['99']);
 });
 
+test('Fairlead calls stay on loopback, with a timeout and no proxy agent', () => {
+  const id = fairleadSocketOptions(ID_TIMEOUT_MS);
+  const forward = fairleadSocketOptions(FORWARD_TIMEOUT_MS);
+  assert.deepEqual(id, { host: '127.0.0.1', port: 8776, timeout: 3000 });
+  assert.equal(forward.timeout, 45000);
+  assert.equal('agent' in id, false);
+  const src = readFileSync(path.join(root, 'tools', 'fairlead-forward.mjs'), 'utf8');
+  assert.match(src, /from 'node:http'/);
+  assert.doesNotMatch(src, /fetch\(/);
+  assert.equal(pinnedContentType('text/html; charset=utf-8'), 'text/plain; charset=utf-8');
+  assert.equal(pinnedContentType('application/json'), 'application/json; charset=utf-8');
+});
+
 test('a matching Fairlead is called with the label and the account token, which the page does not receive', async () => {
   const token = 'fl-account-token-value';
-  const seen: Array<{ url: string; authorization?: string; label?: string; privacy?: string }> = [];
-  const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
-    const headers = new Headers(init?.headers);
-    seen.push({ url: String(url), authorization: headers.get('authorization') ?? undefined, label: headers.get('x-fairlead-label') ?? undefined, privacy: headers.get('x-fairlead-privacy') ?? undefined });
-    if (String(url).endsWith('/__fleethacker/id')) {
-      return new Response(JSON.stringify({ tool: 'fairlead', pid: 42, path: PROGRAM }), { status: 200, headers: { 'content-type': 'application/json' } });
+  const seen: Array<{ path: string; timeoutMs: number; authorization?: string; label?: string; privacy?: string }> = [];
+  const requestImpl = async (call: { path: string; timeoutMs: number; headers?: Record<string, string> }) => {
+    seen.push({ path: call.path, timeoutMs: call.timeoutMs, authorization: call.headers?.authorization, label: call.headers?.['x-fairlead-label'], privacy: call.headers?.['x-fairlead-privacy'] });
+    if (call.path === '/__fleethacker/id') {
+      return { status: 200, headers: { 'content-type': 'application/json' }, body: Buffer.from(JSON.stringify({ tool: 'fairlead', pid: 42, path: PROGRAM })) };
     }
-    return new Response(JSON.stringify({ data: [{ id: 'local' }], echo: token }), { status: 200, headers: { 'content-type': 'application/json' } });
-  }) as typeof fetch;
+    return { status: 200, headers: { 'content-type': 'text/html' }, body: Buffer.from(JSON.stringify({ data: [{ id: 'local' }], echo: token })) };
+  };
   const result = await handleFairleadProxy({
     method: 'GET',
     pathname: '/api/fairlead/v1/models',
     originOk: true,
     env: {},
-    fetchImpl,
+    requestImpl,
     listenerPids: () => [42],
     processPaths: () => [PROGRAM],
     readToken: () => token,
   });
   assert.equal(result.status, 200);
-  assert.equal(seen[0]?.url, 'http://127.0.0.1:8776/__fleethacker/id');
+  assert.equal(seen[0]?.path, '/__fleethacker/id');
+  assert.equal(seen[0]?.timeoutMs, ID_TIMEOUT_MS);
   assert.equal(seen[0]?.authorization, undefined);
+  assert.equal(seen[1]?.path, '/v1/models');
+  assert.equal(seen[1]?.timeoutMs, FORWARD_TIMEOUT_MS);
   assert.equal(seen[1]?.authorization, `Bearer ${token}`);
   assert.equal(seen[1]?.label, 'Shellback');
   assert.equal(seen[1]?.privacy, 'local');
+  assert.equal(result.contentType, 'text/plain; charset=utf-8', 'an HTML content type is not passed through');
   assert.equal(result.body.includes(Buffer.from(token)), false);
   assert.match(result.body.toString('utf8'), /\[key\]/);
 });
 
+test('a redirect is not followed, and a timeout does not leave the token in the error', async () => {
+  const redirect = await handleFairleadProxy({
+    method: 'GET',
+    pathname: '/api/fairlead/v1/models',
+    originOk: true,
+    env: {},
+    requestImpl: async (call) => {
+      if (call.path === '/__fleethacker/id') {
+        const headers: Record<string, string> = { 'content-type': 'application/json' };
+        return { status: 200, headers, body: Buffer.from(JSON.stringify({ tool: 'fairlead', pid: 42, path: PROGRAM })) };
+      }
+      const headers: Record<string, string> = { location: 'http://example.invalid/steal' };
+      return { status: 302, headers, body: Buffer.alloc(0) };
+    },
+    listenerPids: () => [42],
+    processPaths: () => [PROGRAM],
+    readToken: () => 'fl-secret',
+  });
+  assert.equal(redirect.status, 502);
+  assert.match(redirect.body.toString('utf8'), /redirected/);
+  assert.doesNotMatch(redirect.body.toString('utf8'), /example\.invalid|fl-secret/);
+
+  const timed = await handleFairleadProxy({
+    method: 'GET',
+    pathname: '/api/fairlead/v1/models',
+    originOk: true,
+    env: {},
+    requestImpl: async (call) => {
+      if (call.path === '/__fleethacker/id') {
+        const headers: Record<string, string> = { 'content-type': 'application/json' };
+        return { status: 200, headers, body: Buffer.from(JSON.stringify({ tool: 'fairlead', pid: 42, path: PROGRAM })) };
+      }
+      throw Object.assign(new Error('Bearer fl-secret hung'), { code: 'timeout' });
+    },
+    listenerPids: () => [42],
+    processPaths: () => [PROGRAM],
+    readToken: () => 'fl-secret',
+  });
+  assert.equal(timed.status, 502);
+  assert.match(timed.body.toString('utf8'), /did not answer in time/);
+  assert.doesNotMatch(timed.body.toString('utf8'), /fl-secret/);
+});
+
+test('a listener that accepts and never answers is cut off on the loopback socket', async () => {
+  const server = http.createServer(() => { /* hold the socket open */ });
+  try {
+    await new Promise<void>((ok, bad) => {
+      server.once('error', bad);
+      server.listen(8776, '127.0.0.1', () => ok());
+    });
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    assert.equal(code, 'EADDRINUSE');
+    return;
+  }
+  try {
+    const started = Date.now();
+    await assert.rejects(() => loopbackFairleadRequest({ method: 'GET', path: '/__fleethacker/id', headers: {}, timeoutMs: 200 }));
+    assert.ok(Date.now() - started < 2000);
+  } finally {
+    await new Promise<void>((ok) => server.close(() => ok()));
+  }
+});
+
 test('a foreign program on the port does not receive the token', async () => {
-  let called = false;
-  const fetchImpl = (async () => {
-    called = true;
-    return new Response(JSON.stringify({ tool: 'not-fairlead', pid: 9, path: 'C:\\other.exe' }), { status: 200, headers: { 'content-type': 'application/json' } });
-  }) as typeof fetch;
+  let calls = 0;
+  const requestImpl = async () => {
+    calls += 1;
+    return { status: 200, headers: { 'content-type': 'application/json' }, body: Buffer.from(JSON.stringify({ tool: 'not-fairlead', pid: 9, path: 'C:\\other.exe' })) };
+  };
   const result = await handleFairleadProxy({
     method: 'POST',
     pathname: '/api/fairlead/v1/chat/completions',
     body: Buffer.from('{}'),
     originOk: true,
     env: {},
-    fetchImpl,
+    requestImpl,
     listenerPids: () => [9],
     processPaths: () => ['C:\\other.exe'],
     readToken: () => 'fl-secret',
   });
   assert.equal(result.status, 502);
-  assert.equal(called, true);
+  assert.equal(calls, 1, 'the key-bearing forward is not made');
   assert.match(result.body.toString('utf8'), /not Fairlead/);
   assert.doesNotMatch(result.body.toString('utf8'), /fl-secret/);
 });
@@ -130,5 +217,8 @@ test('the PowerShell server wires the same forwarder and never names a workflow 
   assert.match(proxy, /X-Fairlead-Privacy/);
   assert.match(proxy, /__fleethacker\/id/);
   assert.match(proxy, /local-token/);
+  assert.match(proxy, /text\/plain; charset=utf-8/);
+  assert.match(server, /X-Content-Type-Options: nosniff/);
   assert.doesNotMatch(proxy, /fl-secret/);
+  assert.ok(MAX_RESPONSE_BYTES > 0);
 });

@@ -191,9 +191,11 @@ function Invoke-ShellbackFairleadForward {
       }
     } finally { $stream.Dispose() }
     $raw = $ms.ToArray()
-    $ctype = [string]$resp.ContentType
-    if (-not $ctype) { $ctype = 'application/json; charset=utf-8' }
-    if (($ctype -like 'application/json*' -or $ctype -like 'text/*') -and $Token) {
+    # Only JSON or plain text goes back to the page. A browser must not treat another type as active content.
+    $ctype = 'text/plain; charset=utf-8'
+    $rawType = [string]$resp.ContentType
+    if ($rawType -like 'application/json*') { $ctype = 'application/json; charset=utf-8' }
+    if ($Token) {
       $text = [Text.Encoding]::UTF8.GetString($raw)
       if ($text.Contains($Token)) { $raw = [Text.Encoding]::UTF8.GetBytes($text.Replace($Token, '[key]')) }
     }

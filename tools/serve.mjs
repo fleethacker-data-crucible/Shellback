@@ -113,11 +113,10 @@ async function fairleadProxy(req, res, url, headers) {
       body,
       originOk,
       env: process.env,
-      fetchImpl: globalThis.fetch,
       listenerPids: () => discoverListenerPids(8776),
       processPaths: (pid) => discoverProcessPaths(pid),
     });
-    res.writeHead(result.status, { ...headers, 'Content-Type': result.contentType, 'Content-Length': result.body.length });
+    res.writeHead(result.status, { ...headers, 'Content-Type': result.contentType, 'Content-Length': result.body.length, 'X-Content-Type-Options': 'nosniff' });
     res.end(result.body);
   } catch {
     if (res.headersSent) return;

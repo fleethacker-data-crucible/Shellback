@@ -5,13 +5,30 @@
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
 import path from 'node:path';
 
 export const FAIRLEAD_ORIGIN = 'http://127.0.0.1:8776';
+export const FAIRLEAD_HOST = '127.0.0.1';
+export const FAIRLEAD_PORT = 8776;
 export const FAIRLEAD_LABEL = 'Shellback';
 export const MAX_TOKEN_BYTES = 4096;
 export const MAX_BODY_BYTES = 524288;
 export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+export const ID_TIMEOUT_MS = 3000;
+export const FORWARD_TIMEOUT_MS = 45000;
+
+/** Socket target for every Fairlead call. No agent, so HTTP_PROXY is not used. */
+export function fairleadSocketOptions(timeoutMs) {
+  return { host: FAIRLEAD_HOST, port: FAIRLEAD_PORT, timeout: timeoutMs };
+}
+
+/** Only JSON or plain text is returned to the page. Anything else is plain text. */
+export function pinnedContentType(raw) {
+  const kind = String(raw || '').split(';')[0].trim().toLowerCase();
+  if (kind === 'application/json') return 'application/json; charset=utf-8';
+  return 'text/plain; charset=utf-8';
+}
 
 export function localTokenDisabled(env) {
   const v = String(env.FAIRLEAD_LOCAL_TOKEN ?? '').trim().toLowerCase();
@@ -107,7 +124,59 @@ function relayPath(pathname) {
 }
 
 /**
- * @param {{ method: string, pathname: string, body?: Buffer, originOk: boolean, env: NodeJS.ProcessEnv, fetchImpl: typeof fetch, listenerPids: () => number[] | null, processPaths: (pid: number) => string[], readToken?: () => string | null }} input
+ * One HTTP call to 127.0.0.1:8776. node:http does not use HTTP_PROXY.
+ * Redirects are not followed. The body is read until the cap, then the socket is closed.
+ * @param {{ method: string, path: string, headers?: Record<string, string>, body?: Buffer, timeoutMs: number }} call
+ */
+export function loopbackFairleadRequest(call) {
+  const socket = fairleadSocketOptions(call.timeoutMs);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const fail = (err) => { if (settled) return; settled = true; reject(err); };
+    const ok = (value) => { if (settled) return; settled = true; resolve(value); };
+    const headers = { ...(call.headers || {}), host: `${FAIRLEAD_HOST}:${FAIRLEAD_PORT}`, connection: 'close' };
+    const req = http.request({
+      host: socket.host,
+      port: socket.port,
+      method: call.method,
+      path: call.path,
+      headers,
+      timeout: socket.timeout,
+    }, (res) => {
+      const chunks = [];
+      let size = 0;
+      res.on('data', (chunk) => {
+        if (settled) return;
+        if (size + chunk.length > MAX_RESPONSE_BYTES) {
+          res.destroy();
+          req.destroy();
+          fail(Object.assign(new Error('too large'), { code: 'too-large' }));
+          return;
+        }
+        chunks.push(chunk);
+        size += chunk.length;
+      });
+      res.on('end', () => {
+        const hdrs = {};
+        for (const [key, value] of Object.entries(res.headers)) {
+          hdrs[key.toLowerCase()] = Array.isArray(value) ? value.join(', ') : String(value ?? '');
+        }
+        ok({ status: res.statusCode ?? 0, headers: hdrs, body: Buffer.concat(chunks) });
+      });
+      res.on('error', fail);
+    });
+    req.on('timeout', () => {
+      req.destroy();
+      fail(Object.assign(new Error('timeout'), { code: 'timeout' }));
+    });
+    req.on('error', fail);
+    if (call.body && call.body.length) req.write(call.body);
+    req.end();
+  });
+}
+
+/**
+ * @param {{ method: string, pathname: string, body?: Buffer, originOk: boolean, env: NodeJS.ProcessEnv, requestImpl?: typeof loopbackFairleadRequest, listenerPids: () => number[] | null, processPaths: (pid: number) => string[], readToken?: () => string | null }} input
  */
 export async function handleFairleadProxy(input) {
   const method = String(input.method || '').toUpperCase();
@@ -127,11 +196,12 @@ export async function handleFairleadProxy(input) {
   if (!token) {
     return textResult(503, 'Fairlead has no account token for this Windows account yet. Start Fairlead once so it can write %LOCALAPPDATA%\\Fairlead\\local-token, or add a key under Program → Intelligence.');
   }
+  const call = input.requestImpl ?? loopbackFairleadRequest;
   let idRaw;
   try {
-    const idRes = await input.fetchImpl(`${FAIRLEAD_ORIGIN}/__fleethacker/id`, { method: 'GET', redirect: 'manual', headers: { accept: 'application/json' } });
-    if (!idRes.ok) return textResult(502, 'Fairlead did not identify itself, so the account token was not sent.');
-    const idText = await idRes.text();
+    const idRes = await call({ method: 'GET', path: '/__fleethacker/id', headers: { accept: 'application/json' }, timeoutMs: ID_TIMEOUT_MS });
+    if (idRes.status !== 200) return textResult(502, 'Fairlead did not identify itself, so the account token was not sent.');
+    const idText = idRes.body.toString('utf8');
     if (idText.length > MAX_TOKEN_BYTES) return textResult(502, 'Fairlead did not identify itself, so the account token was not sent.');
     idRaw = JSON.parse(idText);
   } catch {
@@ -155,25 +225,26 @@ export async function handleFairleadProxy(input) {
       'x-fairlead-privacy': 'local',
     };
     if (method === 'POST') headers['content-type'] = 'application/json';
-    upstream = await input.fetchImpl(`${FAIRLEAD_ORIGIN}${rel}`, {
+    upstream = await call({
       method,
-      redirect: 'manual',
+      path: rel,
       headers,
       body: method === 'POST' ? body : undefined,
+      timeoutMs: FORWARD_TIMEOUT_MS,
     });
   } catch (err) {
+    const code = err && err.code;
+    if (code === 'too-large') return textResult(502, 'Fairlead sent an answer larger than Shellback accepts.');
+    if (code === 'timeout') return textResult(502, 'Fairlead did not answer in time, so the account token was not left waiting.');
     return textResult(502, scrub(err instanceof Error ? err.message : 'Fairlead could not be reached.', token) || 'Fairlead could not be reached.');
   }
   if (upstream.status >= 300 && upstream.status < 400) {
     return textResult(502, 'Fairlead redirected the request, so Shellback stopped.');
   }
-  const bytes = Buffer.from(await upstream.arrayBuffer());
-  if (bytes.length > MAX_RESPONSE_BYTES) return textResult(502, 'Fairlead sent an answer larger than Shellback accepts.');
-  const contentType = upstream.headers.get('content-type') || 'application/json; charset=utf-8';
-  let out = bytes;
-  if (/json|text/i.test(contentType) && bytes.includes(Buffer.from(token))) {
-    out = Buffer.from(bytes.toString('utf8').split(token).join('[key]'));
-  }
+  if (upstream.body.length > MAX_RESPONSE_BYTES) return textResult(502, 'Fairlead sent an answer larger than Shellback accepts.');
+  const contentType = pinnedContentType(upstream.headers['content-type']);
+  let out = upstream.body;
+  if (out.includes(Buffer.from(token))) out = Buffer.from(out.toString('utf8').split(token).join('[key]'));
   return { status: upstream.status, contentType, body: out };
 }
 
