@@ -121,6 +121,8 @@ export interface RemoteProviderConfig {
   model?: string;
   /** Operator-supplied disclosure shown to users. */
   dataHandling?: string;
+  /** Fairlead only: leave out the local-only header so the router may use cloud engines. Off by default. */
+  cloudAllowed?: boolean;
 }
 
 export type RemoteTask =
@@ -181,7 +183,7 @@ export function createRemoteProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     const bad = validateEndpoint(cfg.endpoint);
     if (bad) throw new Error(bad);
     const body: RemoteRequest = { contract: REMOTE_CONTRACT_VERSION, payload, ...(cfg.model ? { model: cfg.model } : {}) };
-    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint) };
+    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint, cfg.cloudAllowed) };
     const token = deps.token();
     if (token) headers.authorization = `Bearer ${token}`;
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -267,7 +269,7 @@ export function createOpenAIProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timer = ctrl ? setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45_000) : null;
     let res: Response;
-    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint) };
+    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint, cfg.cloudAllowed) };
     if (transport.sendBrowserToken && token) headers.authorization = `Bearer ${token}`;
     try {
       res = await deps.fetch(transport.url, { ...init, headers, credentials: 'omit', referrerPolicy: 'no-referrer', ...(ctrl ? { signal: ctrl.signal } : {}) });
