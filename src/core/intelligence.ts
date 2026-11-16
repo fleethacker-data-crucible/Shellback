@@ -121,6 +121,8 @@ export interface RemoteProviderConfig {
   model?: string;
   /** Operator-supplied disclosure shown to users. */
   dataHandling?: string;
+  /** Fairlead only: leave out the local-only header so the router may use cloud engines. Off by default. */
+  cloudAllowed?: boolean;
 }
 
 export type RemoteTask =
@@ -173,7 +175,7 @@ export function createRemoteProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     const bad = validateEndpoint(cfg.endpoint);
     if (bad) throw new Error(bad);
     const body: RemoteRequest = { contract: REMOTE_CONTRACT_VERSION, payload, ...(cfg.model ? { model: cfg.model } : {}) };
-    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint) };
+    const headers: Record<string, string> = { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint, cfg.cloudAllowed) };
     const token = deps.token();
     if (token) headers.authorization = `Bearer ${token}`;
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -258,7 +260,7 @@ export function createOpenAIProvider(cfg: RemoteProviderConfig, deps: RemoteDeps
     const timer = ctrl ? setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45_000) : null;
     let res: Response;
     try {
-      res = await deps.fetch(`${base}${path}`, { ...init, headers: { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint), authorization: `Bearer ${token}` }, credentials: 'omit', referrerPolicy: 'no-referrer', ...(ctrl ? { signal: ctrl.signal } : {}) });
+      res = await deps.fetch(`${base}${path}`, { ...init, headers: { 'content-type': 'application/json', accept: 'application/json', ...privacyHeaders(cfg.endpoint, cfg.cloudAllowed), authorization: `Bearer ${token}` }, credentials: 'omit', referrerPolicy: 'no-referrer', ...(ctrl ? { signal: ctrl.signal } : {}) });
     } catch (err) {
       throw new Error(`Could not reach ${origin}: ${err instanceof Error ? err.message : String(err)}. Check that this build allows the host (Program → Intelligence) and that the gateway permits browser (CORS) requests; otherwise run the loopback adapter.`);
     } finally { if (timer) clearTimeout(timer); }

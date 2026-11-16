@@ -23,6 +23,11 @@ test('the privacy header goes only to the router, never to other hosts', () => {
   assert.deepEqual(privacyHeaders('http://127.0.0.1:8790/v1'), {}, 'the loopback adapter is not the router');
 });
 
+test('the person can let the router use cloud engines: the local-only header is then left out', () => {
+  assert.deepEqual(privacyHeaders(`${FAIRLEAD_ORIGIN}/v1`, true), {});
+  assert.deepEqual(privacyHeaders(`${FAIRLEAD_ORIGIN}/v1`, false), { [FAIRLEAD_PRIVACY_HEADER]: 'local' });
+});
+
 test('the shipped build allows the router origin and no other host by default', () => {
   const manifest = JSON.parse(readFileSync(path.join(root, 'dist', 'build-manifest.json'), 'utf8')) as { intelHosts: string[] };
   assert.deepEqual(manifest.intelHosts, [FAIRLEAD_ORIGIN]);

@@ -6,7 +6,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { useStore } from '../state/store';
-import { fairleadPreset } from '../../core/fairlead';
+import { FAIRLEAD_CLOUD_NOTICE, FAIRLEAD_LOCAL_NOTICE, fairleadPreset, isFairleadOrigin } from '../../core/fairlead';
 import { EvaluationPanel } from './EvaluationPanel';
 import { useDialogs } from '../components/ui/dialogs';
 import { Button, Field, Input, Notice, Panel, PanelHeading, Pill, SectionIntro, Select, Textarea } from '../components/ui/primitives';
@@ -121,6 +121,12 @@ export function IntelligenceView() {
             <Field label={kind === 'openai' ? 'API base URL (usually ends in /v1)' : 'Endpoint URL (accepts the Shellback contract POST)'} htmlFor="intelEndpoint" hint={endpointError ?? (kind === 'openai' ? 'Shellback will call <base>/models and <base>/chat/completions.' : 'See docs/INTELLIGENCE_PROVIDERS.md for the contract.')}>
               <Input id="intelEndpoint" value={s.remote.endpoint} onChange={(v) => { setRemote({ endpoint: v.trim() }); setModels(null); }} placeholder={kind === 'openai' ? 'https://ai.example.com/v1' : 'https://ai.example.com/shellback'} maxLength={500} />
             </Field>
+            {endpointOk && isFairleadOrigin(s.remote.endpoint) && (
+              <label className="mt-2 flex items-start gap-2 text-sm">
+                <input id="intelCloudAllowed" type="checkbox" className="mt-1 accent-mint" checked={s.remote.cloudAllowed === true} onChange={(e) => setRemote({ cloudAllowed: e.target.checked, dataHandling: e.target.checked ? FAIRLEAD_CLOUD_NOTICE : FAIRLEAD_LOCAL_NOTICE })} />
+                <span>Let the router use cloud engines too. Off by default: Shellback then asks for engines on this computer only. Turn it on only for synthetic or non-sensitive text.</span>
+              </label>
+            )}
             {endpointOk && !hostAllowed && (
               <Notice tone="warn" className="mt-2">
                 <b>This build does not allow connections to that host.</b> Shellback ships with a Content-Security-Policy that blocks every origin except its own, so the browser will refuse the request no matter what is configured here. Rebuild with <code>SHELLBACK_INTEL_HOST={new URL(s.remote.endpoint).origin}</code> (<code>npm run build:intel</code>), or run the loopback adapter on <code>http://127.0.0.1:8790</code> — see LOCAL-DEV.md. {ALLOWED_INTEL_HOSTS.length ? <>Allowed by this build: {ALLOWED_INTEL_HOSTS.join(', ')}.</> : 'This build allows no remote hosts.'}
