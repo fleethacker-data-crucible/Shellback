@@ -69,6 +69,7 @@ if (-not $scriptDir) { $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.D
 $appRoot = [System.IO.Path]::GetFullPath((Join-Path $scriptDir '..')).TrimEnd('\', '/')
 if (-not $Root) { $Root = Join-Path $scriptDir '..\dist' }
 . (Join-Path $scriptDir 'Shellback-Process.ps1')
+. (Join-Path $scriptDir 'Fairlead-Proxy.ps1')
 
 # Lifecycle (TechStack "Lifecycle rules"): the browser tab owns this server unless -Stay or SHELLBACK_AUTO_STOP=0.
 $autoStop = -not $Stay
@@ -210,7 +211,8 @@ try {
       $waited = 0
       while (-not $stream.DataAvailable -and $waited -lt 300) { Start-Sleep -Milliseconds 10; $waited += 10 }
       if (-not $stream.DataAvailable) { continue }
-      $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 4096, $true)
+      # Latin-1 keeps every body byte (ASCII would replace bytes above 127). Headers are still one byte per character.
+      $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::GetEncoding(28591), $false, 4096, $true)
       $requestLine = $reader.ReadLine()
       if (-not $requestLine) { continue }
       # Headers: static GET/HEAD ignores them; the lifecycle routes check Host and Origin.
@@ -261,6 +263,27 @@ try {
           Send-Text -Stream $stream -Status 200 -Reason 'OK' -Text 'Stopping' -HeadOnly $false
           $stopReason = 'End session was chosen in the browser; stopping.'
         }
+        continue
+      }
+      # Fairlead preset with no typed key: this server attaches the account token. The page never sees it.
+      if ($apiPath.StartsWith('/api/fairlead/')) {
+        if ($target.Contains('?')) { Send-Text -Stream $stream -Status 400 -Reason 'Bad Request' -Text 'Bad request' -HeadOnly $false; continue }
+        $origin = $headers['origin']; $hostHeader = $headers['host']
+        $length = 0
+        if ($headers['content-length']) { [void][int]::TryParse($headers['content-length'], [ref]$length) }
+        if ($length -lt 0 -or $length -gt 524288) { Send-Text -Stream $stream -Status 413 -Reason 'Payload Too Large' -Text 'Too large' -HeadOnly $false; continue }
+        $raw = New-Object byte[] 0
+        if ($length -gt 0) {
+          $chars = New-Object char[] $length
+          $read = 0
+          while ($read -lt $length) { $n = $reader.Read($chars, $read, $length - $read); if ($n -le 0) { break }; $read += $n }
+          $raw = New-Object byte[] $read
+          for ($i = 0; $i -lt $read; $i++) { $raw[$i] = [byte][int]$chars[$i] }
+        }
+        $proxied = Invoke-ShellbackFairleadProxy -Method $method -TargetPath $apiPath -Body $raw -Origin $origin -HostHeader $hostHeader -AllowedOrigins $allowedOrigins -AllowedHosts $allowedHosts
+        $proxiedBody = $proxied.Bytes
+        if ($null -eq $proxiedBody) { $proxiedBody = New-Object byte[] 0 }
+        Send-Response -Stream $stream -Status $proxied.Status -Reason $proxied.Reason -Body $proxiedBody -ContentType $proxied.ContentType -HeadOnly $false -Extra $null
         continue
       }
       if ($method -ne 'GET' -and -not $headOnly) { Send-Text -Stream $stream -Status 405 -Reason 'Method Not Allowed' -Text 'Method not allowed' -HeadOnly $false; continue }
