@@ -65,11 +65,12 @@ test('returned text never keeps the token', () => {
   assert.doesNotMatch(scrub('fl-secret-value', 'fl-secret-value'), /fl-secret-value/);
 });
 
-test('proc net tcp keeps loopback listeners and skips other addresses', () => {
+test('proc net tcp keeps 127.0.0.1 listeners and skips other addresses', () => {
   const text = [
     'sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt uid timeout inode',
     '0: 0100007F:2248 00000000:0000 0A 0:0 0:0 0 0 0 99 1 00000000 100 0 0 10 0',
     '1: 0101A8C0:2248 00000000:0000 0A 0:0 0:0 0 0 0 50 1 00000000 100 0 0 10 0',
+    '2: 00000000:2248 00000000:0000 0A 0:0 0:0 0 0 0 77 1 00000000 100 0 0 10 0',
   ].join('\n');
   assert.deepEqual(parseProcNetTcp(text, 8776), ['99']);
 });

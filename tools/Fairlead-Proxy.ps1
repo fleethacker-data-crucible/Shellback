@@ -73,7 +73,7 @@ function Get-ShellbackLoopbackListenerPids {
   $found = New-Object System.Collections.Generic.List[int]
   foreach ($row in $rows) {
     $ip = [string]$row.LocalAddress
-    if ($ip -ne '127.0.0.1' -and $ip -ne '::1' -and $ip -ne '0.0.0.0' -and $ip -ne '::') { continue }
+    if ($ip -ne '127.0.0.1') { continue }
     $procId = [int]$row.OwningProcess
     if (-not $found.Contains($procId)) { [void]$found.Add($procId) }
   }

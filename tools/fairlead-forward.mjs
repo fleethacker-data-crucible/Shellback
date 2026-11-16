@@ -294,7 +294,7 @@ export function windowsListenerPids(port) {
       const colon = local.lastIndexOf(':');
       if (colon < 0 || local.slice(colon + 1) !== String(port)) continue;
       const host = local.slice(0, colon);
-      if (host !== '127.0.0.1' && host !== '0.0.0.0' && host !== '[::1]' && host !== '[::]') continue;
+      if (host !== '127.0.0.1') continue;
       const pid = Number(parts[4]);
       if (Number.isInteger(pid) && pid > 0) pids.add(pid);
     }
@@ -336,8 +336,8 @@ export function parseProcNetTcp(text, port) {
     const ip = local.slice(0, colon).toUpperCase();
     const phex = local.slice(colon + 1).toUpperCase();
     if (phex !== portHex || parts[3] !== '0A') continue;
-    const loopback = ip === '0100007F' || ip === '00000000' || ip === '00000000000000000000000001000000' || ip === '00000000000000000000000000000000';
-    if (!loopback) continue;
+    // 0100007F is 127.0.0.1. A wildcard bind is not this listener.
+    if (ip !== '0100007F') continue;
     inodes.push(parts[9]);
   }
   return inodes;
